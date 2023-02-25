@@ -125,10 +125,10 @@ class MotorPower:
         return self.duty[index]
 
 # default UUID address references the test hub
-# train = SimpleTrain("Train 2", report=True)
+train = SimpleTrain("Train 2", report=True)
 
 # train hub allows control over the LED headlight.
-train = SimpleTrain("Train 1", report=True, address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
+# train = SimpleTrain("Train 1", report=True, address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
 
 # Correct startup sequence requires that the train hub be connected first.
 # Wait a few seconds until the train hub connects. As soon as it connects, press
@@ -136,7 +136,8 @@ train = SimpleTrain("Train 1", report=True, address='F88800F6-F39B-4FD2-AFAA-DD9
 # loop starts running. Notice that the LEDs on both train and handset will go
 # solid white, and won't change color (channel) by pressing the green button.
 sleep(5)
-handset = RemoteHandset(address='5D319849-7D59-4EBB-A561-0C37C5EF8DCD')  # train handset
+handset = RemoteHandset(address='2BC6E69B-5F56-4716-AD8C-7B4D5CBC7BF8')  # test handset
+# handset = RemoteHandset(address='5D319849-7D59-4EBB-A561-0C37C5EF8DCD')  # train handset
 
 # actions associated with each handset button
 speed_actions = {
