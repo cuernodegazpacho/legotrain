@@ -14,12 +14,12 @@ hub = RemoteHandset(address='5D319849-7D59-4EBB-A561-0C37C5EF8DCD')  # train han
 descr = {}
 values = hub.peripherals.values()
 
-print("@@@@ test5.py 15: ", values)
+print("@@@@ modes_scanner.py 15: ", values)
 
 for dev in values:
     # descr[str(dev)] = dev.describe_possible_modes()
-    # print("@@@@ test5.py 15: ", dev)
-    print("@@@@ test5.py 16: ", dev.describe_possible_modes())
+    # print("@@@@ modes_scanner.py 15: ", dev)
+    print("@@@@ modes_scanner.py 16: ", dev.describe_possible_modes())
 
 # print(descr)
 #

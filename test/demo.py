@@ -65,13 +65,7 @@ DEMO_CHOICES = {
     'voltage': demo_voltage,
     'led_colors': demo_led_colors,
     'motor': demo_motor
-    # 'motors_timed': demo_motors_timed,
-    # 'motors_angled': demo_motors_angled,
-    # 'port_cd_motor': demo_port_cd_motor,
-    # 'tilt_sensor': demo_tilt_sensor_simple,
-    # 'tilt_sensor_precise': demo_tilt_sensor_precise,
     # 'color_sensor': demo_color_sensor,
-    # 'motor_sensors': demo_motor_sensors,
 }
 
 # hub_1 = SmartHub(address='86996732-BF5A-433D-AACE-5611D4C6271D')   # test hub
