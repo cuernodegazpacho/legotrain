@@ -11,20 +11,14 @@ from pylgbst.peripherals import Voltage, Current, LEDLight
 
 class Train:
     '''
-    Encapsulates details of a Train. A simple train is a train *not* equipped
-    with a sensor. It may or may not have a headlight. If it does, the headlight
-    brightness is controlled by the motor power setting.
-
-    For now, an instance of this class keeps tabs on the motor power setting, as
-    well as battery and headlights status (if so equipped).
+    Encapsulates details of a Train, such as motor power, led, sensor, headlight,
+    voltage, current.
 
     The train LED can be set to any color. A different color can be used on each
     train initialization. This is useful for visually keeping track of two trains
     simultaneously moving on the track (the handset LED will remain white throughout).
 
-    Train LED will blink between chosen color and red, when train is stopped.
-
-    This class also reports voltage and current at stdout.
+    This class reports voltage and current at stdout.
 
     :param name: train name, used in the report
     :param led_color: primary LED color used in this train instance
@@ -39,7 +33,7 @@ class Train:
     :ivar led_color: LED color, defined at init time
     '''
     def __init__(self, name, report=False, led_color=COLOR_BLUE,
-                 address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub
+                 address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub by default
 
         self.name = name
         self.hub = SmartHub(address=address)
@@ -52,9 +46,12 @@ class Train:
         self.motor_power = MotorPower()
         self.motor = self.hub.port_A
 
+        # led
+        self.set_status_led()
+
         # threads
-        self.led_thread = None
-        self.led_thread_run = False
+        # self.led_thread = None
+        # self.led_thread_run = False
 
         if report:
             self._start_report()
@@ -77,74 +74,68 @@ class Train:
 
     def up_speed(self):
         self._bump_motor_power(1)
-        self.set_status_led()
+        # self.set_status_led()
 
     def down_speed(self):
         self._bump_motor_power(-1)
-        self.set_status_led()
+        # self.set_status_led()
 
     def stop(self):
         self.power_index = 0
         self.motor.power(param=0.)
-        self.set_status_led()
+        # self.set_status_led()
 
     def _bump_motor_power(self, step):
         self.power_index = max(min(self.power_index + step, 10), -10)
         duty_cycle = self.motor_power.get_power(self.power_index)
-        try:
-            self.motor.power(param=duty_cycle)
-        except AssertionError as e:
-            # TODO eventually supress error message after some more testing
-            print("Harmless error when setting motor power:", e)
+        self.motor.power(param=duty_cycle)
 
     def set_status_led(self):
-        self._cancel_led_thread()
+        self.hub.led.set_color(self.led_color)
 
-        if self.power_index != 0:
-            try:
-                self.hub.led.set_color(self.led_color)
-            except AssertionError as e:
-                # TODO eventually supress error message after some more testing
-                print("Harmless error when setting LED:", e)
-        else:
-            self.led_thread = Thread(target=self._swap_led_color, args=(self.led_color, COLOR_RED))
-            self.led_thread_run = True
-            self.led_thread.start()
 
-    def _swap_led_color(self, c1, c2):
-        while self.led_thread_run:
-            try:
-                self.hub.led.set_color(c2)
-                sleep(1)
-                self.hub.led.set_color(c1)
-                sleep(1)
-            except AssertionError as e:
-                # TODO eventually supress error message after some more testing
-                print("harmless error when blinking LED:", e)
+        # self._cancel_led_thread()
 
-    def _cancel_led_thread(self):
-        if self.led_thread is not None:
-            self.led_thread_run = False
-            self.led_thread = None
-            sleep(0.3)
+        # if self.power_index != 0:
+        #     try:
+        #         self.hub.led.set_color(self.led_color)
+        #     except AssertionError as e:
+        #         # TODO eventually supress error message after some more testing
+        #         print("Harmless error when setting LED:", e)
+        # else:
+        #     self.led_thread = Thread(target=self._swap_led_color, args=(self.led_color, COLOR_RED))
+        #     self.led_thread_run = True
+        #     self.led_thread.start()
+
+    # def _swap_led_color(self, c1, c2):
+    #     while self.led_thread_run:
+    #         try:
+    #             self.hub.led.set_color(c2)
+    #             sleep(1)
+    #             self.hub.led.set_color(c1)
+    #             sleep(1)
+    #         except AssertionError as e:
+    #             # TODO eventually supress error message after some more testing
+    #             print("harmless error when blinking LED:", e)
+
+    # def _cancel_led_thread(self):
+    #     if self.led_thread is not None:
+    #         self.led_thread_run = False
+    #         self.led_thread = None
+    #         sleep(0.3)
 
 
 class SimpleTrain(Train):
     '''
-    Encapsulates details of a Train. A simple train is a train *not* equipped
-    with a sensor. It may or may not have a headlight. If it does, the headlight
-    brightness is controlled by the motor power setting.
+    A SimpleTrain is a Train *not* equipped with a sensor. It may or may not have a
+    headlight. If it does, the headlight brightness is controlled by the motor power
+    setting. A SimpleTrain without a headlight behaves as a Train.
 
-    For now, an instance of this class keeps tabs on the motor power setting, as
-    well as battery and headlights status (if so equipped).
-
-    The train LED can be set to any color. A different color can be used on each
-    train initialization. This is useful for visually keeping track of two trains
-    simultaneously moving on the track (the handset LED will remain white throughout).
-
-    Train LED will blink between chosen color and red, when train is stopped.
-
-    This class also reports voltage and current at stdout.
+    Current behavior calls for the headlight to be at maximum brightness for all motor
+    power settings, except for zero power. In that case, the brightness is dropped to
+    10% of maximum. This value is set in the headlight after a few seconds delay from
+    the moment the motor stops. Details of this are handled by an instance of class
+    HeadlightHamdler.
 
     :param name: train name, used in the report
     :param led_color: primary LED color used in this train instance
@@ -152,22 +143,15 @@ class SimpleTrain(Train):
     :param address: UUID of the train's internal hub
 
     :ivar hub: the train's internal hub
-    :ivar motor: references the train's motor
-    :ivar power_index: motor power level
-    :ivar voltage: populated only when report=True
-    :ivar current: populated only when report=True
-    :ivar led_color: LED color, defined at init time
+    :ivar headlight: reference to the hub's port B device
+    :ivar headlight_brightness: reference to the hub `headlight.brightness` value
     '''
-
     def __init__(self, name, report=False, led_color=COLOR_BLUE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub
 
         super(SimpleTrain, self).__init__(name, report=report, led_color=led_color, address=address)
 
         self.headlight = None
-
-        # thread control
-        self.headlight_thread = None
 
         if isinstance(self.hub.port_B, LEDLight):
             self.headlight = self.hub.port_B
@@ -184,24 +168,6 @@ class SimpleTrain(Train):
     def stop(self):
         super(SimpleTrain, self).stop()
         self._set_headlight_brightness()
-
-    def _set_headlight_brightness(self):
-        if self.headlight is not None:
-            brightness = 10
-            self._cancel_headlight_thread()
-            if self.power_index != 0:
-                brightness = 100
-                self.headlight.set_brightness(brightness)
-            else:
-                # dim headlight after delay
-                self.headlight_thread = Timer(10, self.headlight.set_brightness, [brightness])
-                self.headlight_thread.start()
-
-    def _cancel_headlight_thread(self):
-        if self.headlight_thread is not None:
-            self.headlight_thread.cancel()
-            self.headlight_thread = None
-            sleep(0.2)
 
 
 class MotorPower:
@@ -222,3 +188,36 @@ class MotorPower:
 
     def get_power(self, index):
         return self.duty[index]
+
+
+class HeadlightHandler:
+    '''
+    A Handler class is used to send/receive messages to/from a train hub, minimizing
+    the number of actual Bluetooth messages. This helps in shielding the BT environment
+    from a flurry of unecessary messages.
+    '''
+
+
+    # thread control
+    headlight_thread = None
+
+    def _set_headlight_brightness(self):
+        if self.headlight is not None:
+            brightness = 10
+            self._cancel_headlight_thread()
+            if self.power_index != 0:
+                brightness = 100
+                self.headlight.set_brightness(brightness)
+            else:
+                # dim headlight after delay
+                self.headlight_thread = Timer(5, self.headlight.set_brightness, [brightness])
+                self.headlight_thread.start()
+
+    def _cancel_headlight_thread(self):
+        if self.headlight_thread is not None:
+            self.headlight_thread.cancel()
+            self.headlight_thread = None
+            sleep(0.2)
+
+
+
