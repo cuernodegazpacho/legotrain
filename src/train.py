@@ -119,7 +119,7 @@ class SimpleTrain:
                 self.headlight.set_brightness(brightness)
             else:
                 # dim headlight after delay
-                self.headlight_thread = Timer(10, self.headlight.set_brightness, [brightness])
+                self.headlight_thread = Timer(5, self.headlight.set_brightness, [brightness])
                 self.headlight_thread.start()
 
     def _cancel_headlight_thread(self):
