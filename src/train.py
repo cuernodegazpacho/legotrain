@@ -156,6 +156,12 @@ class SimpleTrain(Train):
         if isinstance(self.hub.port_B, LEDLight):
             self.headlight_handler = HeadlightHandler(self)
 
+    # in the methods that increase or decrease motor power, one has to
+    # always call the headlight brightness control, since the power can
+    # go from some given setting to zero by either pressing the plus/minus
+    # buttons, or the red button. The headlight handler sorts out between
+    # these cases and only issues an actual command to the headlight when
+    # needed. This minimizes BLE traffic.
     def up_speed(self):
         super(SimpleTrain, self).up_speed()
         if self.headlight_handler is not None:
@@ -195,7 +201,7 @@ class MotorPower:
 class HeadlightHandler:
     '''
     A Handler class is used to send/receive messages to/from a train hub, minimizing
-    the number of actual Bluetooth messages. This helps in shielding the BT environment
+    the number of actual Bluetooth messages. This helps in shielding the BLE environment
     from a flurry of unecessary messages.
     '''
     def __init__(self, train):
@@ -211,6 +217,7 @@ class HeadlightHandler:
         if self.headlight is not None:
             brightness = 10
             self._cancel_headlight_thread()
+
             if power_index != 0:
                 brightness = 100
                 if brightness != self.headlight_brightness:
@@ -227,7 +234,7 @@ class HeadlightHandler:
         if self.headlight_timer is not None:
             self.headlight_timer.cancel()
             self.headlight_timer = None
-            sleep(0.2)
+            sleep(0.1)
 
 
 
