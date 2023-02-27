@@ -151,23 +151,25 @@ class SimpleTrain(Train):
 
         super(SimpleTrain, self).__init__(name, report=report, led_color=led_color, address=address)
 
-        self.headlight = None
+        self.headlight_handler = None
 
         if isinstance(self.hub.port_B, LEDLight):
-            self.headlight = self.hub.port_B
-            self.headlight_brightness = self.headlight.brightness
+            self.headlight_handler = HeadlightHandler(self)
 
     def up_speed(self):
         super(SimpleTrain, self).up_speed()
-        self._set_headlight_brightness()
+        if self.headlight_handler is not None:
+            self.headlight_handler.set_headlight_brightness(self.power_index)
 
     def down_speed(self):
         super(SimpleTrain, self).down_speed()
-        self._set_headlight_brightness()
+        if self.headlight_handler is not None:
+            self.headlight_handler.set_headlight_brightness(self.power_index)
 
     def stop(self):
         super(SimpleTrain, self).stop()
-        self._set_headlight_brightness()
+        if self.headlight_handler is not None:
+            self.headlight_handler.set_headlight_brightness(self.power_index)
 
 
 class MotorPower:
@@ -196,27 +198,29 @@ class HeadlightHandler:
     the number of actual Bluetooth messages. This helps in shielding the BT environment
     from a flurry of unecessary messages.
     '''
-
+    def __init__(self, train):
+        self.headlight = train.hub.port_B
+        self.headlight_brightness = self.headlight.brightness
 
     # thread control
-    headlight_thread = None
+    headlight_timer = None
 
-    def _set_headlight_brightness(self):
+    def set_headlight_brightness(self, power_index):
         if self.headlight is not None:
             brightness = 10
             self._cancel_headlight_thread()
-            if self.power_index != 0:
+            if power_index != 0:
                 brightness = 100
                 self.headlight.set_brightness(brightness)
             else:
                 # dim headlight after delay
-                self.headlight_thread = Timer(5, self.headlight.set_brightness, [brightness])
-                self.headlight_thread.start()
+                self.headlight_timer = Timer(5, self.headlight.set_brightness, [brightness])
+                self.headlight_timer.start()
 
     def _cancel_headlight_thread(self):
-        if self.headlight_thread is not None:
-            self.headlight_thread.cancel()
-            self.headlight_thread = None
+        if self.headlight_timer is not None:
+            self.headlight_timer.cancel()
+            self.headlight_timer = None
             sleep(0.2)
 
 
