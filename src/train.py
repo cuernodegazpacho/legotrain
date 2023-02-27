@@ -206,16 +206,22 @@ class HeadlightHandler:
     headlight_timer = None
 
     def set_headlight_brightness(self, power_index):
+        # here is the logic that prevents redundant BLE messages
+        # to be sent to the train hub
         if self.headlight is not None:
             brightness = 10
             self._cancel_headlight_thread()
             if power_index != 0:
                 brightness = 100
-                self.headlight.set_brightness(brightness)
+                if brightness != self.headlight_brightness:
+                    self.headlight.set_brightness(brightness)
+                    self.headlight_brightness = brightness
             else:
                 # dim headlight after delay
-                self.headlight_timer = Timer(5, self.headlight.set_brightness, [brightness])
-                self.headlight_timer.start()
+                if brightness != self.headlight_brightness:
+                    self.headlight_timer = Timer(5, self.headlight.set_brightness, [brightness])
+                    self.headlight_timer.start()
+                    self.headlight_brightness = brightness
 
     def _cancel_headlight_thread(self):
         if self.headlight_timer is not None:
