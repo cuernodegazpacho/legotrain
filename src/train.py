@@ -1,10 +1,8 @@
 import sys
-import time
 from time import sleep
 from threading import Thread, Timer
 
-import pylgbst.peripherals as peripherals
-from pylgbst.peripherals import COLOR_BLUE, COLOR_RED, Voltage, Current
+from pylgbst.peripherals import COLOR_BLUE, COLOR_YELLOW, COLOR_PURPLE, COLOR_ORANGE, Voltage, Current
 from pylgbst.hub import SmartHub
 from pylgbst.peripherals import Voltage, Current, LEDLight
 
@@ -47,11 +45,8 @@ class Train:
         self.motor = self.hub.port_A
 
         # led
-        self.set_status_led()
-
-        # threads
-        # self.led_thread = None
-        # self.led_thread_run = False
+        self.led_handler = LEDHandler(self)
+        self.led_handler.set_status_led(self.power_index)
 
         if report:
             self._start_report()
@@ -72,57 +67,25 @@ class Train:
         self.hub.voltage.subscribe(_report_voltage, mode=Voltage.VOLTAGE_L, granularity=6)
         self.hub.current.subscribe(_report_current, mode=Current.CURRENT_L, granularity=15)
 
+    # speed controls respond to key presses in the handset
     def up_speed(self):
         self._bump_motor_power(1)
-        # self.set_status_led()
+        self.led_handler.set_status_led(self.power_index)
 
     def down_speed(self):
         self._bump_motor_power(-1)
-        # self.set_status_led()
+        self.led_handler.set_status_led(self.power_index)
 
     def stop(self):
         self.power_index = 0
         self.motor.power(param=0.)
-        # self.set_status_led()
+        self.led_handler.set_status_led(self.power_index)
 
     def _bump_motor_power(self, step):
         self.power_index = max(min(self.power_index + step, 10), -10)
         duty_cycle = self.motor_power.get_power(self.power_index)
         self.motor.power(param=duty_cycle)
 
-    def set_status_led(self):
-        self.hub.led.set_color(self.led_color)
-
-
-        # self._cancel_led_thread()
-
-        # if self.power_index != 0:
-        #     try:
-        #         self.hub.led.set_color(self.led_color)
-        #     except AssertionError as e:
-        #         # TODO eventually supress error message after some more testing
-        #         print("Harmless error when setting LED:", e)
-        # else:
-        #     self.led_thread = Thread(target=self._swap_led_color, args=(self.led_color, COLOR_RED))
-        #     self.led_thread_run = True
-        #     self.led_thread.start()
-
-    # def _swap_led_color(self, c1, c2):
-    #     while self.led_thread_run:
-    #         try:
-    #             self.hub.led.set_color(c2)
-    #             sleep(1)
-    #             self.hub.led.set_color(c1)
-    #             sleep(1)
-    #         except AssertionError as e:
-    #             # TODO eventually supress error message after some more testing
-    #             print("harmless error when blinking LED:", e)
-
-    # def _cancel_led_thread(self):
-    #     if self.led_thread is not None:
-    #         self.led_thread_run = False
-    #         self.led_thread = None
-    #         sleep(0.3)
 
 
 class SimpleTrain(Train):
@@ -200,6 +163,8 @@ class MotorPower:
 
 class HeadlightHandler:
     '''
+    Handler for controlling the headlight.
+
     A Handler class is used to send/receive messages to/from a train hub, minimizing
     the number of actual Bluetooth messages. This helps in shielding the BLE environment
     from a flurry of unecessary messages.
@@ -237,4 +202,77 @@ class HeadlightHandler:
             sleep(0.1)
 
 
+class LEDHandler:
+    '''
+    Handler for controlling the hub's LED.
+
+    A Handler class is used to send/receive messages to/from a train hub, minimizing
+    the number of actual Bluetooth messages. This helps in shielding the BLE environment
+    from a flurry of unecessary messages.
+
+    CAVEAT:
+    We experimented with a blinking LED light but came to the conclusion that either bleak
+    or pylgbst do not work well with multi-threaded software. Perhaps we would need to implement
+    a sort of global thread manager for the entire train software. For now, we keep the threading
+    code in place, but turned off.
+    '''
+
+    # status values
+    STATIC = 0
+    BLINKING = 1
+
+    non_blinking_stop_colors = {
+        COLOR_BLUE: COLOR_PURPLE,
+        COLOR_YELLOW: COLOR_ORANGE
+    }
+
+    def __init__(self, train):
+        self.led = train.hub.led
+        self.led_color = train.led_color
+        self.previous_power_index = train.power_index
+
+        # thread control
+        self.led_thread = None
+        self.led_thread_stop_switch = False
+        self.led_thread_is_running = False
+
+        self.set_status_led(self.led_color)
+
+    def set_status_led(self, new_power_index):
+        if self._led_desired_status(new_power_index) != self._led_desired_status(self.previous_power_index):
+            self._cancel_led_thread()
+
+            if self._led_desired_status(new_power_index) == self.STATIC:
+                self.led.set_color(self.led_color)
+            else: # BLINKING
+                # self.led_thread = Thread(target=self._swap_led_color, args=(self.led_color, COLOR_RED))
+                # self.led_thread_stop_switch = False
+                # self.led_thread_is_running = True
+                # self.led_thread.start()
+
+                # threading is still unsafe. Use solid color to indicate stopped train
+                self.led.set_color(self.non_blinking_stop_colors[self.led_color])
+
+            self.previous_power_index = new_power_index
+
+    def _led_desired_status(self, power_index):
+        return self.BLINKING if power_index == 0 else self.STATIC
+
+    def _swap_led_color(self, c1, c2):
+        while not self.led_thread_stop_switch:
+            sleep(0.5)
+            self.led.set_color(c1)
+            sleep(1)
+            self.led.set_color(c2)
+            sleep(0.5)
+
+        self.led_thread_is_running = False
+
+    def _cancel_led_thread(self):
+        if self.led_thread is not None:
+            self.led_thread_stop_switch = True
+            while self.led_thread_is_running:
+                sleep(0.2)
+            self.led_thread = None
+            self.led.set_color(self.led_color)
 

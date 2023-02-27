@@ -1,11 +1,8 @@
-import sys
-import time
 from time import sleep
 import logging
-from threading import Timer
 
-from pylgbst.hub import SmartHub, RemoteHandset
-from pylgbst.peripherals import Voltage, Current, LEDLight, RemoteButton
+from pylgbst.hub import RemoteHandset
+from pylgbst.peripherals import RemoteButton, COLOR_YELLOW
 
 from train import SimpleTrain
 
@@ -66,7 +63,8 @@ def controller(train):
 
 if __name__ == '__main__':
     # train hub allows control over the LED headlight.
-    train = SimpleTrain("Train 1", report=True, address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
+    train = SimpleTrain("Train 1", led_color=COLOR_YELLOW, report=True,
+                        address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
 
     # test hub - no headlight
     # train = SimpleTrain("Train 1", report=True, address='86996732-BF5A-433D-AACE-5611D4C6271D')
