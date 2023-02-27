@@ -250,29 +250,38 @@ class LEDHandler:
                 # self.led_thread_is_running = True
                 # self.led_thread.start()
 
-                # threading is still unsafe. Use solid color to indicate stopped train
-                self.led.set_color(self.non_blinking_stop_colors[self.led_color])
+                # due to threading issues when blinking, we replace blink with solid color with delay
+                self.led_thread = Timer(2, self.led.set_color, [self.non_blinking_stop_colors[self.led_color]])
+                self.led_thread.start()
 
             self.previous_power_index = new_power_index
 
     def _led_desired_status(self, power_index):
         return self.BLINKING if power_index == 0 else self.STATIC
 
-    def _swap_led_color(self, c1, c2):
-        while not self.led_thread_stop_switch:
-            sleep(0.5)
-            self.led.set_color(c1)
-            sleep(1)
-            self.led.set_color(c2)
-            sleep(0.5)
-
-        self.led_thread_is_running = False
+    # This is used with the (non-working) blinking thread
+    # def _swap_led_color(self, c1, c2):
+    #     while not self.led_thread_stop_switch:
+    #         sleep(0.5)
+    #         self.led.set_color(c1)
+    #         sleep(1)
+    #         self.led.set_color(c2)
+    #         sleep(0.5)
+    #
+    #     self.led_thread_is_running = False
 
     def _cancel_led_thread(self):
         if self.led_thread is not None:
-            self.led_thread_stop_switch = True
-            while self.led_thread_is_running:
-                sleep(0.2)
+            self.led_thread.cancel()
             self.led_thread = None
-            self.led.set_color(self.led_color)
+            sleep(0.1)
+
+    # This is used with the (non-working) blinking thread
+    # def _cancel_led_thread(self):
+    #     if self.led_thread is not None:
+    #         self.led_thread_stop_switch = True
+    #         while self.led_thread_is_running:
+    #             sleep(0.2)
+    #         self.led_thread = None
+    #         self.led.set_color(self.led_color)
 
