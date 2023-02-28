@@ -66,7 +66,7 @@ def demo_motor(hub):
 def demo_color_sensor(smart_hub):
     print("Color sensor test: wave your hand in front of it")
     demo_color_sensor.cnt = 0
-    limit = 300
+    limit = 100
 
     h_list = []
     s_list = []
@@ -89,7 +89,7 @@ def demo_color_sensor(smart_hub):
             v_list.append(v)
             print(demo_color_sensor.cnt, limit, args, kwargs, h, s, v)
 
-    smart_hub.vision_sensor.subscribe(callback, granularity=5, mode=6)
+    smart_hub.vision_sensor.subscribe(callback, granularity=20, mode=6)
 
     while demo_color_sensor.cnt < limit:
         time.sleep(1)
@@ -100,6 +100,7 @@ def demo_color_sensor(smart_hub):
     print("S stats: ", stat.mean(s_list), stat.stdev(s_list), min(s_list), max(s_list))
     print("V stats: ", stat.mean(v_list), stat.stdev(v_list), min(v_list), max(v_list))
 
+    # TODO fix this by disambiguing circulairy
     # each row lists mean, stddev, min, max.
     # red tile
     # H stats:  0.9831216632280405 0.0052472558028119655 0.9572916666666667 0.9950980392156863
