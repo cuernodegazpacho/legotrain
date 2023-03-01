@@ -2,9 +2,9 @@ import sys
 from time import sleep
 from threading import Thread, Timer
 
-from pylgbst.peripherals import COLOR_BLUE, COLOR_YELLOW, COLOR_PURPLE, COLOR_ORANGE, Voltage, Current
 from pylgbst.hub import SmartHub
 from pylgbst.peripherals import Voltage, Current, LEDLight
+from pylgbst.peripherals import COLOR_BLUE, COLOR_RED, COLOR_YELLOW, COLOR_PURPLE, COLOR_ORANGE
 
 
 class Train:
@@ -46,7 +46,6 @@ class Train:
 
         # led
         self.led_handler = LEDHandler(self)
-        self.led_handler.set_status_led(self.power_index)
 
         if report:
             self._start_report()
@@ -70,11 +69,9 @@ class Train:
     # speed controls respond to key presses in the handset
     def up_speed(self):
         self._bump_motor_power(1)
-        self.led_handler.set_status_led(self.power_index)
 
     def down_speed(self):
         self._bump_motor_power(-1)
-        self.led_handler.set_status_led(self.power_index)
 
     def stop(self):
         self.power_index = 0
@@ -85,6 +82,7 @@ class Train:
         self.power_index = max(min(self.power_index + step, 10), -10)
         duty_cycle = self.motor_power.get_power(self.power_index)
         self.motor.power(param=duty_cycle)
+        self.led_handler.set_status_led(self.power_index)
 
 
 
@@ -214,13 +212,15 @@ class LEDHandler:
     We experimented with a blinking LED light but came to the conclusion that either bleak
     or pylgbst do not work well with multi-threaded software. Perhaps we would need to implement
     a sort of global thread manager for the entire train software. For now, we keep the threading
-    code in place, but turned off.
+    code in place, with timings adjusted to minimize errors. We can turn it off by commenting out
+    the relevant sections of code, if we need to.
     '''
-
     # status values
     STATIC = 0
     BLINKING = 1
 
+    # Translation between main LED color and stopped-train LED color.
+    # These are used only when we comment out the blinking code.
     non_blinking_stop_colors = {
         COLOR_BLUE: COLOR_PURPLE,
         COLOR_YELLOW: COLOR_ORANGE
@@ -236,7 +236,7 @@ class LEDHandler:
         self.led_thread_stop_switch = False
         self.led_thread_is_running = False
 
-        self.set_status_led(self.led_color)
+        self.set_status_led(self.previous_power_index)
 
     def set_status_led(self, new_power_index):
         if self._led_desired_status(new_power_index) != self._led_desired_status(self.previous_power_index):
@@ -250,7 +250,8 @@ class LEDHandler:
                 # self.led_thread_is_running = True
                 # self.led_thread.start()
 
-                # due to threading issues when blinking, we replace blink with solid color with delay
+                # there are threading issues when blinking. To overcome these, we can replace blink
+                # with solid color with delay (uncomment here and comment Thread above)
                 self.led_thread = Timer(2, self.led.set_color, [self.non_blinking_stop_colors[self.led_color]])
                 self.led_thread.start()
 
@@ -259,29 +260,27 @@ class LEDHandler:
     def _led_desired_status(self, power_index):
         return self.BLINKING if power_index == 0 else self.STATIC
 
-    # This is used with the (non-working) blinking thread
-    # def _swap_led_color(self, c1, c2):
-    #     while not self.led_thread_stop_switch:
-    #         sleep(0.5)
-    #         self.led.set_color(c1)
-    #         sleep(1)
-    #         self.led.set_color(c2)
-    #         sleep(0.5)
-    #
-    #     self.led_thread_is_running = False
+    def _swap_led_color(self, c1, c2):
+        while not self.led_thread_stop_switch:
+            self.led.set_color(c1)
+            sleep(1)
+            self.led.set_color(c2)
+            sleep(1)
 
+        self.led_thread_is_running = False
+
+    # This is used with Timer thread
     def _cancel_led_thread(self):
         if self.led_thread is not None:
             self.led_thread.cancel()
             self.led_thread = None
             sleep(0.1)
 
-    # This is used with the (non-working) blinking thread
+    # This is used with blinking Thread
     # def _cancel_led_thread(self):
     #     if self.led_thread is not None:
     #         self.led_thread_stop_switch = True
     #         while self.led_thread_is_running:
     #             sleep(0.2)
     #         self.led_thread = None
-    #         self.led.set_color(self.led_color)
 
