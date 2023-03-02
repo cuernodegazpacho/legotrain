@@ -1,6 +1,6 @@
 import sys
 from time import sleep
-from threading import Thread, Timer
+from threading import Thread, Timer, RLock
 
 from pylgbst.hub import SmartHub
 from pylgbst.peripherals import Voltage, Current, LEDLight
@@ -17,6 +17,9 @@ class Train:
     simultaneously moving on the track (the handset LED will remain white throughout).
 
     This class reports voltage and current at stdout.
+
+    A thread lock mechanism is used to prevent collisions in the thread-unsafe
+    pylgbst environment
 
     :param name: train name, used in the report
     :param led_color: primary LED color used in this train instance
@@ -39,13 +42,16 @@ class Train:
         self.voltage = 0.
         self.led_color = led_color
 
+        # global (per hub) lock to control threaded access to hub functions
+        self.lock = RLock()
+
         # motor
         self.power_index = 0
-        self.motor_power = MotorPower()
         self.motor = self.hub.port_A
+        self.motor_power = MotorHandler(self.motor, self.lock)
 
         # led
-        self.led_handler = LEDHandler(self)
+        self.led_handler = LEDHandler(self, self.lock)
 
         if report:
             self._start_report()
@@ -75,15 +81,45 @@ class Train:
 
     def stop(self):
         self.power_index = 0
-        self.motor.power(param=0.)
-        self.led_handler.set_status_led(self.power_index)
+        self._set_power()
 
     def _bump_motor_power(self, step):
         self.power_index = max(min(self.power_index + step, 10), -10)
-        duty_cycle = self.motor_power.get_power(self.power_index)
-        self.motor.power(param=duty_cycle)
+        self._set_power()
+
+    def _set_power(self):
+        self.motor_power.set_motor_power(self.power_index)
         self.led_handler.set_status_led(self.power_index)
 
+
+class MotorHandler:
+    '''
+    Translator between handset button clicks and actual motor power settings.
+
+    The DC train motor seems to have some non-linearities in between its duty
+    cycle (aka "power") and actual power, measured by its capacity to move the
+    train at a given speed. This class translates the stepwise linear sequence
+    of handset button presses to useful duty cycle values, using a lookup table.
+    '''
+    duty = {
+        0: 0.0,  1: 0.3,  2: 0.35,  3: 0.4,  4: 0.45,  5: 0.5,
+        6: 0.6,  7: 0.7,  8: 0.8,  9: 0.9, 10: 1.0,
+        -1: -0.3, -2: -0.35, -3: -0.4, -4: -0.45, -5: -0.5,
+        -6: -0.6, -7: -0.7,  -8: -0.8, -9: -0.9, -10: -1.0,
+    }
+
+    def __init__(self, motor, lock):
+        self.motor = motor
+        self.lock = lock
+
+    def set_motor_power(self, index):
+        duty_cycle = self._get_power(index)
+        self.lock.acquire()
+        self.motor.power(param=duty_cycle)
+        self.lock.release()
+
+    def _get_power(self, index):
+        return self.duty[index]
 
 
 class SimpleTrain(Train):
@@ -115,7 +151,7 @@ class SimpleTrain(Train):
         self.headlight_handler = None
 
         if isinstance(self.hub.port_B, LEDLight):
-            self.headlight_handler = HeadlightHandler(self)
+            self.headlight_handler = HeadlightHandler(self, self.lock)
 
     # in the methods that increase or decrease motor power, one has to
     # always call the headlight brightness control, since the power can
@@ -139,37 +175,20 @@ class SimpleTrain(Train):
             self.headlight_handler.set_headlight_brightness(self.power_index)
 
 
-class MotorPower:
-    '''
-    Translator between handset button clicks and actual motor power settings.
-
-    The DC train motor seems to have some non-linearities in between its duty
-    cycle (aka "power") and actual power, measured by its capacity to move the
-    train at a given speed. This class translates the stepwise linear sequence
-    of handset button presses to useful duty cycle values, using a lookup table.
-    '''
-    duty = {
-        0: 0.0,  1: 0.3,  2: 0.35,  3: 0.4,  4: 0.45,  5: 0.5,
-        6: 0.6,  7: 0.7,  8: 0.8,  9: 0.9, 10: 1.0,
-        -1: -0.3, -2: -0.35, -3: -0.4, -4: -0.45, -5: -0.5,
-        -6: -0.6, -7: -0.7,  -8: -0.8, -9: -0.9, -10: -1.0,
-    }
-
-    def get_power(self, index):
-        return self.duty[index]
-
-
 class HeadlightHandler:
     '''
     Handler for controlling the headlight.
 
     A Handler class is used to send/receive messages to/from a train hub, minimizing
     the number of actual Bluetooth messages. This helps in shielding the BLE environment
-    from a flurry of unecessary messages.
-    '''
-    def __init__(self, train):
+    from a flurry of unecessary messages. It also uses a lock to set hub parameters, preventing
+    collisions in pylgbst.    '''
+    def __init__(self, train, lock):
+        self.lock = lock
         self.headlight = train.hub.port_B
+        self.lock.acquire()
         self.headlight_brightness = self.headlight.brightness
+        self.lock.release()
 
     # thread control
     headlight_timer = None
@@ -184,14 +203,20 @@ class HeadlightHandler:
             if power_index != 0:
                 brightness = 100
                 if brightness != self.headlight_brightness:
-                    self.headlight.set_brightness(brightness)
+                    self._set_brightness(brightness, self.lock)
                     self.headlight_brightness = brightness
             else:
                 # dim headlight after delay
                 if brightness != self.headlight_brightness:
-                    self.headlight_timer = Timer(5, self.headlight.set_brightness, [brightness])
+                    self.headlight_timer = Timer(5, self._set_brightness, [brightness, self.lock])
                     self.headlight_timer.start()
                     self.headlight_brightness = brightness
+
+    # wrapper to allow locking
+    def _set_brightness(self, brightness, lock):
+        lock.acquire()
+        self.headlight.set_brightness(brightness)
+        lock.release()
 
     def _cancel_headlight_thread(self):
         if self.headlight_timer is not None:
@@ -206,27 +231,15 @@ class LEDHandler:
 
     A Handler class is used to send/receive messages to/from a train hub, minimizing
     the number of actual Bluetooth messages. This helps in shielding the BLE environment
-    from a flurry of unecessary messages.
-
-    CAVEAT:
-    We experimented with a blinking LED light but came to the conclusion that either bleak
-    or pylgbst do not work well with multi-threaded software. Perhaps we would need to implement
-    a sort of global thread manager for the entire train software. For now, we keep the threading
-    code in place, with timings adjusted to minimize errors. We can turn it off by commenting out
-    the relevant sections of code, if we need to.
+    from a flurry of unecessary messages. It also uses a lock to set hub parameters, preventing
+    collisions in pylgbst.
     '''
     # status values
     STATIC = 0
     BLINKING = 1
 
-    # Translation between main LED color and stopped-train LED color.
-    # These are used only when we comment out the blinking code.
-    non_blinking_stop_colors = {
-        COLOR_BLUE: COLOR_PURPLE,
-        COLOR_YELLOW: COLOR_ORANGE
-    }
-
-    def __init__(self, train):
+    def __init__(self, train, lock):
+        self.lock = lock
         self.led = train.hub.led
         self.led_color = train.led_color
         self.previous_power_index = train.power_index
@@ -243,16 +256,13 @@ class LEDHandler:
             self._cancel_led_thread()
 
             if self._led_desired_status(new_power_index) == self.STATIC:
+                self.lock.acquire()
                 self.led.set_color(self.led_color)
+                self.lock.release()
             else: # BLINKING
-                # self.led_thread = Thread(target=self._swap_led_color, args=(self.led_color, COLOR_RED))
-                # self.led_thread_stop_switch = False
-                # self.led_thread_is_running = True
-                # self.led_thread.start()
-
-                # there are threading issues when blinking. To overcome these, we can replace blink
-                # with solid color with delay (uncomment here and comment Thread above)
-                self.led_thread = Timer(2, self.led.set_color, [self.non_blinking_stop_colors[self.led_color]])
+                self.led_thread = Thread(target=self._swap_led_color, args=(self.led_color, COLOR_RED))
+                self.led_thread_stop_switch = False
+                self.led_thread_is_running = True
                 self.led_thread.start()
 
             self.previous_power_index = new_power_index
@@ -262,25 +272,21 @@ class LEDHandler:
 
     def _swap_led_color(self, c1, c2):
         while not self.led_thread_stop_switch:
+            self.lock.acquire()
             self.led.set_color(c1)
-            sleep(1)
+            self.lock.release()
+            sleep(0.2)
+            self.lock.acquire()
             self.led.set_color(c2)
-            sleep(1)
+            self.lock.release()
+            sleep(0.2)
 
         self.led_thread_is_running = False
 
-    # This is used with Timer thread
     def _cancel_led_thread(self):
         if self.led_thread is not None:
-            self.led_thread.cancel()
+            self.led_thread_stop_switch = True
+            while self.led_thread_is_running:
+                sleep(0.2)
             self.led_thread = None
-            sleep(0.1)
-
-    # This is used with blinking Thread
-    # def _cancel_led_thread(self):
-    #     if self.led_thread is not None:
-    #         self.led_thread_stop_switch = True
-    #         while self.led_thread_is_running:
-    #             sleep(0.2)
-    #         self.led_thread = None
 
