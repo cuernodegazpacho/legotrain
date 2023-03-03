@@ -177,6 +177,76 @@ class SimpleTrain(Train):
             self.headlight_handler.set_headlight_brightness(self.power_index)
 
 
+class LEDHandler:
+    '''
+    Handler for controlling the hub's LED. Current implementation blinks the LED
+    when motor power is zero (train stopped).
+
+    A Handler class is used to send/receive messages to/from a train hub, minimizing
+    the number of actual Bluetooth messages. This helps in shielding the BLE environment
+    from a flurry of unecessary messages. It also uses a lock to set hub parameters, preventing
+    collisions in pylgbst.
+    '''
+    STATIC = 0
+    BLINKING = 1
+
+    # blinking should be fast to minimize latency is handset response time
+    BLINK_TIME = 0.1 # seconds
+
+    def __init__(self, train, lock):
+        self.lock = lock
+        self.led = train.hub.led
+        self.led_color = train.led_color
+        self.previous_power_index = 0
+
+        # thread control
+        self.led_thread = None
+        self.led_thread_stop_switch = False
+        self.led_thread_is_running = False
+
+        self.set_status_led(1)
+
+    def set_status_led(self, new_power_index):
+        # here is the logic that prevents redundant BLE messages to be sent to the train hub
+        if self._led_desired_status(new_power_index) != self._led_desired_status(self.previous_power_index):
+            self._cancel_led_thread()
+
+            if self._led_desired_status(new_power_index) == self.STATIC:
+                self.lock.acquire()
+                self.led.set_color(self.led_color)
+                self.lock.release()
+            else: # BLINKING
+                self.led_thread = Thread(target=self._swap_led_color, args=(self.led_color, COLOR_RED))
+                self.led_thread_stop_switch = False
+                self.led_thread_is_running = True
+                self.led_thread.start()
+
+            self.previous_power_index = new_power_index
+
+    def _led_desired_status(self, power_index):
+        return self.BLINKING if power_index == 0 else self.STATIC
+
+    def _swap_led_color(self, c1, c2):
+        while not self.led_thread_stop_switch:
+            self.lock.acquire()
+            self.led.set_color(c1)
+            self.lock.release()
+            sleep(self.BLINK_TIME)
+            self.lock.acquire()
+            self.led.set_color(c2)
+            self.lock.release()
+            sleep(self.BLINK_TIME)
+
+        self.led_thread_is_running = False
+
+    def _cancel_led_thread(self):
+        if self.led_thread is not None:
+            self.led_thread_stop_switch = True
+            while self.led_thread_is_running:
+                sleep(self.BLINK_TIME / 10)
+            self.led_thread = None
+
+
 class HeadlightHandler:
     '''
     Handler for controlling the headlight. Current implementation dims the headlight after
@@ -227,72 +297,3 @@ class HeadlightHandler:
             self.headlight_timer.cancel()
             self.headlight_timer = None
             sleep(0.1)
-
-
-class LEDHandler:
-    '''
-    Handler for controlling the hub's LED. Current implementation blinks the LED
-    when motor power is zero (train stopped).
-
-    A Handler class is used to send/receive messages to/from a train hub, minimizing
-    the number of actual Bluetooth messages. This helps in shielding the BLE environment
-    from a flurry of unecessary messages. It also uses a lock to set hub parameters, preventing
-    collisions in pylgbst.
-    '''
-    STATIC = 0
-    BLINKING = 1
-    BLINK_TIME = 0.2 # seconds
-
-    def __init__(self, train, lock):
-        self.lock = lock
-        self.led = train.hub.led
-        self.led_color = train.led_color
-        self.previous_power_index = train.power_index
-
-        # thread control
-        self.led_thread = None
-        self.led_thread_stop_switch = False
-        self.led_thread_is_running = False
-
-        self.set_status_led(self.previous_power_index)
-
-    def set_status_led(self, new_power_index):
-        # here is the logic that prevents redundant BLE messages to be sent to the train hub
-        if self._led_desired_status(new_power_index) != self._led_desired_status(self.previous_power_index):
-            self._cancel_led_thread()
-
-            if self._led_desired_status(new_power_index) == self.STATIC:
-                self.lock.acquire()
-                self.led.set_color(self.led_color)
-                self.lock.release()
-            else: # BLINKING
-                self.led_thread = Thread(target=self._swap_led_color, args=(self.led_color, COLOR_RED))
-                self.led_thread_stop_switch = False
-                self.led_thread_is_running = True
-                self.led_thread.start()
-
-            self.previous_power_index = new_power_index
-
-    def _led_desired_status(self, power_index):
-        return self.BLINKING if power_index == 0 else self.STATIC
-
-    def _swap_led_color(self, c1, c2):
-        while not self.led_thread_stop_switch:
-            self.lock.acquire()
-            self.led.set_color(c1)
-            self.lock.release()
-            sleep(self.BLINK_TIME)
-            self.lock.acquire()
-            self.led.set_color(c2)
-            self.lock.release()
-            sleep(self.BLINK_TIME)
-
-        self.led_thread_is_running = False
-
-    def _cancel_led_thread(self):
-        if self.led_thread is not None:
-            self.led_thread_stop_switch = True
-            while self.led_thread_is_running:
-                sleep(self.BLINK_TIME)
-            self.led_thread = None
-
