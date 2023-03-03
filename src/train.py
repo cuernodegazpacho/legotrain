@@ -27,6 +27,7 @@ class Train:
     :param name: train name, used in the report
     :param led_color: primary LED color used in this train instance
     :param report: if True, report voltage and current
+    :param record: if True, record voltage and current in file (only if report=True)
     :param address: UUID of the train's internal hub
 
     :ivar hub: the train's internal hub
