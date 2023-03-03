@@ -63,7 +63,7 @@ def controller(train):
 
 if __name__ == '__main__':
     # train hub allows control over the LED headlight.
-    train = SimpleTrain("Train 1", led_color=COLOR_BLUE, report=True,
+    train = SimpleTrain("Train_1", led_color=COLOR_BLUE, report=True, record=True,
                         address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
 
     # test hub - no headlight

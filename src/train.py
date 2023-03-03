@@ -1,4 +1,5 @@
 import sys
+import datetime
 from time import sleep
 from threading import Thread, Timer, RLock
 
@@ -16,7 +17,9 @@ class Train:
     each train initialization. This is useful for visually keeping track of multiple trains
     simultaneously moving on the track (the handset LED will remain white throughout).
 
-    This class can report voltage and current at stdout.
+    This class can report voltage and current at stdout. It can also record these measurements
+    in a text file that is named as the train instance, with suffix ".txt". If a file of the
+    same name already exists, it will be appended with data from the current run.
 
     A thread lock mechanism is used to prevent collisions in the thread-unsafe
     pylgbst environment
@@ -33,7 +36,7 @@ class Train:
     :ivar current: populated only when report=True
     :ivar led_color: LED color, defined at init time
     '''
-    def __init__(self, name, report=False, led_color=COLOR_BLUE,
+    def __init__(self, name, report=False, record=False, led_color=COLOR_BLUE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub by default
 
         self.name = name
@@ -54,12 +57,22 @@ class Train:
         self.led_handler = LEDHandler(self, self.lock)
 
         if report:
-            self._start_reporting()
+            fp = None
+            if record:
+                fp = open(self.name + ".txt", "a")
+            self._start_reporting(fp)
 
-    def _start_reporting(self):
+
+    def _start_reporting(self, fp):
         def _print_values():
-            print("\r%s  voltage %5.2f  current %6.3f" % (self.name, self.voltage, self.current), end='')
+            print("\r%s  voltage %5.2f  current %5.2f  speed %i" %
+                  (self.name, self.voltage, self.current, self.power_index), end='')
             sys.stdout.flush()
+            if fp is not None:
+                ct = datetime.datetime.now()
+                fp.write("\r%s  %s   voltage: %5.2f  current: %5.3f  speed: %i" %
+                         (self.name, ct, self.voltage, self.current, self.power_index))
+                fp.flush()
 
         def _report_voltage(value):
             self.voltage = value
@@ -69,8 +82,8 @@ class Train:
             self.current = value
             _print_values()
 
-        self.hub.voltage.subscribe(_report_voltage, mode=Voltage.VOLTAGE_L, granularity=6)
-        self.hub.current.subscribe(_report_current, mode=Current.CURRENT_L, granularity=15)
+        self.hub.voltage.subscribe(_report_voltage, mode=Voltage.VOLTAGE_L, granularity=5)
+        self.hub.current.subscribe(_report_current, mode=Current.CURRENT_L, granularity=5)
 
     # these speed controls are to be used by the controlling script
     # to respond to key presses in the handset
@@ -145,10 +158,11 @@ class SimpleTrain(Train):
     :ivar headlight: reference to the hub's port B device
     :ivar headlight_brightness: reference to the hub `headlight.brightness` value
     '''
-    def __init__(self, name, report=False, led_color=COLOR_BLUE,
+    def __init__(self, name, report=False, record=False, led_color=COLOR_BLUE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub
 
-        super(SimpleTrain, self).__init__(name, report=report, led_color=led_color, address=address)
+        super(SimpleTrain, self).__init__(name, report=report, record=record,
+                                          led_color=led_color, address=address)
 
         self.headlight_handler = None
 
