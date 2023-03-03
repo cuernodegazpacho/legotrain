@@ -199,8 +199,12 @@ class LEDHandler:
         self.led_color = train.led_color
         self.previous_power_index = 0
 
-        # thread control
+        # we require a quite complex thread control mechanism to implement
+        # a blinking LED that starts with a delay when the motor stops. The
+        # delay is necessary to minimize latency when operating train with
+        # the headset buttons.
         self.led_thread = None
+        self.delay_timer = None
         self.led_thread_stop_switch = False
         self.led_thread_is_running = False
 
@@ -210,18 +214,23 @@ class LEDHandler:
         # here is the logic that prevents redundant BLE messages to be sent to the train hub
         if self._led_desired_status(new_power_index) != self._led_desired_status(self.previous_power_index):
             self._cancel_led_thread()
+            self._cancel_delay_timer()
 
             if self._led_desired_status(new_power_index) == self.STATIC:
                 self.lock.acquire()
                 self.led.set_color(self.led_color)
                 self.lock.release()
             else: # BLINKING
-                self.led_thread = Thread(target=self._swap_led_color, args=(self.led_color, COLOR_RED))
-                self.led_thread_stop_switch = False
-                self.led_thread_is_running = True
-                self.led_thread.start()
+                self.delay_timer = Timer(2., self._start_led_thread, [])
+                self.delay_timer.start()
 
             self.previous_power_index = new_power_index
+
+    def _start_led_thread(self):
+        self.led_thread = Thread(target=self._swap_led_color, args=(self.led_color, COLOR_RED))
+        self.led_thread_stop_switch = False
+        self.led_thread_is_running = True
+        self.led_thread.start()
 
     def _led_desired_status(self, power_index):
         return self.BLINKING if power_index == 0 else self.STATIC
@@ -245,6 +254,11 @@ class LEDHandler:
             while self.led_thread_is_running:
                 sleep(self.BLINK_TIME / 10)
             self.led_thread = None
+
+    def _cancel_delay_timer(self):
+        if self.delay_timer is not None:
+            self.delay_timer.cancel()
+            self.delay_timer = None
 
 
 class HeadlightHandler:
