@@ -15,7 +15,9 @@ class Train:
 
     The train LED can be set to any supported color. A different color can be used on
     each train initialization. This is useful for visually keeping track of multiple trains
-    simultaneously moving on the track (the handset LED will remain white throughout).
+    simultaneously moving on the track (the handset LED will remain white throughout). The
+    LED will blink between the chosen color and orange, whenever power is set to zero. The
+    original blinking with red color signaling low battery remains unchanged.
 
     This class can report voltage and current at stdout. It can also record these measurements
     in a text file that is named as the train instance, with suffix ".txt". If a file of the
@@ -26,6 +28,7 @@ class Train:
 
     :param name: train name, used in the report
     :param led_color: primary LED color used in this train instance
+    :param led_secondary_color: secondary LED color used to signal a stopped train
     :param report: if True, report voltage and current
     :param record: if True, record voltage and current in file (only if report=True)
     :param address: UUID of the train's internal hub
@@ -37,7 +40,8 @@ class Train:
     :ivar current: populated only when report=True
     :ivar led_color: LED color, defined at init time
     '''
-    def __init__(self, name, report=False, record=False, led_color=COLOR_BLUE,
+    def __init__(self, name, report=False, record=False,
+                 led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub by default
 
         self.name = name
@@ -45,6 +49,7 @@ class Train:
         self.current = 0.
         self.voltage = 0.
         self.led_color = led_color
+        self.led_secondary_color = led_secondary_color
 
         # global (per hub) lock to control threaded access to hub functions
         self.lock = RLock()
@@ -159,11 +164,13 @@ class SimpleTrain(Train):
     :ivar headlight: reference to the hub's port B device
     :ivar headlight_brightness: reference to the hub `headlight.brightness` value
     '''
-    def __init__(self, name, report=False, record=False, led_color=COLOR_BLUE,
+    def __init__(self, name, report=False, record=False,
+                 led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub
 
         super(SimpleTrain, self).__init__(name, report=report, record=record,
-                                          led_color=led_color, address=address)
+                                          led_color=led_color, led_secondary_color=led_secondary_color,
+                                          address=address)
 
         self.headlight_handler = None
 
@@ -212,6 +219,7 @@ class LEDHandler:
         self.lock = lock
         self.led = train.hub.led
         self.led_color = train.led_color
+        self.led_secondary_color = train.led_secondary_color
         self.previous_power_index = 0
 
         # we require a quite complex thread control mechanism to implement
@@ -242,7 +250,7 @@ class LEDHandler:
             self.previous_power_index = new_power_index
 
     def _start_led_thread(self):
-        self.led_thread = Thread(target=self._swap_led_color, args=(self.led_color, COLOR_RED))
+        self.led_thread = Thread(target=self._swap_led_color, args=(self.led_color, self.led_secondary_color))
         self.led_thread_stop_switch = False
         self.led_thread_is_running = True
         self.led_thread.start()
