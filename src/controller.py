@@ -2,7 +2,7 @@ from time import sleep
 import logging
 
 from pylgbst.hub import RemoteHandset
-from pylgbst.peripherals import RemoteButton, COLOR_YELLOW
+from pylgbst.peripherals import RemoteButton, COLOR_BLUE
 
 from train import SimpleTrain
 
@@ -22,13 +22,13 @@ def controller(train):
     on usability issues, such as having one person controlling both trains, or having
     two players, each one controlling a separate train.
 
-    Correct startup sequence requires that, with the script already started,  the train
+    Correct startup sequence requires that, with the script already started, the train
     hub be connected first (by a green button momentary press). Wait a few seconds until
     the train hub connects. As soon as it connects, press the green button on the remote
-    handset. As soon as it connects, the control loop starts running. Notice that the LEDs
-    on both train and handset will go solid white, and won't change color (channel) by
-    pressing the green button (the green buttons in both train and handset won't respond to
-    button presses from this point on).
+    handset. As soon as it connects, the control loop starts running. Notice that the train
+    LED will be set to its initialization color, and the LED in the handset will go solid
+    white. They won't change color (channel) by pressing the green button (the green buttons
+    in both train and handset won't respond to button presses from this point on).
     '''
     sleep(5)
     # handset = RemoteHandset(address='2BC6E69B-5F56-4716-AD8C-7B4D5CBC7BF8')  # test handset
@@ -63,7 +63,7 @@ def controller(train):
 
 if __name__ == '__main__':
     # train hub allows control over the LED headlight.
-    train = SimpleTrain("Train 1", led_color=COLOR_YELLOW, report=True,
+    train = SimpleTrain("Train 1", led_color=COLOR_BLUE, report=True,
                         address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
 
     # test hub - no headlight

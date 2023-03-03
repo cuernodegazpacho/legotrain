@@ -12,11 +12,11 @@ class Train:
     Encapsulates details of a Train, such as motor power, led, sensor, headlight,
     voltage, current.
 
-    The train LED can be set to any color. A different color can be used on each
-    train initialization. This is useful for visually keeping track of two trains
+    The train LED can be set to any supported color. A different color can be used on
+    each train initialization. This is useful for visually keeping track of multiple trains
     simultaneously moving on the track (the handset LED will remain white throughout).
 
-    This class reports voltage and current at stdout.
+    This class can report voltage and current at stdout.
 
     A thread lock mechanism is used to prevent collisions in the thread-unsafe
     pylgbst environment
@@ -46,17 +46,17 @@ class Train:
         self.lock = RLock()
 
         # motor
-        self.power_index = 0
         self.motor = self.hub.port_A
         self.motor_power = MotorHandler(self.motor, self.lock)
+        self.power_index = 0
 
         # led
         self.led_handler = LEDHandler(self, self.lock)
 
         if report:
-            self._start_report()
+            self._start_reporting()
 
-    def _start_report(self):
+    def _start_reporting(self):
         def _print_values():
             print("\r%s  voltage %5.2f  current %6.3f" % (self.name, self.voltage, self.current), end='')
             sys.stdout.flush()
@@ -72,7 +72,8 @@ class Train:
         self.hub.voltage.subscribe(_report_voltage, mode=Voltage.VOLTAGE_L, granularity=6)
         self.hub.current.subscribe(_report_current, mode=Current.CURRENT_L, granularity=15)
 
-    # speed controls respond to key presses in the handset
+    # these speed controls are to be used by the controlling script
+    # to respond to key presses in the handset
     def up_speed(self):
         self._bump_motor_power(1)
 
@@ -96,10 +97,11 @@ class MotorHandler:
     '''
     Translator between handset button clicks and actual motor power settings.
 
-    The DC train motor seems to have some non-linearities in between its duty
-    cycle (aka "power") and actual power, measured by its capacity to move the
-    train at a given speed. This class translates the stepwise linear sequence
-    of handset button presses to useful duty cycle values, using a lookup table.
+    The DC train motor appears to have a substantial non-linearities in between
+    its duty cycle (aka "power") and actual power, measured by its capacity to move the
+    train at a given speed. More evident at lower power settings. This class translates
+    the stepwise linear sequence of handset button presses to duty cycle values that result
+    in an apparent linear response from the train.
     '''
     duty = {
         0: 0.0,  1: 0.3,  2: 0.35,  3: 0.4,  4: 0.45,  5: 0.5,
@@ -177,7 +179,9 @@ class SimpleTrain(Train):
 
 class HeadlightHandler:
     '''
-    Handler for controlling the headlight.
+    Handler for controlling the headlight. Current implementation dims the headlight after
+    a few seconds have elapsed since the motor stopped. When motor starts, the headlight is
+    set back to maximum brightness.
 
     A Handler class is used to send/receive messages to/from a train hub, minimizing
     the number of actual Bluetooth messages. This helps in shielding the BLE environment
@@ -227,16 +231,17 @@ class HeadlightHandler:
 
 class LEDHandler:
     '''
-    Handler for controlling the hub's LED.
+    Handler for controlling the hub's LED. Current implementation blinks the LED
+    when motor power is zero (train stopped).
 
     A Handler class is used to send/receive messages to/from a train hub, minimizing
     the number of actual Bluetooth messages. This helps in shielding the BLE environment
     from a flurry of unecessary messages. It also uses a lock to set hub parameters, preventing
     collisions in pylgbst.
     '''
-    # status values
     STATIC = 0
     BLINKING = 1
+    BLINK_TIME = 0.2 # seconds
 
     def __init__(self, train, lock):
         self.lock = lock
@@ -252,6 +257,7 @@ class LEDHandler:
         self.set_status_led(self.previous_power_index)
 
     def set_status_led(self, new_power_index):
+        # here is the logic that prevents redundant BLE messages to be sent to the train hub
         if self._led_desired_status(new_power_index) != self._led_desired_status(self.previous_power_index):
             self._cancel_led_thread()
 
@@ -275,11 +281,11 @@ class LEDHandler:
             self.lock.acquire()
             self.led.set_color(c1)
             self.lock.release()
-            sleep(0.2)
+            sleep(self.BLINK_TIME)
             self.lock.acquire()
             self.led.set_color(c2)
             self.lock.release()
-            sleep(0.2)
+            sleep(self.BLINK_TIME)
 
         self.led_thread_is_running = False
 
@@ -287,6 +293,6 @@ class LEDHandler:
         if self.led_thread is not None:
             self.led_thread_stop_switch = True
             while self.led_thread_is_running:
-                sleep(0.2)
+                sleep(self.BLINK_TIME)
             self.led_thread = None
 
