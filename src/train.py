@@ -199,6 +199,27 @@ class SimpleTrain(Train):
             self.headlight_handler.set_headlight_brightness(self.power_index)
 
 
+class SmartTrain(Train):
+    '''
+    A SmartTrain is a Train equipped with a color/distance sensor pointing downwards.
+
+    :param name: train name, used in the report
+    :param led_color: primary LED color used in this train instance
+    :param report: if True, report voltage and current
+    :param address: UUID of the train's internal hub
+
+    :ivar hub: the train's internal hub
+    :ivar headlight: reference to the hub's port B device
+    :ivar headlight_brightness: reference to the hub `headlight.brightness` value
+    '''
+    def __init__(self, name, report=False, record=False,
+                 led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
+                 address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub
+
+        super(SmartTrain, self).__init__(name, report=report, record=record,
+                                          led_color=led_color, led_secondary_color=led_secondary_color,
+                                          address=address)
+
 class LEDHandler:
     '''
     Handler for controlling the hub's LED. Current implementation blinks the LED
