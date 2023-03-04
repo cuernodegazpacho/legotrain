@@ -63,17 +63,17 @@ def controller(train):
 
 if __name__ == '__main__':
     # train hub allows control over the LED headlight.
-    # train = SimpleTrain("Train_1", report=True, record=True,
-    #                     address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
+    train = SimpleTrain("Train_1", report=True, record=True,
+                        address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
 
     # test hub - with sensor
-    train = SmartTrain("Train_2", led_color=COLOR_YELLOW, led_secondary_color=COLOR_PURPLE,
-                        report=True, record=True,
-                        address='86996732-BF5A-433D-AACE-5611D4C6271D')
+    # train = SmartTrain("Train_2", led_color=COLOR_YELLOW, led_secondary_color=COLOR_PURPLE,
+    #                     report=True, record=True,
+    #                     address='86996732-BF5A-433D-AACE-5611D4C6271D')
 
     controller(train)
 
-    # Dummy main execution thread. All actions take place in the event thread instead.
+    # Dummy main execution thread. All actions take place in the event threads instead.
     while True:
         # since this is an infinite loop, we don't care about unsubscribing from anything
         pass

@@ -141,12 +141,12 @@ class MotorHandler:
         self.lock = lock
 
     def set_motor_power(self, index):
-        duty_cycle = self._get_power(index)
+        duty_cycle = self.get_power(index)
         self.lock.acquire()
         self.motor.power(param=duty_cycle)
         self.lock.release()
 
-    def _get_power(self, index):
+    def get_power(self, index):
         return self.duty[index]
 
 
