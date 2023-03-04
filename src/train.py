@@ -123,10 +123,17 @@ class MotorHandler:
     in an apparent linear response from the train.
     '''
     duty = {
-        0: 0.0,  1: 0.3,  2: 0.35,  3: 0.4,  4: 0.45,  5: 0.5,
-        6: 0.6,  7: 0.7,  8: 0.8,  9: 0.9, 10: 1.0,
-        -1: -0.3, -2: -0.35, -3: -0.4, -4: -0.45, -5: -0.5,
-        -6: -0.6, -7: -0.7,  -8: -0.8, -9: -0.9, -10: -1.0,
+        0:  0.0,
+        1:  0.35, -1: -0.35,
+        2:  0.43, -2: -0.43,
+        3:  0.48, -3: -0.48,
+        4:  0.52, -4: -0.52,
+        5:  0.56, -5: -0.56,
+        6:  0.6,  -6: -0.6,
+        7:  0.7,  -7: -0.7,
+        8:  0.8,  -8: -0.8,
+        9:  0.9,  -9: -0.9,
+       10:  1.0, -10: -1.0,
     }
 
     def __init__(self, motor, lock):
@@ -202,6 +209,9 @@ class SimpleTrain(Train):
 class SmartTrain(Train):
     '''
     A SmartTrain is a Train equipped with a color/distance sensor pointing downwards.
+
+    Since a sensor and a headlight cannot coexist (hub has only 2 ports), this class
+    can inherit straight from Train.
 
     :param name: train name, used in the report
     :param led_color: primary LED color used in this train instance
