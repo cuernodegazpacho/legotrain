@@ -108,7 +108,7 @@ class Train:
         self._set_power()
 
     def _set_power(self):
-        self.motor_power.set_motor_power(self.power_index)
+        self.motor_power.set_motor_power(self.power_index, self.voltage)
         self.led_handler.set_status_led(self.power_index)
 
 
@@ -116,12 +116,19 @@ class MotorHandler:
     '''
     Translator between handset button clicks and actual motor power settings.
 
-    The DC train motor appears to have a substantial non-linearities in between
-    its duty cycle (aka "power") and actual power, measured by its capacity to move the
-    train at a given speed. More evident at lower power settings. This class translates
-    the stepwise linear sequence of handset button presses to duty cycle values that result
-    in an apparent linear response from the train.
+    The DC train motor appears to exibit substantial non-linearity in between
+    its duty cycle (aka "power") and actual power, measured by its capacity to
+    move the train at a given speed. More evident at lower power settings. This
+    class translates the stepwise linear sequence of handset button presses to
+    duty cycle values that result in an apparent linear response from the train.
+
+    A correction factor related to the battery voltage drop that happens during
+    use is also handled by this class.
     '''
+    NOMINAL_VOLTAGE = 8.3  # Volts (6 AAA Ni-MH batteries in hub)
+    MINIMUM_VOLTAGE = 6.0
+    MAXIMUM_FACTOR = 1.2   # minimum factor is 1., corresponding to fresh batteries
+
     duty = {
         0:  0.0,
         1:  0.35, -1: -0.35,
@@ -140,14 +147,25 @@ class MotorHandler:
         self.motor = motor
         self.lock = lock
 
-    def set_motor_power(self, index):
-        duty_cycle = self.get_power(index)
+        # linear voltage correction
+        self.voltage_slope = (self.MAXIMUM_FACTOR - 1.0) / (self.MINIMUM_VOLTAGE - self.NOMINAL_VOLTAGE)
+        self.voltage_zero = 1.0  - self.voltage_slope * self.NOMINAL_VOLTAGE
+
+    def set_motor_power(self, index, voltage):
+        power = self._get_power(index, voltage)
         self.lock.acquire()
-        self.motor.power(param=duty_cycle)
+        self.motor.power(param=power)
         self.lock.release()
 
-    def get_power(self, index):
-        return self.duty[index]
+    def _get_power(self, index, voltage):
+        duty =  self.duty[index]
+        power = duty * self._voltage_correcion(voltage)
+        return power
+
+    # compute power correction factor based on voltage drop from nominal value
+    def _voltage_correcion(self, voltage):
+        factor = self.voltage_slope * voltage + self.voltage_zero
+        return max(min(factor, self.MAXIMUM_FACTOR), 1.)
 
 
 class SimpleTrain(Train):
@@ -323,8 +341,8 @@ class HeadlightHandler:
 
     A Handler class is used to send/receive messages to/from a train hub, minimizing
     the number of actual Bluetooth messages. This helps in shielding the BLE environment
-    from a flurry of unecessary messages. It also uses a lock to set hub parameters, preventing
-    collisions in pylgbst.    '''
+    from a flurry of unecessary messages. It also uses a lock to set hub parameters,
+    preventing collisions in pylgbst.    '''
     def __init__(self, train, lock):
         self.lock = lock
         self.headlight = train.hub.port_B
@@ -336,8 +354,8 @@ class HeadlightHandler:
     headlight_timer = None
 
     def set_headlight_brightness(self, power_index):
-        # here is the logic that prevents redundant BLE messages
-        # to be sent to the train hub
+        # here is the logic that prevents redundant BLE
+        # messages to be sent to the train hub
         if self.headlight is not None:
             brightness = 10
             self._cancel_headlight_thread()
