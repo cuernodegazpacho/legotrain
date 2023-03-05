@@ -56,7 +56,7 @@ class Train:
 
         # motor
         self.motor = self.hub.port_A
-        self.motor_power = MotorHandler(self.motor, self.lock)
+        self.motor_handler = MotorHandler(self.motor, self.lock)
         self.power_index = 0
 
         # led
@@ -71,13 +71,13 @@ class Train:
 
     def _start_reporting(self, fp):
         def _print_values():
-            print("\r%s  voltage %5.2f  current %5.2f  speed %i" %
-                  (self.name, self.voltage, self.current, self.power_index), end='')
+            print("\r%s  voltage %5.2f  current %5.2f  speed %i  power %4.2f" %
+                  (self.name, self.voltage, self.current, self.power_index, self.motor_handler.power), end='')
             sys.stdout.flush()
             if fp is not None:
                 ct = datetime.datetime.now()
-                fp.write("\r%s  %s   voltage: %5.2f  current: %5.3f  speed: %i" %
-                         (self.name, ct, self.voltage, self.current, self.power_index))
+                fp.write("\r%s  %s   voltage: %5.2f  current: %5.3f  speed: %i  power %4.2f" %
+                         (self.name, ct, self.voltage, self.current, self.power_index, self.motor_handler.power))
                 fp.flush()
 
         def _report_voltage(value):
@@ -108,7 +108,7 @@ class Train:
         self._set_power()
 
     def _set_power(self):
-        self.motor_power.set_motor_power(self.power_index, self.voltage)
+        self.motor_handler.set_motor_power(self.power_index, self.voltage)
         self.led_handler.set_status_led(self.power_index)
 
 
@@ -145,6 +145,7 @@ class MotorHandler:
 
     def __init__(self, motor, lock):
         self.motor = motor
+        self.power = 0.
         self.lock = lock
 
         # linear voltage correction
@@ -152,12 +153,13 @@ class MotorHandler:
         self.voltage_zero = 1.0  - self.voltage_slope * self.NOMINAL_VOLTAGE
 
     def set_motor_power(self, index, voltage):
-        power = self._get_power(index, voltage)
+        power = self._compute_power(index, voltage)
         self.lock.acquire()
         self.motor.power(param=power)
         self.lock.release()
+        self.power = power
 
-    def _get_power(self, index, voltage):
+    def _compute_power(self, index, voltage):
         duty =  self.duty[index]
         power = duty * self._voltage_correcion(voltage)
         return power
@@ -166,6 +168,10 @@ class MotorHandler:
     def _voltage_correcion(self, voltage):
         factor = self.voltage_slope * voltage + self.voltage_zero
         return max(min(factor, self.MAXIMUM_FACTOR), 1.)
+
+    @property
+    def get_power(self):
+        return self.power
 
 
 class SimpleTrain(Train):
