@@ -161,13 +161,12 @@ class MotorHandler:
 
     def _compute_power(self, index, voltage):
         duty =  self.duty[index]
-        power = duty * self._voltage_correcion(voltage)
+        power = min(duty * self._voltage_correcion(voltage), 1.)
         return power
 
     # compute power correction factor based on voltage drop from nominal value
     def _voltage_correcion(self, voltage):
-        factor = self.voltage_slope * voltage + self.voltage_zero
-        return max(min(factor, self.MAXIMUM_FACTOR), 1.)
+        return self.voltage_slope * voltage + self.voltage_zero
 
     @property
     def get_power(self):
