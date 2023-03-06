@@ -347,7 +347,8 @@ class HeadlightHandler:
     A Handler class is used to send/receive messages to/from a train hub, minimizing
     the number of actual Bluetooth messages. This helps in shielding the BLE environment
     from a flurry of unecessary messages. It also uses a lock to set hub parameters,
-    preventing collisions in pylgbst.    '''
+    preventing collisions in pylgbst.
+    '''
     def __init__(self, train, lock):
         self.lock = lock
         self.headlight = train.hub.port_B
