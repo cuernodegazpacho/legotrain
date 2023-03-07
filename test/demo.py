@@ -66,8 +66,10 @@ def demo_motor(hub):
 def demo_color_sensor(smart_hub):
     print("Color sensor test: wave your hand in front of it")
     demo_color_sensor.cnt = 0
-    limit = 1000
+    limit = 300
 
+    bg_list = []
+    gr_list = []
     h_list = []
     s_list = []
     v_list = []
@@ -90,11 +92,17 @@ def demo_color_sensor(smart_hub):
             s_list.append(s)
             v_list.append(v)
 
+            bg = b / g
+            gr = g / r
+
+            bg_list.append(bg)
+            gr_list.append(gr)
+
             red_detection = "other"
             if (h > 0.94 or h < 0.1) and (s > 0.75 and s < 0.98):
                 red_detection = "RED"
 
-            print(demo_color_sensor.cnt, limit, args, kwargs, h, s, v, red_detection)
+            print(demo_color_sensor.cnt, limit, args, kwargs, h, s, v, bg, gr, red_detection)
 
     smart_hub.vision_sensor.subscribe(callback, granularity=5, mode=6)
 
@@ -106,13 +114,25 @@ def demo_color_sensor(smart_hub):
     print("H stats: ", stat.mean(h_list), stat.stdev(h_list), min(h_list), max(h_list))
     print("S stats: ", stat.mean(s_list), stat.stdev(s_list), min(s_list), max(s_list))
     print("V stats: ", stat.mean(v_list), stat.stdev(v_list), min(v_list), max(v_list))
+    print("BG stats: ", stat.mean(bg_list), stat.stdev(bg_list), min(bg_list), max(bg_list))
+    print("GR stats: ", stat.mean(gr_list), stat.stdev(gr_list), min(gr_list), max(gr_list))
 
-    # TODO fix this by disambiguing circulairy
+    # TODO fix this by disambiguing circularity
     # each row lists mean, stddev, min, max.
-    # red tile
-    # H stats:  0.9831216632280405 0.0052472558028119655 0.9572916666666667 0.9950980392156863
-    # S stats:  0.8529268586460793 0.028608110545456207 0.8152173913043478 0.96875
-    # V stats:  163.19607843137254 31.911570197026187 69.0 278.0
+
+# red tile
+# H stats:  0.9806985448977178 0.05698806216996789 0.007246376811594198 0.9977777777777778
+# S stats:  0.8323503170402856 0.022939886158379292 0.75 0.9512195121951219
+# V stats:  79.99324324324324 14.584643245491446 28.0 112.0
+# BG stats:  1.496114074185862 0.20334495095943553 0.8333333333333334 2.5
+# GR stats:  0.16777033933037072 0.02309095111763821 0.04878048780487805 0.25
+
+# orange - seems indistibguishable from red
+# H stats:  0.7436221049328164 0.42800810737238887 0.0037878787878787845 0.9972677595628415
+# S stats:  0.8156968777816735 0.05295759376080173 0.68 0.90625
+# V stats:  45.12337662337662 17.909477507798094 21.0 91.0
+# BG stats:  1.1511557352388542 0.24885596264304252 0.6875 2.0
+# GR stats:  0.19708319599959584 0.06990274040261603 0.09375 0.4
 
     # dark blue tile (not to be used)
     # H stats:  0.657232420420557 0.05940983030915233 0.5490196078431372 0.9320987654320988
@@ -138,6 +158,18 @@ def demo_color_sensor(smart_hub):
     # H stats:  0.6240816726904218 0.048370112846115546 0.4583333333333333 0.7424242424242425
     # S stats:  0.23150187264977184 0.04753992183667234 0.08235294117647059 0.38333333333333336
     # V stats:  68.44408945686901 9.540949457788486 43.0 97.0
+
+    # dark gray tile
+    # H stats:  0.3815025234909023 0.015834242652109597 0.3466666666666667 0.4479166666666667
+    # S stats:  0.6323943138609877 0.06786865621567133 0.4375 0.9166666666666666
+    # V stats:  64.91570881226053 23.952689394036554 21.0 107.0
+
+# medium blue
+# H stats:  0.6355270124053662 0.008371171049406817 0.6111111111111112 0.6822916666666666
+# S stats:  0.7714094492782996 0.07327748358345455 0.4888888888888889 0.8679245283018868
+# V stats:  78.70431893687707 19.341896182930814 21.0 125.0
+# BG stats:  2.7237578049746873 0.35426986846525443 1.6511627906976745 3.5
+# GR stats:  1.716136243338517 0.30799059033022896 0.8928571428571429 2.857142857142857
 
 
 
