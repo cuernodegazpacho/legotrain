@@ -99,12 +99,12 @@ def demo_color_sensor(smart_hub):
             gr_list.append(gr)
 
             red_detection = "other"
-            if (h > 0.94 or h < 0.1) and (s > 0.75 and s < 0.98):
+            if (h > 0.90 or h < 0.15) and (s > 0.7 and s < 0.99):
                 red_detection = "RED"
 
             print(demo_color_sensor.cnt, limit, args, kwargs, h, s, v, bg, gr, red_detection)
 
-    smart_hub.vision_sensor.subscribe(callback, granularity=5, mode=6)
+    smart_hub.vision_sensor.subscribe(callback, granularity=20, mode=6)
 
     while demo_color_sensor.cnt < limit:
         time.sleep(1)
