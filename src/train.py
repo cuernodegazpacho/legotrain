@@ -269,9 +269,9 @@ class SmartTrain(Train):
                                           led_secondary_color=led_secondary_color,
                                           address=address)
 
-        self.hub.vision_sensor.subscribe(self.callback, granularity=5, mode=6)
+        self.hub.vision_sensor.subscribe(self._callback, granularity=5, mode=6)
 
-    def callback(self, *args, **kwargs):
+    def _callback(self, *args, **kwargs):
         # use HSV as criterion for mapping colors
         r = args[0]
         g = args[1]
