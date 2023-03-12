@@ -293,9 +293,12 @@ class SmartTrain(Train):
             bg = b / g
             gr = g / r
 
-            # detection of RED tile
             if (h > 0.90 or h < 0.05) and (s > 0.55 and s < 0.80):
-                print(args, kwargs, h, s, v, bg, gr)
+                print(args, kwargs, h, s, v, bg, gr, "RED")
+            if (h > 0.55 and h < 0.62) and (s > 0.45 and s < 0.60):
+                print(args, kwargs, h, s, v, bg, gr, "LIGHT BLUE")
+            if (h > 0.15 and h < 0.30) and (s > 0.23 and s < 0.55):
+                print(args, kwargs, h, s, v, bg, gr, "LIGHT GREEN")
 
 
 class LEDHandler:

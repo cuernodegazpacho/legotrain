@@ -99,8 +99,12 @@ def demo_color_sensor(smart_hub):
             gr_list.append(gr)
 
             red_detection = "other"
-            if (h > 0.90 or h < 0.05) and (s > 0.60 and s < 0.80):
+            if (h > 0.90 or h < 0.05) and (s > 0.55 and s < 0.80):
                 red_detection = "RED"
+            if (h > 0.55 and h < 0.62) and (s > 0.45 and s < 0.60):
+                red_detection = "LIGHT BLUE"
+            if (h > 0.15 and h < 0.30) and (s > 0.23 and s < 0.55):
+                red_detection = "LIGHT GREEN"
 
             print(demo_color_sensor.cnt, limit, args, kwargs, h, s, v, bg, gr, red_detection)
 
