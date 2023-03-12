@@ -31,8 +31,8 @@ def controller(train):
     in both train and handset won't respond to button presses from this point on).
     '''
     sleep(5)
-    # handset = RemoteHandset(address='2BC6E69B-5F56-4716-AD8C-7B4D5CBC7BF8')  # test handset
-    handset = RemoteHandset(address='5D319849-7D59-4EBB-A561-0C37C5EF8DCD')  # train handset
+    # handset = RemoteHandset(address='5D319849-7D59-4EBB-A561-0C37C5EF8DCD')  # train handset
+    handset = RemoteHandset(address='2BC6E69B-5F56-4716-AD8C-7B4D5CBC7BF8')  # test handset
 
     # actions associated with each handset button
     speed_actions = {
@@ -63,13 +63,13 @@ def controller(train):
 
 if __name__ == '__main__':
     # train hub allows control over the LED headlight.
-    train = SimpleTrain("Train_1", report=True, record=True,
-                        address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
+    # train = SimpleTrain("Train_1", report=True, record=True,
+    #                     address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
 
     # test hub - with sensor
-    # train = SmartTrain("Train_2", led_color=COLOR_YELLOW, led_secondary_color=COLOR_PURPLE,
-    #                     report=True, record=True,
-    #                     address='86996732-BF5A-433D-AACE-5611D4C6271D')
+    train = SmartTrain("Train_2", led_color=COLOR_YELLOW, led_secondary_color=COLOR_PURPLE,
+                       linear=True,
+                        address='86996732-BF5A-433D-AACE-5611D4C6271D')
 
     controller(train)
 

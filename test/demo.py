@@ -99,12 +99,12 @@ def demo_color_sensor(smart_hub):
             gr_list.append(gr)
 
             red_detection = "other"
-            if (h > 0.90 or h < 0.15) and (s > 0.7 and s < 0.99):
+            if (h > 0.90 or h < 0.05) and (s > 0.60 and s < 0.80):
                 red_detection = "RED"
 
             print(demo_color_sensor.cnt, limit, args, kwargs, h, s, v, bg, gr, red_detection)
 
-    smart_hub.vision_sensor.subscribe(callback, granularity=20, mode=6)
+    smart_hub.vision_sensor.subscribe(callback, granularity=1, mode=6)
 
     while demo_color_sensor.cnt < limit:
         time.sleep(1)
@@ -126,6 +126,13 @@ def demo_color_sensor(smart_hub):
 # V stats:  79.99324324324324 14.584643245491446 28.0 112.0
 # BG stats:  1.496114074185862 0.20334495095943553 0.8333333333333334 2.5
 # GR stats:  0.16777033933037072 0.02309095111763821 0.04878048780487805 0.25
+
+# red circle
+# H stats:  0.8898214661558889 0.15234378462194229 0.016666666666666663 0.9861111111111112
+# S stats:  0.465337099050416 0.06508904935304234 0.3333333333333333 0.6190476190476191
+# V stats:  24.962962962962962 2.4109283203910765 21.0 30.0
+# BG stats:  1.4699570105820106 0.28472005791778354 0.9285714285714286 2.090909090909091
+# GR stats:  0.5358646396966126 0.06666976078669581 0.38095238095238093 0.7142857142857143
 
 # orange - seems indistibguishable from red
 # H stats:  0.7436221049328164 0.42800810737238887 0.0037878787878787845 0.9972677595628415

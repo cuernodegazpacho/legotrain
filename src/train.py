@@ -2,6 +2,8 @@ import sys
 import datetime
 from time import sleep
 from threading import Thread, Timer, RLock
+from colorsys import rgb_to_hsv
+import statistics as stat
 
 from pylgbst.hub import SmartHub
 from pylgbst.peripherals import Voltage, Current, LEDLight
@@ -40,7 +42,7 @@ class Train:
     :ivar current: populated only when report=True
     :ivar led_color: LED color, defined at init time
     '''
-    def __init__(self, name, report=False, record=False,
+    def __init__(self, name, report=False, record=False, linear=False,
                  led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub by default
 
@@ -56,7 +58,7 @@ class Train:
 
         # motor
         self.motor = self.hub.port_A
-        self.motor_handler = MotorHandler(self.motor, self.lock)
+        self.motor_handler = MotorHandler(self.motor, self.lock, linear)
         self.power_index = 0
 
         # led
@@ -129,6 +131,7 @@ class MotorHandler:
     MINIMUM_VOLTAGE = 6.0
     MAXIMUM_FACTOR = 1.2   # minimum factor is 1., corresponding to fresh batteries
 
+    # non-linear duty cycle, appropriate for a heavy train
     duty = {
         0:  0.0,
         1:  0.35, -1: -0.35,
@@ -143,10 +146,26 @@ class MotorHandler:
        10:  1.0, -10: -1.0,
     }
 
-    def __init__(self, motor, lock):
+    # linear duty cycle, appropriate for a light test rig
+    duty_linear = {
+        0:  0.0,
+        1:  0.1,  -1: -0.1,
+        2:  0.2,  -2: -0.2,
+        3:  0.3,  -3: -0.3,
+        4:  0.4,  -4: -0.4,
+        5:  0.5,  -5: -0.5,
+        6:  0.6,  -6: -0.6,
+        7:  0.7,  -7: -0.7,
+        8:  0.8,  -8: -0.8,
+        9:  0.9,  -9: -0.9,
+       10:  1.0, -10: -1.0,
+    }
+
+    def __init__(self, motor, lock, linear=False):
         self.motor = motor
         self.power = 0.
         self.lock = lock
+        self.linear = linear
 
         # linear voltage correction
         self.voltage_slope = (self.MAXIMUM_FACTOR - 1.0) / (self.MINIMUM_VOLTAGE - self.NOMINAL_VOLTAGE)
@@ -160,6 +179,9 @@ class MotorHandler:
         self.power = power
 
     def _compute_power(self, index, voltage):
+        if self.linear:
+            return self.duty_linear[index]
+
         duty =  self.duty[index]
         power = min(duty * self._voltage_correcion(voltage), 1.)
         return power
@@ -194,12 +216,13 @@ class SimpleTrain(Train):
     :ivar headlight: reference to the hub's port B device
     :ivar headlight_brightness: reference to the hub `headlight.brightness` value
     '''
-    def __init__(self, name, report=False, record=False,
+    def __init__(self, name, report=False, record=False, linear=False,
                  led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub
 
-        super(SimpleTrain, self).__init__(name, report=report, record=record,
-                                          led_color=led_color, led_secondary_color=led_secondary_color,
+        super(SimpleTrain, self).__init__(name, report=report, record=record, linear=linear,
+                                          led_color=led_color,
+                                          led_secondary_color=led_secondary_color,
                                           address=address)
 
         self.headlight_handler = None
@@ -245,13 +268,34 @@ class SmartTrain(Train):
     :ivar headlight: reference to the hub's port B device
     :ivar headlight_brightness: reference to the hub `headlight.brightness` value
     '''
-    def __init__(self, name, report=False, record=False,
+    def __init__(self, name, report=False, record=False, linear=False,
                  led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub
 
-        super(SmartTrain, self).__init__(name, report=report, record=record,
-                                          led_color=led_color, led_secondary_color=led_secondary_color,
+        super(SmartTrain, self).__init__(name, report=report, record=record, linear=linear,
+                                          led_color=led_color,
+                                          led_secondary_color=led_secondary_color,
                                           address=address)
+
+        self.hub.vision_sensor.subscribe(self.callback, granularity=4, mode=6)
+
+    def callback(self, *args, **kwargs):
+        # use HSV as criterion for mapping colors
+        r = args[0]
+        g = args[1]
+        b = args[2]
+        h, s, v = rgb_to_hsv(r, g, b)
+
+        if h >= 1. or h <= 0.:
+            return
+
+        if max(r, g, b) > 10.0 and v > 20.0:
+            bg = b / g
+            gr = g / r
+
+            if (h > 0.90 or h < 0.05) and (s > 0.55 and s < 0.80):
+                print(args, kwargs, h, s, v, bg, gr)
+
 
 class LEDHandler:
     '''
