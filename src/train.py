@@ -33,14 +33,8 @@ class Train:
     :param led_secondary_color: secondary LED color used to signal a stopped train
     :param report: if True, report voltage and current
     :param record: if True, record voltage and current in file (only if report=True)
+    :param linear: if True, use motor's linear duty cycle curve
     :param address: UUID of the train's internal hub
-
-    :ivar hub: the train's internal hub
-    :ivar motor: references the train's motor
-    :ivar power_index: motor power level
-    :ivar voltage: populated only when report=True
-    :ivar current: populated only when report=True
-    :ivar led_color: LED color, defined at init time
     '''
     def __init__(self, name, report=False, record=False, linear=False,
                  led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
@@ -209,12 +203,11 @@ class SimpleTrain(Train):
 
     :param name: train name, used in the report
     :param led_color: primary LED color used in this train instance
+    :param led_secondary_color: secondary LED color used to signal a stopped train
     :param report: if True, report voltage and current
+    :param record: if True, record voltage and current in file (only if report=True)
+    :param linear: if True, use motor's linear duty cycle curve
     :param address: UUID of the train's internal hub
-
-    :ivar hub: the train's internal hub
-    :ivar headlight: reference to the hub's port B device
-    :ivar headlight_brightness: reference to the hub `headlight.brightness` value
     '''
     def __init__(self, name, report=False, record=False, linear=False,
                  led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
@@ -261,12 +254,11 @@ class SmartTrain(Train):
 
     :param name: train name, used in the report
     :param led_color: primary LED color used in this train instance
+    :param led_secondary_color: secondary LED color used to signal a stopped train
     :param report: if True, report voltage and current
+    :param record: if True, record voltage and current in file (only if report=True)
+    :param linear: if True, use motor's linear duty cycle curve
     :param address: UUID of the train's internal hub
-
-    :ivar hub: the train's internal hub
-    :ivar headlight: reference to the hub's port B device
-    :ivar headlight_brightness: reference to the hub `headlight.brightness` value
     '''
     def __init__(self, name, report=False, record=False, linear=False,
                  led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
