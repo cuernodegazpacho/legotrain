@@ -293,6 +293,35 @@ class SmartTrain(Train):
                 print(args, kwargs, h, s, v, bg, gr, "LIGHT GREEN")
 
 
+class CompoundTrain():
+    '''
+    A CompoundTrain is a compound entity that encapsulates two instances of Train:
+    a front engine, and a rear engine running backwards. The front engine is an instance
+    of SimpleTrain (because the headlight must be at the front) and the rear engine is an
+    instance of SmartTrain (to carry the vision sensor).
+
+    :param name: name of the compound train
+    :param train_front: instance of SingleTrain
+    :param train_rear: instance of SmartTrain
+    '''
+    def __init__(self, name, train_front, train_rear):
+        self.name = name
+        self.train_front = train_front
+        self.train_rear = train_rear
+
+    def up_speed(self):
+        self.train_front.up_speed()
+        self.train_rear.up_speed()
+
+    def down_speed(self):
+        self.train_front.down_speed()
+        self.train_rear.down_speed()
+
+    def stop(self):
+        self.train_front.stop()
+        self.train_rear.stop()
+
+
 class LEDHandler:
     '''
     Handler for controlling the hub's LED. Current implementation blinks the LED
