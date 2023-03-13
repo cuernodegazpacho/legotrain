@@ -309,13 +309,14 @@ class CompoundTrain():
         self.train_front = train_front
         self.train_rear = train_rear
 
+    # train_rear must move backwards
     def up_speed(self):
         self.train_front.up_speed()
-        self.train_rear.up_speed()
+        self.train_rear.down_speed()
 
     def down_speed(self):
         self.train_front.down_speed()
-        self.train_rear.down_speed()
+        self.train_rear.up_speed()
 
     def stop(self):
         self.train_front.stop()
