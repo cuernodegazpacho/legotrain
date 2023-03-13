@@ -12,8 +12,7 @@ def controller(train):
     '''
     Main controller function.
 
-    It accepts an initialized instance of SimpleTrain. A future upgrade will support
-    two instances.
+    It accepts a initialized instances of subclasses of Train.
 
     This function creates a remote handset instance which at this first pass just
     re-creates the functionality available in the unmodified Lego product. Future
@@ -45,7 +44,7 @@ def controller(train):
     def handset_callback(button, set):
 
         # for now, ignore the right side buttons, and all button release actions.
-        # This will change when we implement support for a second train.
+        # This might change when we implement support for a second train.
         if set == RemoteButton.RIGHT or button == RemoteButton.RELEASE:
             return
 

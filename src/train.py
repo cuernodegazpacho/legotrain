@@ -12,14 +12,15 @@ from pylgbst.peripherals import COLOR_BLUE, COLOR_RED, COLOR_YELLOW, COLOR_PURPL
 
 class Train:
     '''
-    Encapsulates details of a Train, such as motor power, led, sensor, headlight,
+    Encapsulates details of a Train, such as motor power, led, vision sensor, headlight,
     voltage, current.
 
-    The train LED can be set to any supported color. A different color can be used on
+    The hub LED can be set to any supported color. A different color can be used on
     each train initialization. This is useful for visually keeping track of multiple trains
     simultaneously moving on the track (the handset LED will remain white throughout). The
-    LED will blink between the chosen color and orange, whenever power is set to zero. The
-    original blinking with red color signaling low battery remains unchanged.
+    LED will blink between the chosen color and a secondary color, whenever the motor power
+    is set to zero (train is stopped). The original blinking with red color signaling low
+    battery remains unchanged.
 
     This class can report voltage and current at stdout. It can also record these measurements
     in a text file that is named as the train instance, with suffix ".txt". If a file of the
@@ -112,11 +113,11 @@ class MotorHandler:
     '''
     Translator between handset button clicks and actual motor power settings.
 
-    The DC train motor appears to exibit substantial non-linearity in between
-    its duty cycle (aka "power") and actual power, measured by its capacity to
-    move the train at a given speed. More evident at lower power settings. This
-    class translates the stepwise linear sequence of handset button presses to
-    duty cycle values that result in an apparent linear response from the train.
+    The DC train motor has a substantial non-linearity in between its duty cycle
+    (aka "power") and actual power, measured by its capacity to move the train at
+    a given speed. More evident at lower power settings. This class translates the
+    stepwise linear sequence of handset button presses to duty cycle values that
+    result in a more linearized response from the train.
 
     A correction factor related to the battery voltage drop that happens during
     use is also handled by this class.
@@ -284,6 +285,8 @@ class SmartTrain(Train):
         if max(r, g, b) > 10.0 and v > 20.0:
             bg = b / g
             gr = g / r
+
+            #TODO these values are still preliminary and require a lot of testing
 
             if (h > 0.90 or h < 0.05) and (s > 0.55 and s < 0.80):
                 print(args, kwargs, h, s, v, bg, gr, "RED")
