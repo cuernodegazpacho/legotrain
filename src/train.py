@@ -59,6 +59,9 @@ class Train:
         # led
         self.led_handler = LEDHandler(self, self.lock)
 
+        # subclases can register callbacks
+        self.callback = None
+
         if report:
             fp = None
             if record:
@@ -270,9 +273,9 @@ class SmartTrain(Train):
                                           led_secondary_color=led_secondary_color,
                                           address=address)
 
-        self.hub.vision_sensor.subscribe(self._callback, granularity=5, mode=6)
+        self.hub.vision_sensor.subscribe(self._vision_sensor_callback, granularity=5, mode=6)
 
-    def _callback(self, *args, **kwargs):
+    def _vision_sensor_callback(self, *args, **kwargs):
         # use HSV as criterion for mapping colors
         r = args[0]
         g = args[1]
@@ -290,6 +293,14 @@ class SmartTrain(Train):
 
             if (h > 0.90 or h < 0.05) and (s > 0.55 and s < 0.80):
                 print(args, kwargs, h, s, v, bg, gr, "RED")
+
+                # RED causes train to stop
+                self.stop()
+
+                # if a callback is set, execute it
+                if self.callback is not None:
+                    self.callback()
+
             if (h > 0.55 and h < 0.62) and (s > 0.45 and s < 0.60):
                 print(args, kwargs, h, s, v, bg, gr, "LIGHT BLUE")
             if (h > 0.15 and h < 0.30) and (s > 0.23 and s < 0.55):
@@ -311,6 +322,14 @@ class CompoundTrain():
         self.name = name
         self.train_front = train_front
         self.train_rear = train_rear
+
+        # the front train must stop when the rear train senses
+        # a stop signal on the track. Upon sensing the signal,
+        # the rear train calls a callback function that we set
+        # here as the front train's stop function. The rear train
+        # responds to the stop signal internally via its own stop
+        # function call.
+        self.train_rear.callback = self.train_front.stop
 
     # train_rear must move backwards
     def up_speed(self):
