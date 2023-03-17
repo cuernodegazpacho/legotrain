@@ -3,13 +3,12 @@ import datetime
 from time import sleep
 from threading import Thread, Timer, RLock
 from colorsys import rgb_to_hsv
-import statistics as stat
 
 from pylgbst.hub import SmartHub
 from pylgbst.peripherals import Voltage, Current, LEDLight
-from pylgbst.peripherals import COLOR_BLUE, COLOR_RED, COLOR_YELLOW, COLOR_PURPLE, COLOR_ORANGE
+from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE
 
-from event import SensorEventProcessor, RED_EVENT
+from event import SensorEventFilter, RED_EVENT, LB_EVENT
 
 sign = lambda x: x and (1, -1)[x<0]
 
@@ -114,9 +113,6 @@ class Train:
     def set_power(self):
         self.motor_handler.set_motor_power(self.power_index, self.voltage)
         self.led_handler.set_status_led(self.power_index)
-
-    def process_sensor_event(self, event):
-        print("@@@@ train.py 119: ", event)
 
 
 class MotorHandler:
@@ -284,7 +280,22 @@ class SmartTrain(Train):
 
         # events coming from the vision sensor need to be processed in order
         # to handle multiple detections.
-        self.sensor_event_processor = SensorEventProcessor(self)
+        self.sensor_event_filter = SensorEventFilter(self)
+
+    def process_event(self, event):
+        '''
+        Processes events filtered out by SensorEventFilter
+        '''
+        if event in ["RED"]:
+            print("@@@@ train.py 119: ", event)
+
+            # RED causes train to stop
+            sleep(0.5)
+            self.stop()
+        elif event in ["LIGHT BLUE"]:
+            print("@@@@ train.py 126: ", event)
+            self.power_index = 1 * sign(self.power_index)
+            self.set_power()
 
     def _vision_sensor_callback(self, *args, **kwargs):
         # use HSV as criterion for mapping colors
@@ -305,11 +316,7 @@ class SmartTrain(Train):
             if (h > 0.90 or h < 0.05) and (s > 0.55 and s < 0.80):
                 # print(args, kwargs, h, s, v, bg, gr, "RED")
                 print("RED")
-                self.sensor_event_processor.handle_event(RED_EVENT)
-
-                # RED causes train to stop
-                # sleep(0.7)
-                self.stop()
+                self.sensor_event_filter.filter_event(RED_EVENT)
 
                 # if a callback is set, execute it
                 if self.callback is not None:
@@ -318,9 +325,7 @@ class SmartTrain(Train):
             if (h > 0.55 and h < 0.62) and (s > 0.45 and s < 0.60):
                 # print(args, kwargs, h, s, v, bg, gr, "LIGHT BLUE")
                 print("LIGHT BLUE")
-
-                self.power_index = 1 * sign(self.power_index)
-                self.set_power()
+                self.sensor_event_filter.filter_event(LB_EVENT)
 
             if (h > 0.15 and h < 0.30) and (s > 0.23 and s < 0.55):
                 # print(args, kwargs, h, s, v, bg, gr, "LIGHT GREEN")
