@@ -36,3 +36,4 @@ class SensorEventFilter():
         # if event of current color is not stored here, store current event
         else:
             self.events[event_key] = event_time
+            self.smart_train.process_event(event_key)

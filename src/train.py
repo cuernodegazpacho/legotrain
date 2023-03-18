@@ -1,7 +1,7 @@
 import sys
 import datetime
 from time import sleep
-from threading import Thread, Timer, RLock
+from threading import Thread, Timer
 from colorsys import rgb_to_hsv
 
 from pylgbst.hub import SmartHub
@@ -33,6 +33,7 @@ class Train:
     pylgbst environment
 
     :param name: train name, used in the report
+    :param lock: lock used for threading access
     :param led_color: primary LED color used in this train instance
     :param led_secondary_color: secondary LED color used to signal a stopped train
     :param report: if True, report voltage and current
@@ -40,7 +41,7 @@ class Train:
     :param linear: if True, use motor's linear duty cycle curve
     :param address: UUID of the train's internal hub
     '''
-    def __init__(self, name, report=False, record=False, linear=False,
+    def __init__(self, name, lock, report=False, record=False, linear=False,
                  led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub by default
 
@@ -51,8 +52,8 @@ class Train:
         self.led_color = led_color
         self.led_secondary_color = led_secondary_color
 
-        # global (per hub) lock to control threaded access to hub functions
-        self.lock = RLock()
+        # global lock to control threaded access to hub functions
+        self.lock = lock
 
         # motor
         self.motor = self.hub.port_A
@@ -130,7 +131,7 @@ class MotorHandler:
     '''
     NOMINAL_VOLTAGE = 8.3  # Volts (6 AAA Ni-MH batteries in hub)
     MINIMUM_VOLTAGE = 6.0
-    MAXIMUM_FACTOR = 1.2   # minimum factor is 1., corresponding to fresh batteries
+    MAXIMUM_FACTOR = 1.25  # minimum factor is 1., corresponding to fresh batteries
 
     # non-linear duty cycle, appropriate for a heavy train
     duty = {
@@ -208,6 +209,7 @@ class SimpleTrain(Train):
     HeadlightHamdler.
 
     :param name: train name, used in the report
+    :param lock: lock used for threading access
     :param led_color: primary LED color used in this train instance
     :param led_secondary_color: secondary LED color used to signal a stopped train
     :param report: if True, report voltage and current
@@ -215,11 +217,11 @@ class SimpleTrain(Train):
     :param linear: if True, use motor's linear duty cycle curve
     :param address: UUID of the train's internal hub
     '''
-    def __init__(self, name, report=False, record=False, linear=False,
+    def __init__(self, name, lock, report=False, record=False, linear=False,
                  led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub
 
-        super(SimpleTrain, self).__init__(name, report=report, record=record, linear=linear,
+        super(SimpleTrain, self).__init__(name, lock, report=report, record=record, linear=linear,
                                           led_color=led_color,
                                           led_secondary_color=led_secondary_color,
                                           address=address)
@@ -259,6 +261,7 @@ class SmartTrain(Train):
     can inherit straight from Train.
 
     :param name: train name, used in the report
+    :param lock: lock used for threading access
     :param led_color: primary LED color used in this train instance
     :param led_secondary_color: secondary LED color used to signal a stopped train
     :param report: if True, report voltage and current
@@ -266,11 +269,11 @@ class SmartTrain(Train):
     :param linear: if True, use motor's linear duty cycle curve
     :param address: UUID of the train's internal hub
     '''
-    def __init__(self, name, report=False, record=False, linear=False,
+    def __init__(self, name, lock, report=False, record=False, linear=False,
                  led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub
 
-        super(SmartTrain, self).__init__(name, report=report, record=record, linear=linear,
+        super(SmartTrain, self).__init__(name, lock, report=report, record=record, linear=linear,
                                           led_color=led_color,
                                           led_secondary_color=led_secondary_color,
                                           address=address)
@@ -283,7 +286,7 @@ class SmartTrain(Train):
 
     def process_event(self, event):
         '''
-        Processes events filtered out by SensorEventFilter
+        Processes events pre-filtered by SensorEventFilter
         '''
         if event in ["RED"]:
             print("@@@@ train.py 119: ", event)
@@ -291,6 +294,11 @@ class SmartTrain(Train):
             # RED causes train to stop
             sleep(0.5)
             self.stop()
+
+            # if a callback is set, execute it
+            if self.callback is not None:
+                self.callback()
+
         elif event in ["LIGHT BLUE"]:
             print("@@@@ train.py 126: ", event)
             self.power_index = 1 * sign(self.power_index)
@@ -316,10 +324,6 @@ class SmartTrain(Train):
                 # print(args, kwargs, h, s, v, bg, gr, "RED")
                 print("RED")
                 self.sensor_event_filter.filter_event(RED_EVENT)
-
-                # if a callback is set, execute it
-                if self.callback is not None:
-                    self.callback()
 
             if (h > 0.55 and h < 0.62) and (s > 0.50 and s < 0.72):
                 # print(args, kwargs, h, s, v, bg, gr, "LIGHT BLUE")
@@ -496,12 +500,18 @@ class HeadlightHandler:
                 # dim headlight after delay
                 if brightness != self.headlight_brightness:
                     self.headlight_timer = Timer(5, self._set_brightness, [brightness, self.lock])
+
+                    print("@@@@ train.py 500: ",self.headlight_timer, brightness )
+
                     self.headlight_timer.start()
                     self.headlight_brightness = brightness
 
     # wrapper to allow locking
     def _set_brightness(self, brightness, lock):
         lock.acquire()
+
+        print("@@@@ train.py 509: ", brightness, lock)
+
         self.headlight.set_brightness(brightness)
         lock.release()
 
