@@ -101,14 +101,19 @@ def demo_color_sensor(smart_hub):
             red_detection = "other"
             if (h > 0.90 or h < 0.05) and (s > 0.55 and s < 0.80):
                 red_detection = "RED"
-            if (h > 0.55 and h < 0.62) and (s > 0.45 and s < 0.60):
+            elif (h > 0.55 and h < 0.62) and (s > 0.50 and s < 0.72):
                 red_detection = "LIGHT BLUE"
-            if (h > 0.15 and h < 0.30) and (s > 0.23 and s < 0.55):
+            elif (h > 0.15 and h < 0.30) and (s > 0.23 and s < 0.55):
                 red_detection = "LIGHT GREEN"
+            elif (h > 0.40 and h < 0.60) and (s > 0.25 and s < 0.60):
+                red_detection = "GREEN"
+            elif (h > 0.58 and h < 0.78) and (s > 0.19 and s < 0.40):
+                red_detection = "DARK GRAY (track)"
+
 
             print(demo_color_sensor.cnt, limit, args, kwargs, h, s, v, bg, gr, red_detection)
 
-    smart_hub.vision_sensor.subscribe(callback, granularity=1, mode=6)
+    smart_hub.vision_sensor.subscribe(callback, granularity=3, mode=6)
 
     while demo_color_sensor.cnt < limit:
         time.sleep(1)

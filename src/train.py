@@ -180,10 +180,9 @@ class MotorHandler:
         self.power = power
 
     def _compute_power(self, index, voltage):
+        duty = self.duty[index]
         if self.linear:
-            return self.duty_linear[index]
-
-        duty =  self.duty[index]
+            duty =  self.duty_linear[index]
         power = min(duty * self._voltage_correcion(voltage), 1.)
         return power
 
@@ -313,7 +312,7 @@ class SmartTrain(Train):
 
             #TODO these values are still preliminary and require a lot of testing
 
-            if (h > 0.90 or h < 0.05) and (s > 0.55 and s < 0.80):
+            if (h > 0.90 or h < 0.05) and (s > 0.55 and s < 0.82):
                 # print(args, kwargs, h, s, v, bg, gr, "RED")
                 print("RED")
                 self.sensor_event_filter.filter_event(RED_EVENT)
@@ -322,10 +321,14 @@ class SmartTrain(Train):
                 if self.callback is not None:
                     self.callback()
 
-            if (h > 0.55 and h < 0.62) and (s > 0.45 and s < 0.60):
+            if (h > 0.55 and h < 0.62) and (s > 0.50 and s < 0.72):
                 # print(args, kwargs, h, s, v, bg, gr, "LIGHT BLUE")
                 print("LIGHT BLUE")
                 self.sensor_event_filter.filter_event(LB_EVENT)
+
+            if (h > 0.40 and h < 0.60) and (s > 0.25 and s < 0.60):
+                # print(args, kwargs, h, s, v, bg, gr, "LIGHT BLUE")
+                print("GREEN")
 
             if (h > 0.15 and h < 0.30) and (s > 0.23 and s < 0.55):
                 # print(args, kwargs, h, s, v, bg, gr, "LIGHT GREEN")
@@ -354,6 +357,7 @@ class CompoundTrain():
         # here as the front train's stop function. The rear train
         # responds to the stop signal internally via its own stop
         # function call.
+        #TODO this must handle changes in speed as well
         self.train_rear.callback = self.train_front.stop
 
     # train_rear must move backwards
