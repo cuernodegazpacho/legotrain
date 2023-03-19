@@ -1,7 +1,7 @@
 import sys
 import datetime
 from time import sleep
-from threading import Thread, Timer
+from threading import Thread, Timer, RLock
 from colorsys import rgb_to_hsv
 
 from pylgbst.hub import SmartHub
@@ -30,10 +30,12 @@ class Train:
     same name already exists, it will be appended with data from the current run.
 
     A thread lock mechanism is used to prevent collisions in the thread-unsafe
-    pylgbst environment
+    pylgbst environment. A per-hub lock is provided by default, a global lock
+    can be provided by the caller when the need arises to synchronize among
+    multiple instances of Train.
 
     :param name: train name, used in the report
-    :param lock: lock used for threading access
+    :param lock: global lock used for threading access
     :param led_color: primary LED color used in this train instance
     :param led_secondary_color: secondary LED color used to signal a stopped train
     :param report: if True, report voltage and current
@@ -41,7 +43,7 @@ class Train:
     :param linear: if True, use motor's linear duty cycle curve
     :param address: UUID of the train's internal hub
     '''
-    def __init__(self, name, lock, report=False, record=False, linear=False,
+    def __init__(self, name, lock=None, report=False, record=False, linear=False,
                  led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub by default
 
@@ -52,8 +54,10 @@ class Train:
         self.led_color = led_color
         self.led_secondary_color = led_secondary_color
 
-        # global lock to control threaded access to hub functions
+        # lock to control threaded access to hub functions
         self.lock = lock
+        if self.lock is None:
+            self.lock = RLock()
 
         # motor
         self.motor = self.hub.port_A
@@ -217,7 +221,7 @@ class SimpleTrain(Train):
     :param linear: if True, use motor's linear duty cycle curve
     :param address: UUID of the train's internal hub
     '''
-    def __init__(self, name, lock, report=False, record=False, linear=False,
+    def __init__(self, name, lock=None, report=False, record=False, linear=False,
                  led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub
 
@@ -269,7 +273,7 @@ class SmartTrain(Train):
     :param linear: if True, use motor's linear duty cycle curve
     :param address: UUID of the train's internal hub
     '''
-    def __init__(self, name, lock, report=False, record=False, linear=False,
+    def __init__(self, name, lock=None, report=False, record=False, linear=False,
                  led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub
 
@@ -295,7 +299,12 @@ class SmartTrain(Train):
             sleep(0.5)
             self.stop()
 
-            # if a callback is set, execute it
+            # if a callback is set, execute it.
+            # TODO This is currently used by the compound train to pass a stop
+            # command (resulting from a sensor reading) to the front train To
+            # generalize, we need to pass a specific power setting instead.
+            # Beware of the sense, since front and rear trains operate with
+            # reversed power settings.
             if self.callback is not None:
                 self.callback()
 
@@ -314,7 +323,7 @@ class SmartTrain(Train):
         if h >= 1. or h <= 0.:
             return
 
-        if max(r, g, b) > 10.0 and v > 20.0:
+        if min(r, g, b) > 10.0 and v > 20.0:
             bg = b / g
             gr = g / r
 
@@ -326,16 +335,16 @@ class SmartTrain(Train):
                 self.sensor_event_filter.filter_event(RED_EVENT)
 
             if (h > 0.55 and h < 0.62) and (s > 0.50 and s < 0.72):
-                # print(args, kwargs, h, s, v, bg, gr, "LIGHT BLUE")
+                print("\n", args, kwargs, h, s, v, bg, gr, "LIGHT BLUE")
                 print("LIGHT BLUE")
                 self.sensor_event_filter.filter_event(LB_EVENT)
 
             if (h > 0.40 and h < 0.60) and (s > 0.25 and s < 0.60):
-                # print(args, kwargs, h, s, v, bg, gr, "LIGHT BLUE")
+                print("\n", args, kwargs, h, s, v, bg, gr, "GREEN")
                 print("GREEN")
 
             if (h > 0.15 and h < 0.30) and (s > 0.23 and s < 0.55):
-                # print(args, kwargs, h, s, v, bg, gr, "LIGHT GREEN")
+                print("\n", args, kwargs, h, s, v, bg, gr, "LIGHT GREEN")
                 print("LIGHT GREEN")
 
 
@@ -366,8 +375,8 @@ class CompoundTrain():
 
     # train_rear must move backwards
     def up_speed(self):
-        self.train_front.up_speed()
         self.train_rear.down_speed()
+        self.train_front.up_speed()
 
     def down_speed(self):
         self.train_front.down_speed()
