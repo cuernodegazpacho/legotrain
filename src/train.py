@@ -284,8 +284,8 @@ class SmartTrain(Train):
 
         self.hub.vision_sensor.subscribe(self._vision_sensor_callback, granularity=5, mode=6)
 
-        # events coming from the vision sensor need to be processed in order
-        # to handle multiple detections.
+        # events coming from the vision sensor need to be pre-processed in order
+        # to filter out multiple detections.
         self.sensor_event_filter = SensorEventFilter(self)
 
     def process_event(self, event):
@@ -295,13 +295,25 @@ class SmartTrain(Train):
         if event in ["RED"]:
             print("@@@@ train.py 119: ", event)
 
+# TODO a RED event will signal the entry into a station segment. This
+# should start a separate thread that will run a sequence of steps:
+# 1 - slow down the motor,
+# 2 - wait for a second RED event that will stop the motor.
+# 3 - sleep for a pre-assigned time,
+# 4 - blink the green LED for a second or two
+# 5 - start motor at low speed
+# 6 - maybe, ignore next RED signal (that marks the end of the station segment).
+# This will be amended later when we introduce control based on segments:
+# before blinking the green LED, the next segment must be checked for availability, and,
+# if available, reserved. # Only after that the motor should be started at low speed.
+
             # RED causes train to stop
             sleep(0.5)
             self.stop()
 
             # if a callback is set, execute it.
             # TODO This is currently used by the compound train to pass a stop
-            # command (resulting from a sensor reading) to the front train To
+            # command (resulting from a sensor reading) to the front train. To
             # generalize, we need to pass a specific power setting instead.
             # Beware of the sense, since front and rear trains operate with
             # reversed power settings.

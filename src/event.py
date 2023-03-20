@@ -7,6 +7,14 @@ TIME_THRESHOLD = 2.0 # seconds
 
 
 class SensorEventFilter():
+    '''
+    This class is used to filter out multiple detections of the same color
+    by the vision sensor in a SmartTrain.
+
+    It works by ignoring all detections of the given color that take place
+    within a pre-defined time interval. The first event will be passed back
+    to the caller, an instance of SmartTrain, via its process_event method.
+    '''
 
     events = {}
 
