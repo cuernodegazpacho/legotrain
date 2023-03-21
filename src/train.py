@@ -312,7 +312,7 @@ class SmartTrain(Train):
 
             action = track.segments[event]
 
-            sleep(0.5)
+            sleep(0.3)
             self.stop()
 
             # if a callback is set, execute it.

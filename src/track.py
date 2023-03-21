@@ -1,8 +1,7 @@
+actions = {"RED": "stop"}
 
-actions = {"RED", "stop"}
 
 class Segment():
-
     def __init__(self, name):
         self.name = name
         self.action = actions[self.name]
@@ -12,4 +11,4 @@ class Segment():
 
 station = Segment("RED")
 
-segments = {station.name, station}
+segments = {station.name: station}
