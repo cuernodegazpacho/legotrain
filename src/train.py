@@ -8,6 +8,7 @@ from pylgbst.hub import SmartHub
 from pylgbst.peripherals import Voltage, Current, LEDLight
 from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE
 
+import track
 from event import SensorEventFilter, RED_EVENT, LB_EVENT
 
 sign = lambda x: x and (1, -1)[x<0]
@@ -308,6 +309,9 @@ class SmartTrain(Train):
 # if available, reserved. # Only after that the motor should be started at low speed.
 
             # RED causes train to stop
+
+            action = track.segments[event]
+
             sleep(0.5)
             self.stop()
 
