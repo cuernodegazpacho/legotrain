@@ -56,7 +56,8 @@ def demo_color_sensor(smart_hub):
                 red_detection = "DARK GRAY (track)"
 
 
-            print(demo_color_sensor.cnt, limit, args, kwargs, h, s, v, bg, gr, red_detection)
+            # print(demo_color_sensor.cnt, limit, args, kwargs, h, s, v, bg, gr, red_detection)
+            print(r, ",", g, ",", b)
 
     smart_hub.vision_sensor.subscribe(callback, granularity=3, mode=6)
 
