@@ -312,7 +312,7 @@ class SmartTrain(Train):
 
             action = track.segments[event]
 
-            sleep(0.3)
+            sleep(0.01)
             self.stop()
 
             # if a callback is set, execute it.
@@ -326,7 +326,9 @@ class SmartTrain(Train):
 
         elif event in ["LIGHT BLUE"]:
             print("@@@@ train.py 126: ", event)
-            self.power_index = 1 * sign(self.power_index)
+            # light blue causes power to decrease to level 1
+            new_power_index = 1
+            self.power_index = new_power_index * sign(self.power_index)
             self.set_power()
 
     def _vision_sensor_callback(self, *args, **kwargs):
@@ -401,6 +403,18 @@ class CompoundTrain():
     def stop(self):
         self.train_front.stop()
         self.train_rear.stop()
+
+    # def set_power(self):
+    #     # it's the rear engine that generates power change commands,
+    #     # since it carries the sensor mechanism. Thus we read the
+    #     # current power index from it, reversing its sign.
+    #     power_index = - self.train_rear.power_index
+    #     self.train_front.power_index = power_index
+    #     self.train_front.set_power()
+    #
+    #     self.motor_handler.set_motor_power(self.power_index, self.voltage)
+    #     self.led_handler.set_status_led(self.power_index)
+
 
 
 class LEDHandler:
