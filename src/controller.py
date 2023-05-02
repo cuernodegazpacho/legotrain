@@ -6,14 +6,15 @@ from pylgbst.hub import RemoteHandset
 from pylgbst.peripherals import RemoteButton, COLOR_YELLOW, COLOR_PURPLE
 
 from train import SimpleTrain, SmartTrain, CompoundTrain
+from gui import GUI
 
 # logging.basicConfig(level=logging.DEBUG)
 
-def controller(train):
+def controller(train, gui):
     '''
     Main controller function.
 
-    It accepts a initialized instances of subclasses of Train.
+    It accepts initialized instances of subclasses of Train.
 
     This function creates a remote handset instance which at this first pass just
     re-creates the functionality available in the unmodified Lego product. Future
@@ -67,6 +68,9 @@ if __name__ == '__main__':
     # lock = RLock()
     lock = None
 
+    # Tkinter window for displaying status information
+    gui = GUI()
+
     # front train hub allows control over the LED headlight.
     train_front = SimpleTrain("Front", lock=lock, report=True, record=True,
                               address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
@@ -79,10 +83,8 @@ if __name__ == '__main__':
     # train = train_rear
     # train = train_front
 
-    controller(train)
+    controller(train, gui)
 
-    # Dummy main execution thread. All actions take place in the event threads instead.
-    while True:
-        # since this is an infinite loop, we don't care about unsubscribing from anything
-        pass
+    # gui main loop has to be started at the very end of the control script
+    gui.gui.mainloop()
 
