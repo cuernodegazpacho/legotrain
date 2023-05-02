@@ -77,6 +77,7 @@ if __name__ == '__main__':
 
     train = CompoundTrain("Massive train", train_front, train_rear)
     # train = train_rear
+    # train = train_front
 
     controller(train)
 
