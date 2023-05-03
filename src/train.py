@@ -37,6 +37,7 @@ class Train:
     caller when the need arises to synchronize among multiple instances of Train.
 
     :param name: train name, used in the report
+    :param gui_id: str used by the GUI to direct report to appropriate field
     :param lock: global lock used for threading access
     :param gui: instance of GUI, used to report status info
     :param led_color: primary LED color used in this train instance
@@ -46,11 +47,12 @@ class Train:
     :param linear: if True, use motor's linear duty cycle curve
     :param address: UUID of the train's internal hub
     '''
-    def __init__(self, name, lock=None, report=False, record=False, linear=False,
+    def __init__(self, name, gui_id="0", lock=None, report=False, record=False, linear=False,
                  gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub by default
 
         self.name = name
+        self.gui_id = gui_id
         self.hub = SmartHub(address=address)
         self.current = 0.
         self.voltage = 0.
@@ -94,12 +96,13 @@ class Train:
                 fp.write("\r%s  %s   voltage: %5.2f  current: %5.3f  speed: %i  power %4.2f" %
                          (self.name, ct, self.voltage, self.current, self.power_index, self.motor_handler.power))
                 fp.flush()
-            if self.gui is not None:
+            if self.gui is not None and self.gui_id != "0":
                 # use gui-specific code to encode variables. Actual data passing must
                 # be done via a queue, since tkinter is not thread-safe and can't be
                 # updated directly from here.
-                output_buffer = self.gui.encode_basic_variables(self.name, self.voltage, self.current,
-                                                                self.power_index, self.motor_handler.power)
+                output_buffer = self.gui.encode_basic_variables(self.name, self.gui_id, self.voltage,
+                                                                self.current, self.power_index,
+                                                                self.motor_handler.power)
                 tkinter_output_queue.put(output_buffer)
 
         def _report_voltage(value):
@@ -233,6 +236,7 @@ class SimpleTrain(Train):
     HeadlightHamdler.
 
     :param name: train name, used in the report
+    :param gui_id: str used by the GUI to direct report to appropriate field
     :param lock: lock used for threading access
     :param gui: instance of GUI, used to report status info
     :param led_color: primary LED color used in this train instance
@@ -242,11 +246,11 @@ class SimpleTrain(Train):
     :param linear: if True, use motor's linear duty cycle curve
     :param address: UUID of the train's internal hub
     '''
-    def __init__(self, name, lock=None, report=False, record=False, linear=False,
+    def __init__(self, name, gui_id="0", lock=None, report=False, record=False, linear=False,
                  gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub
 
-        super(SimpleTrain, self).__init__(name, lock, report=report, record=record, linear=linear,
+        super(SimpleTrain, self).__init__(name, gui_id, lock, report=report, record=record, linear=linear,
                                           gui=gui, led_color=led_color,
                                           led_secondary_color=led_secondary_color,
                                           address=address)
@@ -294,6 +298,7 @@ class SmartTrain(Train):
     are registered with it.
 
     :param name: train name, used in the report
+    :param gui_id: str used by the GUI to direct report to appropriate field
     :param lock: lock used for threading access
     :param gui: instance of GUI, used to report status info
     :param led_color: primary LED color used in this train instance
@@ -303,11 +308,11 @@ class SmartTrain(Train):
     :param linear: if True, use motor's linear duty cycle curve
     :param address: UUID of the train's internal hub
     '''
-    def __init__(self, name, lock=None, report=False, record=False, linear=False,
+    def __init__(self, name, gui_id="0", lock=None, report=False, record=False, linear=False,
                  gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub
 
-        super(SmartTrain, self).__init__(name, lock, report=report, record=record, linear=linear,
+        super(SmartTrain, self).__init__(name, gui_id, lock, report=report, record=record, linear=linear,
                                           gui=gui, led_color=led_color,
                                           led_secondary_color=led_secondary_color,
                                           address=address)
@@ -357,7 +362,7 @@ class SmartTrain(Train):
     # start a timed wait interval at a station, and
     # handle the hub's LED behavior.
     def timed_stop_at_station(self):
-        time_station = random.uniform(8., 15.)
+        time_station = random.uniform(15., 45.)
         self.timer_station = Timer(time_station, self.restart_from_station)
         self.timer_station.start()
 
