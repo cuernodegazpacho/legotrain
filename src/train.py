@@ -11,7 +11,7 @@ from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN
 
 import track
 from event import SensorEventFilter, RED_EVENT, LB_EVENT
-from gui import the_queue
+from gui import tkinter_output_queue
 
 sign = lambda x: x and (1, -1)[x<0]
 
@@ -95,10 +95,12 @@ class Train:
                          (self.name, ct, self.voltage, self.current, self.power_index, self.motor_handler.power))
                 fp.flush()
             if self.gui is not None:
-                # self.gui.update(self.name, self.voltage, self.current, self.power_index, self.motor_handler.power)
-
-                the_queue.put(str(self.voltage))
-
+                # use gui-specific code to encode variables. Actual data passing must
+                # be done via a queue, since tkinter is not thread-safe and can't be
+                # updated directly from here.
+                output_buffer = self.gui.encode_basic_variables(self.name, self.voltage, self.current,
+                                                                self.power_index, self.motor_handler.power)
+                tkinter_output_queue.put(output_buffer)
 
         def _report_voltage(value):
             self.voltage = value
