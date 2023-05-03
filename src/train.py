@@ -11,6 +11,7 @@ from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN
 
 import track
 from event import SensorEventFilter, RED_EVENT, LB_EVENT
+from gui import the_queue
 
 sign = lambda x: x and (1, -1)[x<0]
 
@@ -37,6 +38,7 @@ class Train:
 
     :param name: train name, used in the report
     :param lock: global lock used for threading access
+    :param gui: instance of GUI, used to report status info
     :param led_color: primary LED color used in this train instance
     :param led_secondary_color: secondary LED color used to signal a stopped train
     :param report: if True, report voltage and current
@@ -45,7 +47,7 @@ class Train:
     :param address: UUID of the train's internal hub
     '''
     def __init__(self, name, lock=None, report=False, record=False, linear=False,
-                 led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
+                 gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub by default
 
         self.name = name
@@ -75,12 +77,12 @@ class Train:
         # used by the base class.
         self.timer_station = None
 
+        self.gui = gui
         if report:
             fp = None
             if record:
                 fp = open(self.name + ".txt", "a")
             self._start_reporting(fp)
-
 
     def _start_reporting(self, fp):
         def _print_values():
@@ -92,6 +94,11 @@ class Train:
                 fp.write("\r%s  %s   voltage: %5.2f  current: %5.3f  speed: %i  power %4.2f" %
                          (self.name, ct, self.voltage, self.current, self.power_index, self.motor_handler.power))
                 fp.flush()
+            if self.gui is not None:
+                # self.gui.update(self.name, self.voltage, self.current, self.power_index, self.motor_handler.power)
+
+                the_queue.put(str(self.voltage))
+
 
         def _report_voltage(value):
             self.voltage = value
@@ -225,6 +232,7 @@ class SimpleTrain(Train):
 
     :param name: train name, used in the report
     :param lock: lock used for threading access
+    :param gui: instance of GUI, used to report status info
     :param led_color: primary LED color used in this train instance
     :param led_secondary_color: secondary LED color used to signal a stopped train
     :param report: if True, report voltage and current
@@ -233,11 +241,11 @@ class SimpleTrain(Train):
     :param address: UUID of the train's internal hub
     '''
     def __init__(self, name, lock=None, report=False, record=False, linear=False,
-                 led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
+                 gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub
 
         super(SimpleTrain, self).__init__(name, lock, report=report, record=record, linear=linear,
-                                          led_color=led_color,
+                                          gui=gui, led_color=led_color,
                                           led_secondary_color=led_secondary_color,
                                           address=address)
 
@@ -285,6 +293,7 @@ class SmartTrain(Train):
 
     :param name: train name, used in the report
     :param lock: lock used for threading access
+    :param gui: instance of GUI, used to report status info
     :param led_color: primary LED color used in this train instance
     :param led_secondary_color: secondary LED color used to signal a stopped train
     :param report: if True, report voltage and current
@@ -293,11 +302,11 @@ class SmartTrain(Train):
     :param address: UUID of the train's internal hub
     '''
     def __init__(self, name, lock=None, report=False, record=False, linear=False,
-                 led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
+                 gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub
 
         super(SmartTrain, self).__init__(name, lock, report=report, record=record, linear=linear,
-                                          led_color=led_color,
+                                          gui=gui, led_color=led_color,
                                           led_secondary_color=led_secondary_color,
                                           address=address)
 
