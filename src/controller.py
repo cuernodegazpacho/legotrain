@@ -85,8 +85,7 @@ if __name__ == '__main__':
 
     controller(train)
 
+    # connect gui and start main loop
     gui.root.after(100, gui.after_callback)
-
-    # gui main loop has to be started at the very end of the control script
     gui.root.mainloop()
 
