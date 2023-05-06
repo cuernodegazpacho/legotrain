@@ -113,8 +113,8 @@ class Train:
             self.current = value
             _print_values()
 
-        self.hub.voltage.subscribe(_report_voltage, mode=Voltage.VOLTAGE_L, granularity=5)
-        self.hub.current.subscribe(_report_current, mode=Current.CURRENT_L, granularity=5)
+        self.hub.voltage.subscribe(_report_voltage, mode=Voltage.VOLTAGE_L, granularity=20)
+        self.hub.current.subscribe(_report_current, mode=Current.CURRENT_L, granularity=20)
 
     # In the most basic application, these speed controls are to be used
     # by the controlling script to respond to key presses in the handset.
@@ -158,7 +158,7 @@ class MotorHandler:
     '''
     NOMINAL_VOLTAGE = 8.3  # Volts (6 AAA Ni-MH batteries in hub)
     MINIMUM_VOLTAGE = 6.0
-    MAXIMUM_FACTOR = 1.25  # minimum factor is 1., corresponding to fresh batteries
+    MAXIMUM_FACTOR = 1.40  # minimum factor is 1., corresponding to fresh batteries
 
     # non-linear duty cycle, appropriate for a heavy train
     duty = {
@@ -362,7 +362,7 @@ class SmartTrain(Train):
     # start a timed wait interval at a station, and
     # handle the hub's LED behavior.
     def timed_stop_at_station(self):
-        time_station = random.uniform(15., 45.)
+        time_station = random.uniform(10., 30.)
         self.timer_station = Timer(time_station, self.restart_from_station)
         self.timer_station.start()
 
@@ -410,7 +410,7 @@ class SmartTrain(Train):
                 self.sensor_event_filter.filter_event(RED_EVENT)
 
             #TODO use most recent values from colorimetry notebook
-            if (h > 0.55 and h < 0.62) and (s > 0.50 and s < 0.72):
+            if (h > 0.55 and h < 0.63) and (s > 0.50 and s < 0.73):
                 print("\n", args, kwargs, h, s, v, bg, gr, "LIGHT BLUE")
                 # print("LIGHT BLUE")
                 self.sensor_event_filter.filter_event(LB_EVENT)

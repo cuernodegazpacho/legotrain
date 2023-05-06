@@ -76,12 +76,12 @@ if __name__ == '__main__':
                               gui=gui, address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
 
     # rear train hub has a vision sensor
-    train_rear = SmartTrain("Rear", "2", lock=lock, report=True, record=True,
-                            gui=gui, address='86996732-BF5A-433D-AACE-5611D4C6271D')
+    # train_rear = SmartTrain("Rear", "2", lock=lock, report=True, record=True,
+    #                         gui=gui, address='86996732-BF5A-433D-AACE-5611D4C6271D')
 
-    train = CompoundTrain("Massive train", train_front, train_rear)
+    # train = CompoundTrain("Massive train", train_front, train_rear)
     # train = train_rear
-    # train = train_front
+    train = train_front
 
     controller(train)
 
