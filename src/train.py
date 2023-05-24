@@ -342,8 +342,8 @@ class SmartTrain(Train):
             # after stopping at station, execute a Timer delay followed by a re-start
             self.timed_stop_at_station()
 
-            # if a train instance is registered, call its stop method.
-            # But *do not* call its timed delay routine, since this
+            # if a secondary train instance is registered, call its stop
+            # method. But *do not* call its timed delay routine, since this
             # functionality must be commanded by the current train only.
             if self.secondary_train is not None:
                 self.secondary_train.stop()
