@@ -381,6 +381,10 @@ class SmartTrain(Train):
         else:
             power_index_signal = -1
 
+        # the acceleration sequence below is somewhat dependent on the fact
+        # that an instance of SmartTrain is going to be used as the back
+        # (rear facing) engine in a CompoundTrain object.
+        # TODO A more generic solution is desirable here.
         for k in range(1,7):
             self.set_power(k * power_index_signal)
             if self.secondary_train is not None:
