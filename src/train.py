@@ -84,6 +84,7 @@ class Train:
         # user or the controlling script.
         self.timer_station = None
         self.acceleration_thread = None
+        self.stop_acceleration_thread = False
 
         self.gui = gui
         if report:
@@ -134,6 +135,7 @@ class Train:
         self.set_power(0)
 
     def _bump_motor_power(self, step):
+        self.check_acceleration_thread()
         power_index = max(min(self.power_index + step, 10), -10)
         self.set_power(power_index)
 
@@ -149,23 +151,30 @@ class Train:
             self.timer_station = None
             self.led_handler.set_solid(self.led_color)
 
+    def check_acceleration_thread(self):
+        if self.acceleration_thread is not None:
+            self.stop_acceleration_thread = True
+            self.acceleration_thread = None
+
     # The `accelerate` method has to be run in a thread, and stopped whenever a
     # set_power call takes place coming, typically, from the up_speed, dow_speed,
     # or stop methods initiated by either the user remote, or the controlling script
     # itself, as for instance in response from a sensor signal.
     def accelerate(self, power_index_values, power_index_signal, sleep_time=0.3):
         # if already running, stop it before starting a new acceleration ramp
-        if self.acceleration_thread is not None:
-            self.acceleration_thread.stop()
+        self.check_acceleration_thread()
 
         self.acceleration_thread = Thread(target=self._accelerate,
                                           args=(power_index_values,
                                                 power_index_signal,
                                                 sleep_time))
+        self.stop_acceleration_thread = False
         self.acceleration_thread.start()
 
     def _accelerate(self, power_index_values, power_index_signal, sleep_time):
         for k in power_index_values:
+            if self.stop_acceleration_thread:
+                break
             self.set_power(k * power_index_signal)
             if self.secondary_train is not None:
                 # secondary train runs in opposite direction as this train
@@ -360,6 +369,8 @@ class SmartTrain(Train):
         '''
         # red signal means stop at station
         if event in [RED_EVENT]:
+
+            self.check_acceleration_thread()
 
             action = track.segments[event]
 
