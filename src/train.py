@@ -76,12 +76,14 @@ class Train:
         # led
         self.led_handler = LEDHandler(self, self.lock)
 
-        # this is a timer thread used to hold the train at a station for a
-        # given amount of time. This thread must be checked and eventually
-        # cancelled whenever a up_speed, down_speed, or stop command is
-        # issued by either the user or the controlling script. It is not
-        # used by the base class.
+        # Thread control: threads are used to hold the train at a
+        # station for a timed interval, and to accelerate a train
+        # gradually between two power settings.
+        # These threads must be checked and eventually cancelled whenever
+        # a up_speed, down_speed, or stop command is issued by either the
+        # user or the controlling script.
         self.timer_station = None
+        self.acceleration_thread = None
 
         self.gui = gui
         if report:
@@ -147,17 +149,29 @@ class Train:
             self.timer_station = None
             self.led_handler.set_solid(self.led_color)
 
-    # TODO this method was moved to the base class because it is going to interact
-    # with the speed controlling methods in the base class. It has to be run in
-    # a thread, and stopped whenever a set_power call takes place coming, typically,
-    # from the up_speed, dow_speed, and stop methods initiated by the user remote.
+    # The `accelerate` method has to be run in a thread, and stopped whenever a
+    # set_power call takes place coming, typically, from the up_speed, dow_speed,
+    # or stop methods initiated by either the user remote, or the controlling script
+    # itself, as for instance in response from a sensor signal.
     def accelerate(self, power_index_values, power_index_signal, sleep_time=0.3):
+        # if already running, stop it before starting a new acceleration ramp
+        if self.acceleration_thread is not None:
+            self.acceleration_thread.stop()
+
+        self.acceleration_thread = Thread(target=self._accelerate,
+                                          args=(power_index_values,
+                                                power_index_signal,
+                                                sleep_time))
+        self.acceleration_thread.start()
+
+    def _accelerate(self, power_index_values, power_index_signal, sleep_time):
         for k in power_index_values:
             self.set_power(k * power_index_signal)
             if self.secondary_train is not None:
                 # secondary train runs in opposite direction as this train
                 self.secondary_train.set_power(- k * power_index_signal)
             sleep(sleep_time)
+        self.acceleration_thread = None
 
 
 class MotorHandler:
