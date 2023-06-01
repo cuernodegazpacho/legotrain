@@ -132,6 +132,7 @@ class Train:
         self._bump_motor_power(-1)
 
     def stop(self):
+        self.check_acceleration_thread()
         self.set_power(0)
 
     def _bump_motor_power(self, step):
@@ -180,6 +181,7 @@ class Train:
                 # secondary train runs in opposite direction as this train
                 self.secondary_train.set_power(- k * power_index_signal)
             sleep(sleep_time)
+        self.stop_acceleration_thread = False
         self.acceleration_thread = None
 
 
@@ -403,7 +405,14 @@ class SmartTrain(Train):
                                      new_power_index_value,
                                      power_index_step))
 
-            self.accelerate(power_index_range, sign(self.power_index), sleep_time=0.2)
+            # a sequence of 6 deceleration steps has 5 sleeping intervals. It
+            # is executed in approx. 1 sec. Normalize so it takes about the
+            # same time regardless of current speed.
+            sleep_time = 6. / len(power_index_range) * 0.2
+            sleep_time *= 6. / current_power_index_value
+            sleep_time *= 1.1 # fudge factor
+
+            self.accelerate(power_index_range, sign(self.power_index), sleep_time=sleep_time)
 
     def timed_stop_at_station(self):
         # start a timed wait interval at a station, and handle the hub's LED behavior.
