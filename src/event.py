@@ -12,8 +12,8 @@ HUE = {}
 SATURATION = {}
 HUE[RED_EVENT]        = (0.90, 1.00)  # min and max hue for red
 SATURATION[RED_EVENT] = (0.55, 0.82)  # min and max saturation for red
-HUE[LB_EVENT]         = (0.55, 0.63)  # same for azure (light blue)
-SATURATION[LB_EVENT]  = (0.50, 0.73)
+HUE[LB_EVENT]         = (0.55, 0.62)  # same for azure (light blue)
+SATURATION[LB_EVENT]  = (0.50, 0.72)
 
 
 class SensorEventFilter():

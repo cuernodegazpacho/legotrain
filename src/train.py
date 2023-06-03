@@ -416,7 +416,7 @@ class SmartTrain(Train):
 
     def timed_stop_at_station(self):
         # start a timed wait interval at a station, and handle the hub's LED behavior.
-        time_station = random.uniform(10., 20.)
+        time_station = random.uniform(30., 50.)
         self.timer_station = Timer(time_station, self.restart_from_station)
         self.timer_station.start()
 
@@ -435,7 +435,7 @@ class SmartTrain(Train):
         else:
             power_index_signal = -1
 
-        self.accelerate(list(range(1, 7)), power_index_signal)
+        self.accelerate(list(range(1, 6)), power_index_signal)
 
     def _vision_sensor_callback(self, *args, **kwargs):
         # use HSV as criterion for mapping colors
@@ -447,7 +447,7 @@ class SmartTrain(Train):
         if h >= 1. or h <= 0.:
             return
 
-        if min(r, g, b) > 10.0 and v > 20.0:
+        if min(r, g, b) > 10.0 and v > 25.0:
             for color in [RED_EVENT, LB_EVENT]:
                 if (h >= HUE[color][0] and h <= HUE[color][1]) and \
                    (s >= SATURATION[color][0] and s <= SATURATION[color][1]):
