@@ -408,7 +408,8 @@ class SmartTrain(Train):
             # a sequence of 6 deceleration steps has 5 sleeping intervals. It
             # is executed in approx. 1 sec. Normalize so it takes about the
             # same time regardless of current speed.
-            sleep_time = 6. / len(power_index_range) * 0.2
+            # sleep_time = 6. / len(power_index_range) * 0.2
+            sleep_time = 6. / len(power_index_range) * 0.1 #TODO test for fast stop (2-car = 0.1, 1-car = 0.05)
             sleep_time *= 6. / current_power_index_value
             sleep_time *= 1.1 # fudge factor
 
@@ -416,7 +417,7 @@ class SmartTrain(Train):
 
     def timed_stop_at_station(self):
         # start a timed wait interval at a station, and handle the hub's LED behavior.
-        time_station = random.uniform(30., 50.)
+        time_station = random.uniform(5., 6.)
         self.timer_station = Timer(time_station, self.restart_from_station)
         self.timer_station.start()
 
@@ -435,7 +436,7 @@ class SmartTrain(Train):
         else:
             power_index_signal = -1
 
-        self.accelerate(list(range(1, 6)), power_index_signal)
+        self.accelerate(list(range(1, 7)), power_index_signal)
 
     def _vision_sensor_callback(self, *args, **kwargs):
         # use HSV as criterion for mapping colors

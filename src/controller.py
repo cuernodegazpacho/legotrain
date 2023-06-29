@@ -71,17 +71,30 @@ if __name__ == '__main__':
     # Tkinter window for displaying status information
     gui = GUI()
 
-    # front train hub allows control over the LED headlight.
-    train_front = SimpleTrain("Front", "1", lock=lock, report=True, record=True,
-                              gui=gui, address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
+    # Use either one of those setups to configure
 
-    # rear train hub has a vision sensor
-    train_rear = SmartTrain("Rear", "2", lock=lock, report=True, record=True,
+    # ---------------------- Simple train setup --------------------------
+
+    # train with LED headlight.
+    # train = SimpleTrain("Front", "1", lock=lock, report=True, record=True,
+    #                           gui=gui, address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
+    # train with vision sensor
+    train = SmartTrain("Rear", "2", lock=lock, report=True, record=True,
                             gui=gui, address='86996732-BF5A-433D-AACE-5611D4C6271D')
 
-    train = CompoundTrain("Massive train", train_front, train_rear)
-    # train = train_rear
-    # train = train_front
+    # ---------------------- Compound train setup --------------------------
+
+    # # front train hub allows control over the LED headlight.
+    # train_front = SimpleTrain("Front", "1", lock=lock, report=True, record=True,
+    #                           gui=gui, address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
+    #
+    # # rear train hub has a vision sensor
+    # train_rear = SmartTrain("Rear", "2", lock=lock, report=True, record=True,
+    #                         gui=gui, address='86996732-BF5A-433D-AACE-5611D4C6271D')
+    #
+    # train = CompoundTrain("Massive train", train_front, train_rear)
+
+    # -----------------------------------------------------------------------
 
     controller(train)
 
