@@ -9,6 +9,7 @@ from pylgbst.hub import SmartHub
 from pylgbst.peripherals import Voltage, Current, LEDLight
 from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN
 
+import uuid_definitions
 import track
 from event import SensorEventFilter, RED_EVENT, LB_EVENT, HUE, SATURATION
 from gui import tkinter_output_queue
@@ -49,7 +50,7 @@ class Train:
     '''
     def __init__(self, name, gui_id="0", lock=None, report=False, record=False, linear=False,
                  gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
-                 address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub by default
+                 address=uuid_definitions.TEST_HUB):
 
         self.name = name
         self.gui_id = gui_id
@@ -290,7 +291,7 @@ class SimpleTrain(Train):
     '''
     def __init__(self, name, gui_id="0", lock=None, report=False, record=False, linear=False,
                  gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
-                 address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub
+                 address=uuid_definitions.TEST_HUB): # test hub
 
         super(SimpleTrain, self).__init__(name, gui_id, lock, report=report, record=record, linear=linear,
                                           gui=gui, led_color=led_color,
@@ -352,7 +353,7 @@ class SmartTrain(Train):
     '''
     def __init__(self, name, gui_id="0", lock=None, report=False, record=False, linear=False,
                  gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
-                 address='86996732-BF5A-433D-AACE-5611D4C6271D'): # test hub
+                 address=uuid_definitions.TEST_HUB): # test hub
 
         super(SmartTrain, self).__init__(name, gui_id, lock, report=report, record=record, linear=linear,
                                           gui=gui, led_color=led_color,

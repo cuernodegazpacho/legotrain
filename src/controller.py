@@ -3,8 +3,9 @@ from time import sleep
 from threading import RLock
 
 from pylgbst.hub import RemoteHandset
-from pylgbst.peripherals import RemoteButton, COLOR_YELLOW, COLOR_PURPLE, COLOR_GREEN
+from pylgbst.peripherals import RemoteButton, COLOR_PURPLE
 
+import uuid_definitions
 from train import SimpleTrain, SmartTrain, CompoundTrain
 from gui import GUI
 
@@ -39,8 +40,7 @@ def controller(train1, train2=None):
     buttons in both train and handset won't respond to button presses from this point on).
     '''
     sleep(5)
-    # handset = RemoteHandset(address='5D319849-7D59-4EBB-A561-0C37C5EF8DCD')  # train handset
-    handset = RemoteHandset(address='2BC6E69B-5F56-4716-AD8C-7B4D5CBC7BF8')  # test handset
+    handset = RemoteHandset(address=uuid_definitions.HANDSET_TEST)
 
     # define sensible handset actions for a dummy train2 object
     if train2 is None:
@@ -95,32 +95,32 @@ if __name__ == '__main__':
     # ---------------------- Simple train setup --------------------------
 
     # train = SimpleTrain("Train", "1", lock=lock, report=True, record=True,
-    #                           gui=gui, address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
+    #                           gui=gui, address=uuid_definitions.ORIG_HUB)
     # controller(train)
 
     # ---------------------- Smart train setup ----------------------------
 
     # train = SmartTrain("Train", "1", lock=lock, report=True, record=True,
-    #                         gui=gui, address='86996732-BF5A-433D-AACE-5611D4C6271D')
+    #                         gui=gui, address=uuid_definitions.TEST_HUB)
     # controller(train)
 
     # ---------------------- Two-train setup ----------------------------
 
     train1 = SmartTrain("Train 1", "1", led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
-                            gui=gui, address='86996732-BF5A-433D-AACE-5611D4C6271D')
+                            gui=gui, address=uuid_definitions.TEST_HUB)
     train2 = SimpleTrain("Train 2", "2", lock=lock, report=True, record=True,
-                              gui=gui, address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
+                              gui=gui, address=uuid_definitions.ORIG_HUB)
     controller(train1, train2=train2)
 
     # ---------------------- Compound train setup --------------------------
 
     # # front train hub allows control over the LED headlight.
     # train_front = SimpleTrain("Front", "1", lock=lock, report=True, record=True,
-    #                           gui=gui, address='F88800F6-F39B-4FD2-AFAA-DD93DA2945A6')
+    #                           gui=gui, address=uuid_definitions.ORIG_HUB)
     #
     # # rear train hub has a vision sensor
     # train_rear = SmartTrain("Rear", "2", lock=lock, report=True, record=True,
-    #                         gui=gui, address='86996732-BF5A-433D-AACE-5611D4C6271D')
+    #                         gui=gui, address=uuid_definitions.TEST_HUB)
     #
     # train = CompoundTrain("Massive train", train_front, train_rear)
     #
