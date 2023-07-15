@@ -95,32 +95,32 @@ if __name__ == '__main__':
     # ---------------------- Simple train setup --------------------------
 
     # train = SimpleTrain("Train", "1", lock=lock, report=True, record=True,
-    #                           gui=gui, address=uuid_definitions.ORIG_HUB)
+    #                           gui=gui, address=uuid_definitions.HUB_ORIG)
     # controller(train)
 
     # ---------------------- Smart train setup ----------------------------
 
     # train = SmartTrain("Train", "1", lock=lock, report=True, record=True,
-    #                         gui=gui, address=uuid_definitions.TEST_HUB)
+    #                         gui=gui, address=uuid_definitions.HUB_TEST)
     # controller(train)
 
     # ---------------------- Two-train setup ----------------------------
 
     train1 = SmartTrain("Train 1", "1", led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
-                            gui=gui, address=uuid_definitions.TEST_HUB)
-    train2 = SimpleTrain("Train 2", "2", lock=lock, report=True, record=True,
-                              gui=gui, address=uuid_definitions.ORIG_HUB)
+                            gui=gui, address=uuid_definitions.HUB_TEST)
+    train2 = SmartTrain("Train 2", "2", lock=lock, report=True, record=True,
+                         gui=gui, address=uuid_definitions.HUB_ORIG)
     controller(train1, train2=train2)
 
     # ---------------------- Compound train setup --------------------------
 
     # # front train hub allows control over the LED headlight.
     # train_front = SimpleTrain("Front", "1", lock=lock, report=True, record=True,
-    #                           gui=gui, address=uuid_definitions.ORIG_HUB)
+    #                           gui=gui, address=uuid_definitions.HUB_ORIG)
     #
     # # rear train hub has a vision sensor
     # train_rear = SmartTrain("Rear", "2", lock=lock, report=True, record=True,
-    #                         gui=gui, address=uuid_definitions.TEST_HUB)
+    #                         gui=gui, address=uuid_definitions.HUB_TEST)
     #
     # train = CompoundTrain("Massive train", train_front, train_rear)
     #
