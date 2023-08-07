@@ -1,3 +1,5 @@
+from event import RED, GREEN, BLUE
+
 CLOCKWISE = "clockwise"
 ANTI_CLOCKWISE = "anti_clockwise"
 
@@ -24,12 +26,10 @@ class Segment():
 #------------------ TRACK DEFINITION ----------------------------
 
 # segments
-segments = {"RED_1": Segment("RED", is_fast=False),
-            "MAGENTA": Segment("MAGENTA", is_fast=False),
-            "GREEN": Segment("GREEN"),
-            "RED_2": Segment("RED", is_fast=False),
-            "YELLOW": Segment("YELLOW", is_fast=False),
-            "BLUE": Segment("BLUE")
+segments = {"RED_1": Segment(RED, is_fast=False),
+            GREEN: Segment(GREEN),
+            "RED_2": Segment(RED, is_fast=False),
+            BLUE: Segment(BLUE)
            }
 
 # The track layout is defined by how the segments connect to each
@@ -40,19 +40,16 @@ segments = {"RED_1": Segment("RED", is_fast=False),
 # choices allowed in the segment connections where a movable switch
 # is located.
 
-#TODO use color constants defined in event.py instead of plain strings.
-# That way, segments are tied directly to the sensor response associated
-# with each segment.
+# Since in this basic initial implementation we have 2 red segments
+# (stations), we use a special string to key them into the 'segments'
+# dict.
 
-segments["GREEN"].next[CLOCKWISE] = segments["MAGENTA"]
-segments["GREEN"].next[ANTI_CLOCKWISE] = segments["YELLOW"]
-segments["BLUE"].next[CLOCKWISE] = segments["RED_2"]
-segments["BLUE"].next[ANTI_CLOCKWISE] = segments["RED_1"]
-segments["MAGENTA"].next[CLOCKWISE] = segments["BLUE"]
-segments["MAGENTA"].next[ANTI_CLOCKWISE] = segments["GREEN"]
-segments["YELLOW"].next[CLOCKWISE] = segments["GREEN"]
-segments["YELLOW"].next[ANTI_CLOCKWISE] = segments["BLUE"]
-segments["RED_1"].next[CLOCKWISE] = segments["BLUE"]
-segments["RED_1"].next[ANTI_CLOCKWISE] = segments["GREEN"]
-segments["RED_2"].next[CLOCKWISE] = segments["GREEN"]
-segments["RED_2"].next[ANTI_CLOCKWISE] = segments["BLUE"]
+# clockwise track
+segments[GREEN].next[CLOCKWISE] = segments[BLUE]
+segments[BLUE].next[CLOCKWISE] = segments["RED_2"]
+segments["RED_2"].next[CLOCKWISE] = segments[GREEN]
+
+# anti-clockwise track
+segments[GREEN].next[ANTI_CLOCKWISE] = segments[BLUE]
+segments[BLUE].next[ANTI_CLOCKWISE] = segments["RED_1"]
+segments["RED_1"].next[ANTI_CLOCKWISE] = segments[GREEN]

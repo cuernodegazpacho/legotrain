@@ -1,19 +1,26 @@
 import time
 
-RED_EVENT = "RED"
-LB_EVENT = "LIGHT BLUE"
+RED = "RED"
+GREEN = "GREEN"
+BLUE = "BLUE"
+LIGHT_BLUE = "LIGHT BLUE"
 
 TIME_THRESHOLD = 2.0 # seconds
 
 # Vision sensor colorimetry parameters.
-# TODO these values are still preliminary and require a lot of testing
-# TODO use most recent values from colorimetry notebook
+# TODO preliminary values taken from colorimetry analysis
 HUE = {}
 SATURATION = {}
-HUE[RED_EVENT]        = (0.90, 1.00)  # min and max hue for red
-SATURATION[RED_EVENT] = (0.55, 0.82)  # min and max saturation for red
-HUE[LB_EVENT]         = (0.55, 0.62)  # same for azure (light blue)
-SATURATION[LB_EVENT]  = (0.50, 0.72)
+
+HUE[RED]        = (0.90, 1.00)  # min and max hue for red
+HUE[GREEN]      = (0.40, 0.54)
+HUE[BLUE]       = (0.58, 0.63)
+# HUE[LIGHT_BLUE] = (0.55, 0.62)  # same for azure (light blue)
+
+SATURATION[RED]        = (0.55, 0.82)  # min and max saturation for red
+SATURATION[GREEN]      = (0.30, 0.56)
+SATURATION[BLUE]       = (0.56, 0.76)
+# SATURATION[LIGHT_BLUE] = (0.50, 0.72)
 
 
 class SensorEventFilter():

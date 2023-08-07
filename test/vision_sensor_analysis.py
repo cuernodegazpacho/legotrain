@@ -89,25 +89,25 @@ def ingest(filename):
     return RGB_list
 
 if __name__ == '__main__':
-    smart_hub = SmartHub(address=uuid_definitions.HUB_TEST)   # test hub
-    demo_color_sensor(smart_hub)
+    # smart_hub = SmartHub(address=uuid_definitions.HUB_TEST)   # test hub
+    # demo_color_sensor(smart_hub)
 
     # alternate form that reads RGB data from file
-    # rgb_list = ingest("Red_tile_RGB.csv")
-    #
-    # h_list = []
-    # s_list = []
-    # v_list = []
-    #
-    # for rgb in rgb_list:
-    #     h, s, v = rgb_to_hsv(rgb[0], rgb[1], rgb[2])
-    #     h_list.append(h)
-    #     s_list.append(s)
-    #     v_list.append(v)
-    #
-    # print("H stats: ", stat.mean(h_list), stat.stdev(h_list), min(h_list), max(h_list))
-    # print("S stats: ", stat.mean(s_list), stat.stdev(s_list), min(s_list), max(s_list))
-    # print("V stats: ", stat.mean(v_list), stat.stdev(v_list), min(v_list), max(v_list))
+    rgb_list = ingest("data/Final_green_2.csv")
+
+    h_list = []
+    s_list = []
+    v_list = []
+
+    for rgb in rgb_list:
+        h, s, v = rgb_to_hsv(rgb[0], rgb[1], rgb[2])
+        h_list.append(h)
+        s_list.append(s)
+        v_list.append(v)
+
+    print("H stats: ", stat.mean(h_list), stat.stdev(h_list), min(h_list), max(h_list))
+    print("S stats: ", stat.mean(s_list), stat.stdev(s_list), min(s_list), max(s_list))
+    print("V stats: ", stat.mean(v_list), stat.stdev(v_list), min(v_list), max(v_list))
 
 #--------------- RESULTS -----------------
 

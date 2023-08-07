@@ -12,7 +12,7 @@ from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN
 import uuid_definitions
 import track
 from track import CLOCKWISE
-from event import SensorEventFilter, RED_EVENT, LB_EVENT, HUE, SATURATION
+from event import SensorEventFilter, RED, LIGHT_BLUE, HUE, SATURATION
 from gui import tkinter_output_queue
 
 sign = lambda x: x and (1, -1)[x<0]
@@ -380,7 +380,7 @@ class SmartTrain(Train):
         Processes events pre-filtered by SensorEventFilter
         '''
         # red signal means stop at station
-        if event in [RED_EVENT]:
+        if event in [RED]:
 
             self.check_acceleration_thread()
 
@@ -399,7 +399,7 @@ class SmartTrain(Train):
                 self.secondary_train.stop()
 
         # light blue signal causes power to be dropped to level 1
-        elif event in [LB_EVENT]:
+        elif event in [LIGHT_BLUE]:
             # the train might be moving backwards, so first we generate
             # a positive representation of the current power index (the
             # `accelerate` method will handle the actual sense of movement
@@ -459,21 +459,12 @@ class SmartTrain(Train):
             return
 
         if min(r, g, b) > 10.0 and v > 25.0:
-            for color in [RED_EVENT, LB_EVENT]:
+            for color in [RED, LIGHT_BLUE]:
                 if (h >= HUE[color][0] and h <= HUE[color][1]) and \
                    (s >= SATURATION[color][0] and s <= SATURATION[color][1]):
                     # print(args, kwargs, h, s, v, bg, gr, color)
                     self.sensor_event_filter.filter_event(color)
                     return
-
-
-
-            if (h > 0.40 and h < 0.60) and (s > 0.25 and s < 0.60):
-                print("\n", args, kwargs, h, s, v, "GREEN")
-
-            if (h > 0.15 and h < 0.30) and (s > 0.23 and s < 0.55):
-                print("\n", args, kwargs, h, s, v, "LIGHT GREEN")
-
 
 class CompoundTrain():
     '''
