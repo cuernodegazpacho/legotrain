@@ -100,17 +100,17 @@ if __name__ == '__main__':
 
     # ---------------------- Smart train setup ----------------------------
 
-    # train = SmartTrain("Train", "1", lock=lock, report=True, record=True,
-    #                         gui=gui, address=uuid_definitions.HUB_TEST)
-    # controller(train)
+    train = SmartTrain("Train", "1", lock=lock, report=True, record=True,
+                            gui=gui, address=uuid_definitions.HUB_TEST)
+    controller(train)
 
     # ---------------------- Two-train setup ----------------------------
 
-    train1 = SmartTrain("Train 1", "1", led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
-                            gui=gui, address=uuid_definitions.HUB_TEST)
-    train2 = SmartTrain("Train 2", "2", lock=lock, report=True, record=True,
-                         gui=gui, address=uuid_definitions.HUB_ORIG)
-    controller(train1, train2=train2)
+    # train1 = SmartTrain("Train 1", "1", led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
+    #                         gui=gui, address=uuid_definitions.HUB_TEST)
+    # train2 = SmartTrain("Train 2", "2", lock=lock, report=True, record=True,
+    #                      gui=gui, address=uuid_definitions.HUB_ORIG)
+    # controller(train1, train2=train2)
 
     # ---------------------- Compound train setup --------------------------
 
