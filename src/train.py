@@ -12,7 +12,8 @@ from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN
 import uuid_definitions
 import track
 from track import CLOCKWISE
-from event import EventProcessor, SensorEventFilter, RED, GREEN, BLUE, HUE, SATURATION
+from event import EventProcessor, SensorEventFilter
+from event import RED, GREEN, BLUE, YELLOW, HUE, SATURATION, RGB_LIMIT, V_LIMIT
 from gui import tkinter_output_queue
 
 sign = lambda x: x and (1, -1)[x<0]
@@ -419,8 +420,8 @@ class SmartTrain(Train):
 
         # print(args, kwargs, r, g, b, h, s, v)
 
-        if min(r, g, b) > 10.0 and v > 15.0:
-            for color in [RED, GREEN, BLUE]:
+        if min(r, g, b) >= RGB_LIMIT and v >= V_LIMIT:
+            for color in [RED, GREEN, BLUE, YELLOW]:
                 if (h >= HUE[color][0] and h <= HUE[color][1]) and \
                    (s >= SATURATION[color][0] and s <= SATURATION[color][1]):
                     # print(args, kwargs, r, g, b, h, s, v, color)
