@@ -93,7 +93,7 @@ if __name__ == '__main__':
     demo_color_sensor(smart_hub)
 
     # # alternate form that reads RGB data from file
-    # rgb_list = ingest("data/Final_purple.csv")
+    # rgb_list = ingest("data/Final_green_2.csv")
     #
     # h_list = []
     # s_list = []
@@ -126,3 +126,12 @@ if __name__ == '__main__':
 # S stats:  0.714 0.0231     0.643  0.756
 # V stats:  42.427 1.444    39.0 46.0
 
+# Green 1
+# H stats:  0.465 0.0174     0.4167 0.538
+# S stats:  0.455 0.038      0.3333 0.55
+# V stats:  19.5367 0.7237  17.0 21.0
+
+# Green 1
+# H stats:  0.464   0.0184     0.4167 0.5278
+# S stats:  0.4457  0.0400     0.3    0.55
+# V stats:  19.412  0.9035    17.0   21.0

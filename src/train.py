@@ -12,7 +12,7 @@ from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN
 import uuid_definitions
 import track
 from track import CLOCKWISE
-from event import EventProcessor, SensorEventFilter, RED, GREEN, BLUE, LIGHT_BLUE, HUE, SATURATION
+from event import EventProcessor, SensorEventFilter, RED, GREEN, BLUE, HUE, SATURATION
 from gui import tkinter_output_queue
 
 sign = lambda x: x and (1, -1)[x<0]
@@ -380,7 +380,7 @@ class SmartTrain(Train):
         self.hub.vision_sensor.subscribe(self._vision_sensor_callback, granularity=5, mode=6)
 
         # events coming from the vision sensor need to be pre-processed in order
-        # to filter out multiple detections, befor being handled.
+        # to filter out multiple detections, before being handled.
         self.sensor_event_filter = SensorEventFilter(self)
         self.event_processor = EventProcessor(self)
 
@@ -417,11 +417,13 @@ class SmartTrain(Train):
         if h >= 1. or h <= 0.:
             return
 
-        if min(r, g, b) > 10.0 and v > 25.0:
-            for color in [RED, LIGHT_BLUE]:
+        # print(args, kwargs, r, g, b, h, s, v)
+
+        if min(r, g, b) > 10.0 and v > 15.0:
+            for color in [RED, GREEN, BLUE]:
                 if (h >= HUE[color][0] and h <= HUE[color][1]) and \
                    (s >= SATURATION[color][0] and s <= SATURATION[color][1]):
-                    # print(args, kwargs, h, s, v, bg, gr, color)
+                    # print(args, kwargs, r, g, b, h, s, v, color)
                     self.sensor_event_filter.filter_event(color)
                     return
 

@@ -4,9 +4,8 @@ from time import sleep
 RED = "RED"
 GREEN = "GREEN"
 BLUE = "BLUE"
-LIGHT_BLUE = "LIGHT BLUE"
 
-TIME_THRESHOLD = 2.0 # seconds
+TIME_THRESHOLD = 2.5 # seconds
 
 # Vision sensor colorimetry parameters.
 # TODO preliminary values taken from colorimetry analysis
@@ -14,14 +13,12 @@ HUE = {}
 SATURATION = {}
 
 HUE[RED]        = (0.90, 1.00)  # min and max hue for red
-HUE[GREEN]      = (0.40, 0.54)
+HUE[GREEN]      = (0.38, 0.55)
 HUE[BLUE]       = (0.58, 0.63)
-HUE[LIGHT_BLUE] = (0.55, 0.62)  # same for azure (light blue)
 
-SATURATION[RED]        = (0.55, 0.82)  # min and max saturation for red
-SATURATION[GREEN]      = (0.30, 0.56)
+SATURATION[RED]        = (0.52, 0.82)  # min and max saturation for red
+SATURATION[GREEN]      = (0.25, 0.57)
 SATURATION[BLUE]       = (0.56, 0.76)
-SATURATION[LIGHT_BLUE] = (0.50, 0.72)
 
 sign = lambda x: x and (1, -1)[x<0]
 
@@ -55,7 +52,7 @@ class SensorEventFilter():
                 # not a double detection. Alert caller and
                 # redefine stored event
                 self.events[event_key] = event_time
-                self.train.process_event(event_key)
+                self.train.event_processor.process_event(event_key)
 
             else:
                 # double detection. Do nothing.
@@ -64,7 +61,7 @@ class SensorEventFilter():
         # if event of current color is not stored here, store current event
         else:
             self.events[event_key] = event_time
-            self.train.process_event(event_key)
+            self.train.event_processor.process_event(event_key)
 
 
 class EventProcessor:
@@ -84,6 +81,9 @@ class EventProcessor:
         Processes events pre-filtered by SensorEventFilter
         '''
         # red signal means stop at station
+
+        print("Event:  ", event)
+
         if event in [RED]:
 
             self.train.check_acceleration_thread()
@@ -103,7 +103,7 @@ class EventProcessor:
                 self.train.secondary_train.stop()
 
         # light blue signal causes power to be dropped to level 1
-        elif event in [LIGHT_BLUE]:
+        elif event in [BLUE]:
             # the train might be moving backwards, so first we generate
             # a positive representation of the current power index (the
             # `accelerate` method will handle the actual sense of movement
