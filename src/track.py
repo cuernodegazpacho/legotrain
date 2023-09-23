@@ -1,7 +1,7 @@
-from event import RED, GREEN, BLUE
+from signal import RED, GREEN, BLUE, YELLOW
 
 CLOCKWISE = "clockwise"
-ANTI_CLOCKWISE = "anti_clockwise"
+COUNTER_CLOCKWISE = "counter_clockwise"
 
 class Segment():
     def __init__(self, color, is_fast=True):
@@ -27,7 +27,7 @@ class Segment():
 
 # segments
 segments = {"RED_1": Segment(RED, is_fast=False),
-            GREEN: Segment(GREEN),
+            YELLOW: Segment(YELLOW),
             "RED_2": Segment(RED, is_fast=False),
             BLUE: Segment(BLUE)
            }
@@ -45,11 +45,11 @@ segments = {"RED_1": Segment(RED, is_fast=False),
 # dict.
 
 # clockwise track
-segments[GREEN].next[CLOCKWISE] = segments[BLUE]
+segments["RED_2"].next[CLOCKWISE] = segments[YELLOW]
+segments[YELLOW].next[CLOCKWISE] = segments[BLUE]
 segments[BLUE].next[CLOCKWISE] = segments["RED_2"]
-segments["RED_2"].next[CLOCKWISE] = segments[GREEN]
 
-# anti-clockwise track
-segments[GREEN].next[ANTI_CLOCKWISE] = segments[BLUE]
-segments[BLUE].next[ANTI_CLOCKWISE] = segments["RED_1"]
-segments["RED_1"].next[ANTI_CLOCKWISE] = segments[GREEN]
+# counter-clockwise track
+segments["RED_1"].next[COUNTER_CLOCKWISE] = segments[BLUE]
+segments[BLUE].next[COUNTER_CLOCKWISE] = segments[YELLOW]
+segments[YELLOW].next[COUNTER_CLOCKWISE] = segments["RED_1"]

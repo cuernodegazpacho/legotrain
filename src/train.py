@@ -10,8 +10,8 @@ from pylgbst.peripherals import Voltage, Current, LEDLight
 from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN
 
 import uuid_definitions
-import track
-from track import CLOCKWISE
+from track import CLOCKWISE, COUNTER_CLOCKWISE
+from track import segments
 from event import EventProcessor, SensorEventFilter
 from event import RED, GREEN, BLUE, YELLOW, HUE, SATURATION, RGB_LIMIT, V_LIMIT
 from gui import tkinter_output_queue
@@ -369,7 +369,7 @@ class SmartTrain(Train):
     '''
     def __init__(self, name, gui_id="0", lock=None, report=False, record=False, linear=False,
                  gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
-                 direction=CLOCKWISE,
+                 direction=COUNTER_CLOCKWISE,
                  address=uuid_definitions.HUB_TEST): # test hub
 
         super(SmartTrain, self).__init__(name, gui_id, lock, report=report, record=record, linear=linear,
@@ -384,6 +384,10 @@ class SmartTrain(Train):
         # to filter out multiple detections, before being handled.
         self.sensor_event_filter = SensorEventFilter(self)
         self.event_processor = EventProcessor(self)
+
+        # assume train is departing from station for counter-clockwise train.
+        # BLUE is first segment after station
+        self.segment = segments[BLUE]
 
     def timed_stop_at_station(self):
         # start a timed wait interval at a station, and handle the hub's LED behavior.
