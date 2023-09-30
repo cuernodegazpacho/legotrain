@@ -11,9 +11,10 @@ from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN
 
 import uuid_definitions
 from track import CLOCKWISE, COUNTER_CLOCKWISE
-from track import segments
+from track import segments, station_segment_names
 from event import EventProcessor, SensorEventFilter
-from event import RED, GREEN, BLUE, YELLOW, HUE, SATURATION, RGB_LIMIT, V_LIMIT
+from signal import RED, GREEN, BLUE, YELLOW
+from event import HUE, SATURATION, RGB_LIMIT, V_LIMIT
 from gui import tkinter_output_queue
 
 sign = lambda x: x and (1, -1)[x<0]
@@ -385,9 +386,12 @@ class SmartTrain(Train):
         self.sensor_event_filter = SensorEventFilter(self)
         self.event_processor = EventProcessor(self)
 
-        # assume train is departing from station for counter-clockwise train.
-        # BLUE is first segment after station
-        self.segment = segments[BLUE]
+        self.initialize_segments()
+
+    def initialize_segments(self):
+        # assume train is departing from station
+        self.segment = None
+        self.previous_segment = segments[station_segment_names[self.direction]]
 
     def timed_stop_at_station(self):
         # start a timed wait interval at a station, and handle the hub's LED behavior.
@@ -410,7 +414,7 @@ class SmartTrain(Train):
         else:
             power_index_signal = -1
 
-        self.accelerate(list(range(1, 7)), power_index_signal)
+        self.accelerate(list(range(1, 6)), power_index_signal)
 
     def _vision_sensor_callback(self, *args, **kwargs):
         # use HSV as criterion for mapping colors

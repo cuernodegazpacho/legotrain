@@ -19,11 +19,18 @@ class Segment():
         self.color = color
         self.is_fast = is_fast
 
-        # for now, this is a 2-element dict with pointers to the two neighboring
-        # segments, keyed by the train's sense of motion (clockwise or counter-clockwise).
+        # Describes segment position in track. For now, this is a 2-element dict
+        # with pointers to the two neighboring segments, keyed by the train's
+        # sense of motion (clockwise or counter-clockwise).
         self.next = {}
 
+        # This flag tells that the segment is occupied by a train.
+        self.occupied = False
+
 #------------------ TRACK DEFINITION ----------------------------
+
+station_segment_names = {COUNTER_CLOCKWISE: "RED_1",
+                         CLOCKWISE: "RED_2"}
 
 # segments
 segments = {"RED_1": Segment(RED, is_fast=False),

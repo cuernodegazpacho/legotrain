@@ -18,12 +18,12 @@ V_LIMIT = 23.0
 HUE[RED]    = (0.90, 1.00)  # min and max hue for red
 HUE[GREEN]  = (0.37, 0.54)
 HUE[BLUE]   = (0.58, 0.63)
-HUE[YELLOW] = (0.67, 0.71)
+HUE[YELLOW] = (0.66, 0.72)
 
 SATURATION[RED]    = (0.52, 0.82)  # min and max saturation for red
 SATURATION[GREEN]  = (0.20, 0.59)
 SATURATION[BLUE]   = (0.56, 0.76)
-SATURATION[YELLOW] = (0.42, 0.51)
+SATURATION[YELLOW] = (0.41, 0.51)
 
 sign = lambda x: x and (1, -1)[x<0]
 
@@ -91,8 +91,10 @@ class EventProcessor:
 
         if event in [RED]:
 
-            self.train.check_acceleration_thread()
+            # at station, re-initialize train segment tracking
+            self.train.initialize_segments()
 
+            self.train.check_acceleration_thread()
             # action = track.segments[event]
 
             sleep(0.01)
@@ -107,24 +109,32 @@ class EventProcessor:
             if self.train.secondary_train is not None:
                 self.train.secondary_train.stop()
 
-        elif event in [YELLOW]:
-            if self.train.segment.color == YELLOW:
-                # train is already in yellow segment, so this event
-                # signals that it is exiting the segment. Tell the
-                # train that it is in a new segment now.
-                segment = self.train.segment
-                self.train.segment = segment.next[self.train.direction]
-                print("Exiting YELLOW segment. Train segment is ", self.train.segment.color)
+        elif event in [YELLOW, BLUE]:
+            # if the most recent signal event has a color identical to the
+            # segment color where the train is right now, this means the train
+            # detected the segment end signal, and is departing the segment.
+            # It's now entering the inter-segment zone.
+            if self.train.segment is not None and \
+                    self.train.segment.color is not None and \
+                    self.train.segment.color == event:
+                self.train.previous_segment = self.train.segment
+                self.train.segment = None
+                print("Exiting segment ", event)
 
-                # yellow segment precedes a station stop for both clockwise
+                # YELLOW segment precedes a station stop for both clockwise
                 # and counter-clockwise directions. This should however be
                 # integrated in the red segment handling.
-                self._slowdown()
+                if event in [YELLOW]:
+                    self._slowdown()
+
+            elif self.train.segment is None:
+                # train is moving from inter-segment zone into new segment
+                self.train.segment = self.train.previous_segment.next[self.train.direction]
+                print("Entering segment ", self.train.segment.color)
 
             else:
-                # train is entering YELLOW segment
-                self.train.segment = segments[YELLOW]
-                print("Entering YELLOW segment")
+                print("ERROR: detected signal inside segment")
+
 
 
     def _slowdown(self):
@@ -144,8 +154,8 @@ class EventProcessor:
         # a sequence of 6 deceleration steps has 5 sleeping intervals. It
         # is executed in approx. 1 sec. Normalize so it takes about the
         # same time regardless of current speed.
-        # sleep_time = 6. / len(power_index_range) * 0.2
-        sleep_time = 6. / len(power_index_range) * 0.1  # TODO test for fast stop (2-car = 0.1, 1-car = 0.05)
+        sleep_time = 6. / len(power_index_range) * 0.15
+        # sleep_time = 6. / len(power_index_range) * 0.1  # TODO test for fast stop (2-car = 0.1, 1-car = 0.05)
         sleep_time *= 6. / current_power_index_value
         sleep_time *= 1.1  # fudge factor
         self.train.accelerate(power_index_range, sign(self.train.power_index), sleep_time=sleep_time)
