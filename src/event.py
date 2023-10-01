@@ -89,6 +89,9 @@ class EventProcessor:
 
         print("Event:  ", event)
 
+        # RED events are reserved for handling segments that contain a
+        # train stop (station). As such, they require a specialized logic
+        # that differs from the logic applied to regular track segments.
         if event in [RED]:
 
             # at station, re-initialize train segment tracking
@@ -118,6 +121,10 @@ class EventProcessor:
                     self.train.segment.color is not None and \
                     self.train.segment.color == event:
                 self.train.previous_segment = self.train.segment
+
+                # free current segment. TODO this should be handled elsewhere.
+                self.train.segment.occupied = False
+
                 self.train.segment = None
                 print("Exiting segment ", event)
 
@@ -131,6 +138,11 @@ class EventProcessor:
                 # train is moving from inter-segment zone into new segment
                 self.train.segment = self.train.previous_segment.next[self.train.direction]
                 print("Entering segment ", self.train.segment.color)
+
+                # lock segment. This was probably handled somewhere else, before
+                # the train had taken the decision to enter the segment. But we do
+                # it again here just in case.
+                self.train.segment.occupied = True
 
             else:
                 print("ERROR: detected signal inside segment")

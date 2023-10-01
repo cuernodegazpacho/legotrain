@@ -6,11 +6,15 @@ COUNTER_CLOCKWISE = "counter_clockwise"
 class Segment():
     def __init__(self, color, is_fast=True):
         '''
+        Encapsulates properties of a track segment. Segments are used
+        to isolate sections of a continuous track, such that only one
+        train can be at any given segment at any time.
 
-
-
-
-
+        As trains move in and out of segments, they mark the segment
+        they are currently in as occupied, so that other trains can
+        avoid entering that same segment. A train can book a given
+        segment in advance when necessary, to prevent other trains
+        from taking it. Trains free segments when they leave them.
 
         :param color: the segment's color
         :param is_fast: if True, the segment has an internal sub-segment that
