@@ -11,10 +11,10 @@ from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN
 
 import uuid_definitions
 from track import CLOCKWISE, COUNTER_CLOCKWISE
-from track import segments, station_segment_names
+from track import sectors, station_sector_names
 from event import EventProcessor, SensorEventFilter
-from signal import RED, GREEN, BLUE, YELLOW
 from event import HUE, SATURATION, RGB_LIMIT, V_LIMIT
+from signal import RED, GREEN, BLUE, YELLOW
 from gui import tkinter_output_queue
 
 sign = lambda x: x and (1, -1)[x<0]
@@ -65,7 +65,7 @@ class Train:
         self.led_secondary_color = led_secondary_color
 
         # In this current implementation, this attribute is only used
-        # by subclasses that should be aware of the segment structure
+        # by subclasses that should be aware of the sector structure
         # of the track.
         self.direction = direction
 
@@ -386,12 +386,12 @@ class SmartTrain(Train):
         self.sensor_event_filter = SensorEventFilter(self)
         self.event_processor = EventProcessor(self)
 
-        self.initialize_segments()
+        self.initialize_sectors()
 
-    def initialize_segments(self):
+    def initialize_sectors(self):
         # assume train is departing from station
-        self.segment = None
-        self.previous_segment = segments[station_segment_names[self.direction]]
+        self.sector = None
+        self.previous_sector = sectors[station_sector_names[self.direction]]
 
     def timed_stop_at_station(self):
         # start a timed wait interval at a station, and handle the hub's LED behavior.
