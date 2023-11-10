@@ -1,5 +1,6 @@
 import time
 from time import sleep
+from threading import Timer
 
 from signal import RED, GREEN, BLUE, YELLOW
 from track import StructuredSector, FAST, SLOW
@@ -123,7 +124,8 @@ class EventProcessor:
             # It's now entering the inter-sector zone.
             if self.train.sector is not None and \
                     self.train.sector.color is not None and \
-                    self.train.sector.color == event:
+                    self.train.sector.color == event and \
+                    not self.train.just_entered_sector:
                 self.train.previous_sector = self.train.sector
 
                 # free current sector. TODO this should be handled elsewhere.
@@ -178,6 +180,12 @@ class EventProcessor:
                 # the train had taken the decision to enter the sector. But we do
                 # it again here just in case.
                 self.train.sector.occupied = True
+
+                # set up timer for sanity check to prevent false detections
+                # of a spurious end-of-sector signal
+                self.train.time_in_sector = Timer(7, self.train.mark_exit_valid)
+                self.train.just_entered_sector = True
+                self.train.time_in_sector.start()
 
             else:
                 print("ERROR: detected signal inside sector")
