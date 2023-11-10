@@ -37,13 +37,13 @@ class Sector():
 
 class StructuredSector(Sector):
     '''
-    A Structuredsector contains a higher-speed stretch and a lower-speed
+    A StructuredSector contains a higher-speed stretch and a lower-speed
     stretch within it. An attribute in the sector tells where the train is
     located. The stretches are separated by a signal with same color as
     the sector itself.
     '''
     def __init__(self, color, is_fast=True):
-        super(Sector, self).__init__(color, is_fast=is_fast)
+        super(StructuredSector, self).__init__(color, is_fast=is_fast)
 
         # defaults assume the train enters the sector via its FAST side.
         self.sub_sector_type = FAST

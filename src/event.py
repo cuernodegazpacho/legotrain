@@ -121,15 +121,15 @@ class EventProcessor:
             # sector color where the train is right now, this means the train
             # detected the sector end signal, and is departing the sector.
             # It's now entering the inter-sector zone.
-            if self.train.Sector is not None and \
-                    self.train.Sector.color is not None and \
-                    self.train.Sector.color == event:
-                self.train.previous_sector = self.train.Sector
+            if self.train.sector is not None and \
+                    self.train.sector.color is not None and \
+                    self.train.sector.color == event:
+                self.train.previous_sector = self.train.sector
 
                 # free current sector. TODO this should be handled elsewhere.
-                self.train.Sector.occupied = False
+                self.train.sector.occupied = False
 
-                self.train.Sector = None
+                self.train.sector = None
                 print("Exiting sector ", event)
 
                 # YELLOW sector precedes a station stop for both clockwise
@@ -144,15 +144,15 @@ class EventProcessor:
                 # BLUE signal may indicate either the FAST-SLOW decision point within
                 # blue sector, or just the end of that sector. Decide which one
                 # based on sector type.
-                if event in [BLUE] and isinstance(self.train.Sector, StructuredSector):
+                if event in [BLUE] and isinstance(self.train.sector, StructuredSector):
 
                     # decision on how to behave from now on depends on the
                     # occupancy status of the next sector ahead of train.
-                    next_sector = self.train.Sector.next[self.train.direction]
+                    next_sector = self.train.sector.next[self.train.direction]
 
-                    if self.train.Sector.sub_sector_type == FAST:
+                    if self.train.sector.sub_sector_type == FAST:
                         # leaving FAST subsector and entering SLOW
-                        self.train.Sector.sub_sector_type = SLOW
+                        self.train.sector.sub_sector_type = SLOW
 
                         # train should slow down and eventually stop only if
                         # next sector is occupied. Otherwise, grab next sector.
@@ -163,21 +163,21 @@ class EventProcessor:
                             # next sector is free. Grab it.
                             next_sector.occupied = True
 
-                    elif self.train.Sector.sub_sector_type == SLOW:
+                    elif self.train.sector.sub_sector_type == SLOW:
                         # leaving SLOW sector. Either do a full stop-and-wait,
                         # or keep going based on occupancy status of next sector
                         if next_sector.occupied:
                             self._stop_and_wait()
 
-            elif self.train.Sector is None:
+            elif self.train.sector is None:
                 # train is moving from inter-sector zone into new sector
-                self.train.Sector = self.train.previous_sector.next[self.train.direction]
-                print("Entering sector ", self.train.Sector.color)
+                self.train.sector = self.train.previous_sector.next[self.train.direction]
+                print("Entering sector ", self.train.sector.color)
 
                 # lock sector. This was probably handled somewhere else, before
                 # the train had taken the decision to enter the sector. But we do
                 # it again here just in case.
-                self.train.Sector.occupied = True
+                self.train.sector.occupied = True
 
             else:
                 print("ERROR: detected signal inside sector")
