@@ -31,8 +31,8 @@ class Sector():
         # sense of motion (clockwise or counter-clockwise).
         self.next = {}
 
-        # This flag tells that the sector is occupied by a train.
-        self.occupied = False
+        # This flag tells what train owns the sector.
+        self.occupier = None
 
 
 class StructuredSector(Sector):
