@@ -19,6 +19,8 @@ from gui import tkinter_output_queue
 
 sign = lambda x: x and (1, -1)[x<0]
 
+MAX_AUTO_SPEED = 4   # max speed setting for smart trains
+
 
 class Train:
     '''
@@ -397,6 +399,12 @@ class SmartTrain(Train):
         self.sector = None
         self.previous_sector = sectors[station_sector_names[self.direction]]
 
+
+        #TODO
+        sectors[YELLOW].occupier = "AAAA"
+
+
+
     def timed_stop_at_station(self):
         # start a timed wait interval at a station, and handle the hub's LED behavior.
         time_station = random.uniform(5., 6.)
@@ -418,7 +426,7 @@ class SmartTrain(Train):
         else:
             power_index_signal = -1
 
-        self.accelerate(list(range(1, 6)), power_index_signal)
+        self.accelerate(list(range(1, MAX_AUTO_SPEED+1)), power_index_signal)
 
     def _vision_sensor_callback(self, *args, **kwargs):
         # use HSV as criterion for mapping colors

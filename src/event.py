@@ -6,7 +6,7 @@ from signal import RED, GREEN, BLUE, YELLOW
 from track import StructuredSector, FAST, SLOW
 
 
-TIME_THRESHOLD = 0.6 # seconds
+TIME_THRESHOLD = 0.8 # seconds
 
 # Vision sensor colorimetry parameters.
 # TODO preliminary values taken from colorimetry analysis
@@ -92,8 +92,6 @@ class EventProcessor:
         '''
         # red signal means stop at station
 
-        print("Event:  ", event)
-
         # RED events are reserved for handling sectors that contain a
         # train stop (station). As such, they require a specialized logic
         # that differs from the logic applied to regular track sectors.
@@ -151,33 +149,22 @@ class EventProcessor:
                         else:
                             # next sector is free. Grab it.
                             next_sector.occupier = self.train.name
-                            print("Grabbed next sector: ", next_sector.occupier)
+                            print("Grabbing next sector: ", next_sector.color, next_sector.occupier)
 
                     else:
                         # leaving SLOW sector. Either do a full stop-and-wait,
                         # or keep going, based on occupancy status of next sector
                         if next_sector.occupier != self.train.name:
                             self._stop_and_wait()
-
                         else:
-                            self.train.previous_sector = self.train.sector
+                            self._exit_sector(event)
 
-                            # free current sector. TODO this should be handled elsewhere.
-                            self.train.sector.occupier = None
-
-                            # entering inter-sector zone
-                            self.train.sector = None
-                            print("Exiting sector (1)", event)
-
-                # YELLOW sector precedes a station stop for both clockwise
-                # and counter-clockwise directions. This should however be
-                # integrated in the red sector handling.
+                # YELLOW sector precedes a station stop for both clockwise and counter-clockwise
+                # directions. It also signals entry in an inter-sector zone.
                 if event in [YELLOW] and not isinstance(self.train.sector, StructuredSector):
+                    print("Exiting YELLOW sector into inter-sector zone:  slowing down")
+                    self._exit_sector(event)
                     self._slowdown()
-
-#TODO code below requires handling of None sector
-
-
 
             elif self.train.sector is None:
                 # train is moving from inter-sector zone into new sector
@@ -201,6 +188,16 @@ class EventProcessor:
 
             else:
                 print("ERROR: detected spurious signal inside sector")
+
+    def _exit_sector(self, event):
+        self.train.previous_sector = self.train.sector
+
+        # free current sector.
+        self.train.sector.occupier = None
+
+        # entering inter-sector zone
+        self.train.sector = None
+        print("Exiting sector ", event)
 
     def _slowdown(self):
         # the train might be moving backwards, so first we generate
@@ -226,14 +223,9 @@ class EventProcessor:
         self.train.accelerate(power_index_range, sign(self.train.power_index), sleep_time=sleep_time)
 
     def _stop_and_wait(self):
+        self._exit_sector("Stop and wait")
 
-        #TODO here we have to reset that fast/slow logic on the sector when departing it
+        #TODO execute stop-and-wait sequence/thread here
 
-        self.train.previous_sector = self.train.sector
+        self.train.stop()
 
-        # free current sector. TODO this should be handled elsewhere.
-        self.train.sector.occupier = None
-
-        # entering inter-sector zone
-        self.train.sector = None
-        print("Exiting sector (2)")
