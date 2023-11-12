@@ -19,7 +19,7 @@ from gui import tkinter_output_queue
 
 sign = lambda x: x and (1, -1)[x<0]
 
-MAX_AUTO_SPEED = 4   # max speed setting for smart trains
+MAX_AUTO_SPEED = 5   # max speed setting for smart trains
 
 
 class Train:
@@ -399,11 +399,17 @@ class SmartTrain(Train):
         self.sector = None
         self.previous_sector = sectors[station_sector_names[self.direction]]
 
-
-        #TODO
-        sectors[YELLOW].occupier = "AAAA"
-
-
+    def switch_semaphore(self):
+        # this method is used only to debug the sector enter-exit logic.
+        # It should be called by a handset right button when in 1-train
+        # configuration. That way, pressing the button causes the sector
+        # to open and close.
+        if sectors[YELLOW].occupier is None:
+            sectors[YELLOW].occupier = "AAAA"
+            print("YELLOW sector OCCUPIED")
+        else:
+            sectors[YELLOW].occupier = None
+            print("YELLOW sector OPEN")
 
     def timed_stop_at_station(self):
         # start a timed wait interval at a station, and handle the hub's LED behavior.

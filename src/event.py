@@ -133,14 +133,14 @@ class EventProcessor:
 
                         # leaving FAST subsector and entering SLOW
                         self.train.sector.sub_sector_type = SLOW
-                        print("On SLOW sub-sector now")
+                        # print("On SLOW sub-sector now")
 
                         # Decision on how to behave from now on depends on the
                         # occupancy status of the next sector ahead of train.
                         # Train should slow down and eventually stop only if
                         # next sector is occupied. Otherwise, grab next sector.
 
-                        print("DBG:  ", next_sector.occupier, self.train.name)
+                        # print("DBG:  ", next_sector.occupier, self.train.name)
 
                         if next_sector.occupier is not None and \
                            next_sector.occupier != self.train.name:
@@ -149,27 +149,28 @@ class EventProcessor:
                         else:
                             # next sector is free. Grab it.
                             next_sector.occupier = self.train.name
-                            print("Grabbing next sector: ", next_sector.color, next_sector.occupier)
+                            # print("Grabbing next sector: ", next_sector.color, next_sector.occupier)
 
                     else:
                         # leaving SLOW sector. Either do a full stop-and-wait,
                         # or keep going, based on occupancy status of next sector
-                        if next_sector.occupier != self.train.name:
-                            self._stop_and_wait()
+                        if next_sector.occupier is not None and \
+                           next_sector.occupier != self.train.name:
+                            self._stop_and_wait(next_sector)
                         else:
                             self._exit_sector(event)
 
                 # YELLOW sector precedes a station stop for both clockwise and counter-clockwise
                 # directions. It also signals entry in an inter-sector zone.
                 if event in [YELLOW] and not isinstance(self.train.sector, StructuredSector):
-                    print("Exiting YELLOW sector into inter-sector zone:  slowing down")
+                    # print("Exiting YELLOW sector into inter-sector zone:  slowing down")
                     self._exit_sector(event)
                     self._slowdown()
 
             elif self.train.sector is None:
                 # train is moving from inter-sector zone into new sector
                 self.train.sector = self.train.previous_sector.next[self.train.direction]
-                print("Entering sector ", self.train.sector.color)
+                # print("Entering sector ", self.train.sector.color)
 
                 # structured segments start with a FAST sub-sector
                 if isinstance(self.train.sector, StructuredSector):
@@ -197,7 +198,7 @@ class EventProcessor:
 
         # entering inter-sector zone
         self.train.sector = None
-        print("Exiting sector ", event)
+        # print("Exiting sector ", event)
 
     def _slowdown(self):
         # the train might be moving backwards, so first we generate
@@ -222,10 +223,16 @@ class EventProcessor:
         sleep_time *= 1.1  # fudge factor
         self.train.accelerate(power_index_range, sign(self.train.power_index), sleep_time=sleep_time)
 
-    def _stop_and_wait(self):
-        self._exit_sector("Stop and wait")
+    def _stop_and_wait(self, next_sector):
 
-        #TODO execute stop-and-wait sequence/thread here
 
+        print("Stop: ", self.train.name)
         self.train.stop()
 
+        while next_sector.occupier is not None and \
+              next_sector.occupier != self.train.name:
+            time.sleep(0.5)
+
+        print("Restart movement: ", self.train.name)
+        self.train.restart_movement()
+        # self._exit_sector("Stop and wait")
