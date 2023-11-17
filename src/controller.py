@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
     # ---------------------- Smart train setup ----------------------------
 
-    # train = SmartTrain("Train", "1", lock=lock, report=True, record=True,
+    # train = SmartTrain("Train 1", "1", lock=lock, report=True, record=True,
     #                         gui=gui, address=uuid_definitions.HUB_ORIG)
     # controller(train)
 

@@ -4,15 +4,15 @@ from time import sleep
 from colorsys import rgb_to_hsv
 import numpy as np
 
+from pylgbst.hub import SmartHub
 from src import uuid_definitions
 
-from pylgbst.hub import SmartHub
+LIMIT = 600
 
 
 def demo_color_sensor(smart_hub):
     print("Color sensor test: wave your hand in front of it")
     demo_color_sensor.cnt = 0
-    limit = 300
 
     bg_list = []
     gr_list = []
@@ -64,7 +64,7 @@ def demo_color_sensor(smart_hub):
 
     smart_hub.vision_sensor.subscribe(callback, granularity=2, mode=6)
 
-    while demo_color_sensor.cnt < limit:
+    while demo_color_sensor.cnt < LIMIT:
         sleep(1)
 
     smart_hub.vision_sensor.unsubscribe(callback)
@@ -89,7 +89,7 @@ def ingest(filename):
     return RGB_list
 
 if __name__ == '__main__':
-    smart_hub = SmartHub(address=uuid_definitions.HUB_TEST)   # test hub
+    smart_hub = SmartHub(address=uuid_definitions.HUB_ORIG)   # original hub
     demo_color_sensor(smart_hub)
 
     # # alternate form that reads RGB data from file

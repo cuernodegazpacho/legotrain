@@ -1,5 +1,5 @@
 import sys
-import datetime
+import time, datetime
 import random
 from time import sleep
 from threading import Thread, Timer, RLock
@@ -12,14 +12,14 @@ from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN
 import uuid_definitions
 from track import CLOCKWISE, COUNTER_CLOCKWISE
 from track import sectors, station_sector_names
-from event import EventProcessor, SensorEventFilter
+from event import EventProcessor, DummyEventProcessor, SensorEventFilter
 from event import HUE, SATURATION, RGB_LIMIT, V_LIMIT
 from signal import RED, GREEN, BLUE, YELLOW
 from gui import tkinter_output_queue
 
 sign = lambda x: x and (1, -1)[x<0]
 
-MAX_AUTO_SPEED = 5   # max speed setting for smart trains
+MAX_AUTO_SPEED = 3   # max speed setting for smart trains
 
 
 class Train:
@@ -391,6 +391,7 @@ class SmartTrain(Train):
         # to filter out multiple detections, before being handled.
         self.sensor_event_filter = SensorEventFilter(self)
         self.event_processor = EventProcessor(self)
+        # self.event_processor = DummyEventProcessor(self) # for debugging only
 
         self.initialize_sectors()
 
@@ -399,21 +400,9 @@ class SmartTrain(Train):
         self.sector = None
         self.previous_sector = sectors[station_sector_names[self.direction]]
 
-    def switch_semaphore(self):
-        # this method is used only to debug the sector enter-exit logic.
-        # It should be called by a handset right button when in 1-train
-        # configuration. That way, pressing the button causes the sector
-        # to open and close.
-        if sectors[YELLOW].occupier is None:
-            sectors[YELLOW].occupier = "AAAA"
-            print("YELLOW sector OCCUPIED")
-        else:
-            sectors[YELLOW].occupier = None
-            print("YELLOW sector OPEN")
-
     def timed_stop_at_station(self):
         # start a timed wait interval at a station, and handle the hub's LED behavior.
-        time_station = random.uniform(5., 6.)
+        time_station = random.uniform(5., 10.)
         self.timer_station = Timer(time_station, self.restart_movement)
         self.timer_station.start()
 
@@ -431,6 +420,16 @@ class SmartTrain(Train):
             power_index_signal = 1
         else:
             power_index_signal = -1
+
+        # Check occupancy status of next sector. Note that restart_movement
+        # is always called immediately *after* the train is internally set to
+        # indicate it left a sector. Thus, train.sector was set to None, and
+        # train.previous_sector was set to the sector the train is departing
+        # from.
+        next_sector = self.previous_sector.next[self.direction]
+        while next_sector.occupier is not None and \
+              next_sector.occupier != self.name:
+            time.sleep(0.5)
 
         self.accelerate(list(range(1, MAX_AUTO_SPEED+1)), power_index_signal)
 
@@ -459,6 +458,19 @@ class SmartTrain(Train):
     # to prevent spurious end-of-sector detections.
     def mark_exit_valid(self):
         self.just_entered_sector = False
+
+    def switch_semaphore(self):
+        # this method is used only to debug the sector enter-exit logic.
+        # It should be called by a handset right button when in 1-train
+        # configuration. That way, pressing the button causes the sector
+        # to open and close.
+        if sectors[YELLOW].occupier is None:
+            sectors[YELLOW].occupier = "AAAA"
+            print("YELLOW sector OCCUPIED")
+        else:
+            sectors[YELLOW].occupier = None
+            print("YELLOW sector OPEN")
+
 
 
 class CompoundTrain():
