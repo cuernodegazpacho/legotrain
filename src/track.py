@@ -7,7 +7,7 @@ FAST = 0
 SLOW = 1
 
 class Sector():
-    def __init__(self, color, is_fast=True):
+    def __init__(self, color, max_speed=6, max_speed_time=8):
         '''
         Encapsulates properties of a track sector. sectors are used
         to isolate sections of a continuous track, such that only one
@@ -19,12 +19,18 @@ class Sector():
         sector in advance when necessary, to prevent other trains
         from taking it. Trains free sectors when they leave them.
 
+        Sectors support variable speed. For now, we define a high speed
+        setting that should be maintained for a given time, after which
+        the train returns to its default auto-control speed.
+
         :param color: the sector's color
-        :param is_fast: if True, the sector has an internal sub-sector that
-                        can be travelled at faster speeds.
+        :param max_speed: the speed setting to which the train must
+            accelerate when entering the sector
+        :param max_speed_time: the time to sustain max speed (in sec.)
         '''
         self.color = color
-        self.is_fast = is_fast
+        self.max_speed = max_speed
+        self.max_speed_time = max_speed_time
 
         # Describes sector position in track. For now, this is a 2-element dict
         # with pointers to the two neighboring sectors, keyed by the train's
@@ -41,24 +47,33 @@ class StructuredSector(Sector):
     stretch within it. An attribute in the sector tells where the train is
     located. The stretches are separated by a signal with same color as
     the sector itself.
+
+    :param color: the sector's color
+    :param max_speed: the speed setting to which the train must
+        accelerate when entering the sector
+    :param max_speed_time: the time to sustain max speed (in sec.)
     '''
-    def __init__(self, color, is_fast=True):
-        super(StructuredSector, self).__init__(color, is_fast=is_fast)
+    def __init__(self, color, max_speed=6, max_speed_time=8):
+        super(StructuredSector, self).__init__(color, max_speed=max_speed,
+                                               max_speed_time=max_speed_time)
 
         # defaults assume the train enters the sector via its FAST side.
+        # Note that a physical sector may have two SLOW sub-sectors, one
+        # at each end. However, for any given train direction, only one
+        # is visible.
         self.sub_sector_type = FAST
 
 
 #------------------ TRACK DEFINITION ----------------------------
 
 station_sector_names = {COUNTER_CLOCKWISE: "RED_1",
-                         CLOCKWISE: "RED_2"}
+                        CLOCKWISE: "RED_2"}
 
 # sectors
-sectors = {"RED_1": Sector(RED, is_fast=False),
-            YELLOW: Sector(YELLOW),
-            "RED_2": Sector(RED, is_fast=False),
-            BLUE: StructuredSector(BLUE)
+sectors = {"RED_1": Sector(RED),
+           YELLOW: Sector(YELLOW),
+           "RED_2": Sector(RED),
+           BLUE: StructuredSector(BLUE, max_speed_time=6)
            }
 
 # The track layout is defined by how the sectors connect to each

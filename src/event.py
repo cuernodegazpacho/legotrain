@@ -103,6 +103,14 @@ class EventProcessor:
             sleep(0.01)
             self.train.stop()
 
+            # make sure previous sector is released.
+            self.train.previous_sector.occupier = None
+
+            # mark current sector as occupied. Note that this is not
+            # strictly required in the current implementation, but we
+            # do it anyway for debugging and logging purposes.
+            self.train.previous_sector.next[self.train.direction].occupier = self.train.name
+
             # after stopping at station, execute a Timer delay followed by a re-start
             self.train.timed_stop_at_station()
 
@@ -204,11 +212,22 @@ class EventProcessor:
                 # it again here just in case.
                 self.train.sector.occupier = self.train.name
 
+                # make sure previous sector is released.
+                self.train.previous_sector.occupier = None
+
                 # set up timer for sanity check to prevent false detections
                 # of a spurious end-of-sector signal
                 self.train.time_in_sector = Timer(6, self.train.mark_exit_valid)
                 self.train.just_entered_sector = True
                 self.train.time_in_sector.start()
+
+                # when entering sector, set timed speedup
+                if self.train.speedup_timer is not None:
+                    self.train.speedup_timer.cancel()
+                self.train.speedup_timer = Timer(self.train.sector.max_speed_time,
+                                                 self.train.return_to_default_speed)
+                self.train.speedup_timer.start()
+                self.train.accelerate(list(range(self.train.power_index, self.train.sector.max_speed + 1)), 1)
 
                 self._debug(self.train.name + " entering sector ")
 
@@ -222,7 +241,7 @@ class EventProcessor:
         self.train.previous_sector = self.train.sector
 
         # free current sector.
-        self.train.sector.occupier = None
+        # self.train.sector.occupier = None
 
         # entering inter-sector zone
         self.train.sector = None
