@@ -381,7 +381,7 @@ class SmartTrain(Train):
     '''
     def __init__(self, name, gui_id="0", lock=None, report=False, record=False, linear=False,
                  gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
-                 direction=COUNTER_CLOCKWISE,
+                 direction=COUNTER_CLOCKWISE, process_events=True,
                  address=uuid_definitions.HUB_TEST): # test hub
 
         super(SmartTrain, self).__init__(name, gui_id, lock, report=report, record=record, linear=linear,

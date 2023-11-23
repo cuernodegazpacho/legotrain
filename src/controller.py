@@ -86,6 +86,7 @@ class Controller:
         # store values from most recent handset action
         self.button = button
         self.set = set
+        self.time = None
 
         # select action on train speed based on which button was pressed
         self.handset_actions[self.set][self.button]()
