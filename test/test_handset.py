@@ -39,8 +39,24 @@ class HandsetHandler():
     def __init__(self, handset):
         self.handset = handset
 
+        self.buffer = []
+
     def callback_from_button(self, button, button_set):
         print("value from callback: ", button, button_set)
+
+        # keep buffer small
+        if len(self.buffer) > 4:
+            self.buffer.pop(0)
+
+        # store button actions of interest
+        if button in [RemoteButton.RED, RemoteButton.RELEASE]:
+            self.buffer.append(button)
+
+        # check that a dual button press happened
+        for i in range(len(self.buffer)-1):
+            if self.buffer[i] is RemoteButton.RED and self.buffer[i+1] is RemoteButton.RED:
+                print("Dual RED button press")
+                self.buffer = []
 
 
 remote_handler = HandsetHandler(remote1)
