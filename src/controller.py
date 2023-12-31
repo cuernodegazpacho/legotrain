@@ -6,6 +6,9 @@ from pylgbst.peripherals import RemoteButton, COLOR_PURPLE
 
 import uuid_definitions
 
+import track
+from train import SmartTrain
+
 DUAL = "dual"
 LONG = "long"
 
@@ -121,14 +124,31 @@ class Controller:
         self.train1.stop()
         self.train2.stop()
 
-        #TODO reset track; reset trains, keep trains on manual mode; turn off signals
+        # both trains should be conducted from now on just in manual mode
+        if isinstance(self.train1, SmartTrain) and isinstance(self.train2, SmartTrain):
+            self.train1.auto = False
+            self.train2.auto = False
 
-        print("RESET_ALL: Long RED button press")
+        # print("RESET_ALL: Long RED button press")
 
     def _restart(self):
-        #TODO turn on signals, start each train in turn
+        # this method assumes the trains are stopped at they designated stations,
+        # after manual mode was entered, and they were driven manually to there.
 
-        print("RESTART: Dual RED button press")
+        track.clear_track()
+
+        if isinstance(self.train1, SmartTrain) and isinstance(self.train2, SmartTrain):
+            self.train1.auto = True
+            self.train2.auto = True
+
+            self.train1.initialize_sectors()
+            self.train2.initialize_sectors()
+
+            self.train1.timed_stop_at_station()
+            time.sleep(1.0)
+            self.train2.timed_stop_at_station()
+
+            # print("RESTART: Dual RED button press")
 
 
 
@@ -146,7 +166,7 @@ class HandsetHandler:
         self.buffer = []
 
     def callback_from_button(self, button, button_set):
-        print("value from callback: ", button, button_set)
+        # print("value from callback: ", button, button_set)
 
         event = HandsetEvent(button)
 

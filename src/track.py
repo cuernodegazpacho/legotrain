@@ -1,4 +1,4 @@
-from signal import RED, GREEN, BLUE, YELLOW
+from signal import RED, BLUE, YELLOW
 
 CLOCKWISE = "clockwise"
 COUNTER_CLOCKWISE = "counter_clockwise"
@@ -64,6 +64,11 @@ class StructuredSector(Sector):
         self.sub_sector_type = FAST
 
 
+def clear_track():
+    for sector in sectors.items():
+        sector[1].occupier = None
+
+
 #------------------ TRACK DEFINITION ----------------------------
 
 station_sector_names = {COUNTER_CLOCKWISE: "RED_1",
@@ -89,9 +94,9 @@ sectors = {"RED_1": Sector(RED),
 # dict.
 
 # clockwise track
-sectors["RED_2"].next[CLOCKWISE] = sectors[YELLOW]
-sectors[YELLOW].next[CLOCKWISE] = sectors[BLUE]
-sectors[BLUE].next[CLOCKWISE] = sectors["RED_2"]
+sectors["RED_2"].next[CLOCKWISE] = sectors[BLUE]
+sectors[BLUE].next[CLOCKWISE] = sectors[YELLOW]
+sectors[YELLOW].next[CLOCKWISE] = sectors["RED_2"]
 
 # counter-clockwise track
 sectors["RED_1"].next[COUNTER_CLOCKWISE] = sectors[BLUE]

@@ -84,6 +84,10 @@ class Train:
         # as when dealing with sensors.
         self.event_processor = None
 
+        # subclasses may implement automatic control modes (self-driving);
+        # this flag can be used to toggle between that, and manual mode.
+        self.auto = False
+
         # lock to control threaded access to hub functions
         self.lock = lock
         if self.lock is None:
@@ -101,7 +105,7 @@ class Train:
         # station for a timed interval, and to accelerate a train
         # gradually between two power settings.
         # These threads must be checked and eventually cancelled whenever
-        # a up_speed, down_speed, or stop command is issued by either the
+        # an up_speed, down_speed, or stop command is issued by either the
         # user or the controlling script.
         self.timer_station = None
         self.acceleration_thread = None
@@ -163,12 +167,12 @@ class Train:
         self.set_power(power_index)
 
     def set_power(self, power_index):
-        self._check_timer_station()
+        self.check_timer_station()
         self.power_index = power_index
         self.motor_handler.set_motor_power(self.power_index, self.voltage)
         self.led_handler.set_status_led(self.power_index)
 
-    def _check_timer_station(self):
+    def check_timer_station(self):
         if self.timer_station is not None:
             self.timer_station.cancel()
             self.timer_station = None
@@ -381,7 +385,7 @@ class SmartTrain(Train):
     '''
     def __init__(self, name, gui_id="0", lock=None, report=False, record=False, linear=False,
                  gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
-                 direction=COUNTER_CLOCKWISE, process_events=True,
+                 direction=CLOCKWISE, process_events=True,
                  address=uuid_definitions.HUB_TEST): # test hub
 
         super(SmartTrain, self).__init__(name, gui_id, lock, report=report, record=record, linear=linear,
@@ -406,12 +410,30 @@ class SmartTrain(Train):
         self.previous_sector = sectors[station_sector_names[self.direction]]
 
     def timed_stop_at_station(self):
+        # this only happens in auto mode
+        if not self.auto:
+            return
+
         # start a timed wait interval at a station, and handle the hub's LED behavior.
-        time_station = random.uniform(3., 5.)
+        time_station = random.uniform(3., 10.)
         self.timer_station = Timer(time_station, self.restart_movement)
         self.timer_station.start()
 
     def restart_movement(self):
+        # Check occupancy status of next sector. Note that restart_movement
+        # is always called immediately *after* the train is internally set to
+        # indicate it left a sector. Thus, train.sector was set to None, and
+        # train.previous_sector was set to the sector the train is departing
+        # from.
+        self.led_handler.set_solid(COLOR_ORANGE)
+        next_sector = self.previous_sector.next[self.direction]
+        while next_sector.occupier is not None and \
+              next_sector.occupier != self.name:
+            time.sleep(0.5)
+
+        # immediately occupy next sector
+        next_sector.occupier = self.name
+
         self.led_handler.set_solid(COLOR_GREEN)
         if self.secondary_train is not None:
             self.secondary_train.led_handler.set_solid(COLOR_GREEN)
@@ -425,16 +447,6 @@ class SmartTrain(Train):
             power_index_signal = 1
         else:
             power_index_signal = -1
-
-        # Check occupancy status of next sector. Note that restart_movement
-        # is always called immediately *after* the train is internally set to
-        # indicate it left a sector. Thus, train.sector was set to None, and
-        # train.previous_sector was set to the sector the train is departing
-        # from.
-        next_sector = self.previous_sector.next[self.direction]
-        while next_sector.occupier is not None and \
-              next_sector.occupier != self.name:
-            time.sleep(0.5)
 
         self.accelerate(list(range(1, MAX_AUTO_SPEED+1)), power_index_signal)
 
@@ -458,7 +470,7 @@ class SmartTrain(Train):
                     self.sensor_event_filter.filter_event(color)
                     return
 
-    # this method will set a flag that tells that is safe now to get an
+    # this method will set a flag that tells that it's safe now to get an
     # end-of-sector signal. The flag is managed by a timer and is used
     # to prevent spurious end-of-sector detections.
     def mark_exit_valid(self):
@@ -532,6 +544,7 @@ class LEDHandler:
     BLINK_TIME = 0.1 # seconds
 
     def __init__(self, train, lock):
+        self.train = train
         self.lock = lock
         self.led = train.hub.led
         self.led_color = train.led_color
@@ -577,7 +590,7 @@ class LEDHandler:
         self.led_thread.start()
 
     def _led_desired_status(self, power_index):
-        return self.BLINKING if power_index == 0 else self.STATIC
+        return self.BLINKING if power_index == 0 and self.train.auto else self.STATIC
 
     def _swap_led_color(self, c1, c2):
         while not self.led_thread_stop_switch:
