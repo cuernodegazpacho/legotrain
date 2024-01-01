@@ -89,6 +89,9 @@ class EventProcessor:
         This method contains the logic for stopping/starting the
         train at sector end points based on the occupied/free
         status of a sector.
+
+        TODO this badly needs refactoring. A conditional-plagued
+        code is not conducive to a modular, scalable design.
         '''
 
         # events should be processed only when in auto mode
