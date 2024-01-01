@@ -6,8 +6,12 @@ COUNTER_CLOCKWISE = "counter_clockwise"
 FAST = 0
 SLOW = 1
 
+MAX_SPEED = 5
+MAX_SPEED_TIME = 8 # s
+
+
 class Sector():
-    def __init__(self, color, max_speed=6, max_speed_time=8):
+    def __init__(self, color, max_speed=MAX_SPEED, max_speed_time=MAX_SPEED_TIME):
         '''
         Encapsulates properties of a track sector. sectors are used
         to isolate sections of a continuous track, such that only one
@@ -53,7 +57,7 @@ class StructuredSector(Sector):
         accelerate when entering the sector
     :param max_speed_time: the time to sustain max speed (in sec.)
     '''
-    def __init__(self, color, max_speed=6, max_speed_time=8):
+    def __init__(self, color, max_speed=MAX_SPEED, max_speed_time=MAX_SPEED_TIME):
         super(StructuredSector, self).__init__(color, max_speed=max_speed,
                                                max_speed_time=max_speed_time)
 

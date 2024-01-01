@@ -1,3 +1,5 @@
+from threading import RLock
+
 from pylgbst.peripherals import COLOR_PURPLE
 
 import uuid_definitions
@@ -19,8 +21,8 @@ buttons in both train and handset won't respond to button presses from this poin
 if __name__ == '__main__':
 
     # global lock for threading access
-    # lock = RLock()
-    lock = None
+    lock = RLock()
+    # lock = None
 
     # Tkinter window for displaying status information
     gui = GUI()

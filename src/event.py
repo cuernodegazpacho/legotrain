@@ -6,7 +6,7 @@ from signal import RED, GREEN, BLUE, YELLOW
 from track import StructuredSector, FAST, SLOW, sectors
 
 
-TIME_THRESHOLD = 1.0 # seconds
+TIME_THRESHOLD = 0.4 # seconds
 
 # Vision sensor colorimetry parameters.
 # TODO preliminary values taken from colorimetry analysis
@@ -238,7 +238,7 @@ class EventProcessor:
 
             else:
                 pass
-                # print("ERROR: detected spurious signal inside sector")
+                print("ERROR: detected spurious signal inside sector")
 
     def _exit_sector(self, event):
 

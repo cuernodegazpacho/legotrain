@@ -7,7 +7,7 @@ from colorsys import rgb_to_hsv
 
 from pylgbst.hub import SmartHub
 from pylgbst.peripherals import Voltage, Current, LEDLight
-from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN
+from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN, COLOR_RED
 
 import uuid_definitions
 from track import CLOCKWISE, COUNTER_CLOCKWISE
@@ -98,8 +98,9 @@ class Train:
         self.motor_handler = MotorHandler(self.motor, self.lock, linear)
         self.power_index = 0
 
-        # led
+        # led control. Set initial status to current power index
         self.led_handler = LEDHandler(self, self.lock)
+        self.led_handler.set_status_led(self.power_index)
 
         # Thread control: threads are used to hold the train at a
         # station for a timed interval, and to accelerate a train
@@ -121,8 +122,8 @@ class Train:
 
     def _start_reporting(self, fp):
         def _print_values():
-            print("\r%s  voltage %5.2f  current %5.2f  speed %i  power %4.2f" %
-                  (self.name, self.voltage, self.current, self.power_index, self.motor_handler.power), end='')
+            # print("\r%s  voltage %5.2f  current %5.2f  speed %i  power %4.2f" %
+            #       (self.name, self.voltage, self.current, self.power_index, self.motor_handler.power), end='')
             sys.stdout.flush()
             if fp is not None:
                 ct = datetime.datetime.now()
@@ -182,6 +183,11 @@ class Train:
         if self.acceleration_thread is not None:
             self.stop_acceleration_thread = True
             self.acceleration_thread = None
+
+        if self.speedup_timer is not None:
+            self.stop_acceleration_thread = True
+            self.speedup_timer.cancel()
+            self.speedup_timer= None
 
     def return_to_default_speed(self):
         self.accelerate([self.power_index, MAX_AUTO_SPEED], 1)
@@ -415,7 +421,7 @@ class SmartTrain(Train):
             return
 
         # start a timed wait interval at a station, and handle the hub's LED behavior.
-        time_station = random.uniform(3., 10.)
+        time_station = random.uniform(2., 8.)
         self.timer_station = Timer(time_station, self.restart_movement)
         self.timer_station.start()
 
@@ -425,7 +431,7 @@ class SmartTrain(Train):
         # indicate it left a sector. Thus, train.sector was set to None, and
         # train.previous_sector was set to the sector the train is departing
         # from.
-        self.led_handler.set_solid(COLOR_ORANGE)
+        self.led_handler.set_solid(COLOR_RED)
         next_sector = self.previous_sector.next[self.direction]
         while next_sector.occupier is not None and \
               next_sector.occupier != self.name:
@@ -541,7 +547,7 @@ class LEDHandler:
     BLINKING = 1
 
     # blinking should be fast to minimize latency in handset response time
-    BLINK_TIME = 0.1 # seconds
+    BLINK_TIME = 0.3 # seconds
 
     def __init__(self, train, lock):
         self.train = train
@@ -554,7 +560,7 @@ class LEDHandler:
         # we require a quite complex thread control mechanism to implement
         # a blinking LED that starts with a delay when the motor stops. The
         # delay is necessary to minimize latency when operating train with
-        # the headset buttons.
+        # the handset buttons.
         self.led_thread = None
         self.delay_timer = None
         self.led_thread_stop_switch = False
@@ -565,7 +571,10 @@ class LEDHandler:
     def set_solid(self, color):
         self._cancel_led_thread()
         self._cancel_delay_timer()
+
+        self.lock.acquire()
         self.led.set_color(color)
+        self.lock.release()
 
     def set_status_led(self, new_power_index):
         # here is the logic that prevents redundant BLE messages to be sent to the train hub
@@ -590,7 +599,7 @@ class LEDHandler:
         self.led_thread.start()
 
     def _led_desired_status(self, power_index):
-        return self.BLINKING if power_index == 0 and self.train.auto else self.STATIC
+        return self.BLINKING if power_index == 0 else self.STATIC
 
     def _swap_led_color(self, c1, c2):
         while not self.led_thread_stop_switch:
