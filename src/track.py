@@ -13,7 +13,7 @@ MAX_SPEED_TIME = 8 # s
 class Sector():
     def __init__(self, color, max_speed=MAX_SPEED, max_speed_time=MAX_SPEED_TIME):
         '''
-        Encapsulates properties of a track sector. sectors are used
+        Encapsulates properties of a track sector. Sectors are used
         to isolate sections of a continuous track, such that only one
         train can be at any given sector at any time.
 
@@ -21,7 +21,8 @@ class Sector():
         they are currently in as occupied, so that other trains can
         avoid entering that same sector. A train can book a given
         sector in advance when necessary, to prevent other trains
-        from taking it. Trains free sectors when they leave them.
+        from taking it. Trains free sectors when they leave them,
+        or, in some cases, only when they enter the next sector.
 
         Sectors support variable speed. For now, we define a high speed
         setting that should be maintained for a given time, after which
@@ -41,7 +42,7 @@ class Sector():
         # sense of motion (clockwise or counter-clockwise).
         self.next = {}
 
-        # This flag tells what train owns the sector.
+        # This attribute tells what train owns the sector.
         self.occupier = None
 
 
@@ -49,8 +50,8 @@ class StructuredSector(Sector):
     '''
     A StructuredSector contains a higher-speed stretch and a lower-speed
     stretch within it. An attribute in the sector tells where the train is
-    located. The stretches are separated by a signal with same color as
-    the sector itself.
+    located. The stretches are separated by a signal mark with same color
+    as the sector itself.
 
     :param color: the sector's color
     :param max_speed: the speed setting to which the train must
@@ -75,15 +76,15 @@ def clear_track():
 
 #------------------ TRACK DEFINITION ----------------------------
 
-station_sector_names = {COUNTER_CLOCKWISE: "RED_1",
-                        CLOCKWISE: "RED_2"}
-
 # sectors
 sectors = {"RED_1": Sector(RED),
            YELLOW: Sector(YELLOW),
            "RED_2": Sector(RED),
            BLUE: StructuredSector(BLUE, max_speed_time=6)
            }
+
+station_sector_names = {COUNTER_CLOCKWISE: "RED_1",
+                        CLOCKWISE: "RED_2"}
 
 # The track layout is defined by how the sectors connect to each
 # other. There are actually two tracks, one for each direction of

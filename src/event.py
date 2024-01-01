@@ -103,7 +103,6 @@ class EventProcessor:
         if event in [RED]:
 
             self.train.check_acceleration_thread()
-            # action = track.sectors[event]
 
             sleep(0.01)
             self.train.stop()
@@ -165,15 +164,11 @@ class EventProcessor:
 
                         # leaving FAST sub-sector and entering SLOW
                         self.train.sector.sub_sector_type = SLOW
-                        # print("On SLOW sub-sector now")
 
                         # Decision on how to behave from now on depends on the
                         # occupancy status of the next sector ahead of train.
                         # Train should slow down and eventually stop only if
                         # next sector is occupied. Otherwise, grab next sector.
-
-                        # print("DBG:  ", next_sector.occupier, self.train.name)
-
                         if next_sector.occupier is not None and \
                            next_sector.occupier != self.train.name:
                             # occupied: slow down and wait for en-of-sector signal.
@@ -181,7 +176,6 @@ class EventProcessor:
                         else:
                             # next sector is free. Grab it.
                             next_sector.occupier = self.train.name
-                            # print("Grabbing next sector: ", next_sector.color, next_sector.occupier)
 
                     else:
                         # leaving SLOW sub-sector, thus leaving the entire sector as well.
@@ -192,21 +186,19 @@ class EventProcessor:
                             # occupied: stop and keep interrogating next sector
                             self._stop_and_wait(next_sector)
                         else:
-                            # next sector is free: exit curreent sector
+                            # next sector is free: exit current sector
                             # and keep moving TODO at normal speed
                             self._exit_sector(event)
 
                 # YELLOW sector precedes a station stop for both clockwise and counter-clockwise
                 # directions. It also signals entry in an inter-sector zone.
                 if event in [YELLOW] and not isinstance(self.train.sector, StructuredSector):
-                    # print("Exiting YELLOW sector into inter-sector zone:  slowing down")
                     self._exit_sector(event)
                     self._slowdown()
 
             elif self.train.sector is None:
                 # train is moving from inter-sector zone into new sector
                 self.train.sector = self.train.previous_sector.next[self.train.direction]
-                # print("Entering sector ", self.train.sector.color)
 
                 # structured segments start with a FAST sub-sector
                 if isinstance(self.train.sector, StructuredSector):
@@ -234,26 +226,15 @@ class EventProcessor:
                 self.train.speedup_timer.start()
                 self.train.accelerate(list(range(self.train.power_index, self.train.sector.max_speed + 1)), 1)
 
-                # self._debug(self.train.name + " entering sector ")
-
             else:
                 pass
                 print("ERROR: detected spurious signal inside sector")
 
     def _exit_sector(self, event):
-
-        # self._debug(self.train.name + " entering _exit_sector method")
-
         self.train.previous_sector = self.train.sector
-
-        # free current sector.
-        # self.train.sector.occupier = None
 
         # entering inter-sector zone
         self.train.sector = None
-        # print("Exiting sector ", event)
-
-        # self._debug(self.train.name + " exiting _exit_sector method")
 
     def _slowdown(self):
         # the train might be moving backwards, so first we generate
@@ -279,9 +260,6 @@ class EventProcessor:
         self.train.accelerate(power_index_range, sign(self.train.power_index), sleep_time=sleep_time)
 
     def _stop_and_wait(self, next_sector):
-
-        # self._debug(self.train.name + " entering stop_and_wait method")
-
         self.train.stop()
 
         # make sure we wait for the next sector to go free. This
@@ -291,12 +269,8 @@ class EventProcessor:
               next_sector.occupier != self.train.name:
             time.sleep(0.5)
 
-        # print("Restart movement: ", self.train.name)
         self._exit_sector("from stop and wait")
         self.train.restart_movement()
-
-        # self._debug(self.train.name + " exiting stop_and_wait method")
-
 
 
     def _debug(self, msg):

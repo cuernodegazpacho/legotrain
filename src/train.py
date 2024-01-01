@@ -19,7 +19,7 @@ from gui import tkinter_output_queue
 
 sign = lambda x: x and (1, -1)[x<0]
 
-MAX_AUTO_SPEED = 3   # max speed setting for smart trains
+MAX_AUTO_SPEED = 5   # max speed setting for smart trains
 
 
 class Train:
@@ -391,8 +391,7 @@ class SmartTrain(Train):
     '''
     def __init__(self, name, gui_id="0", lock=None, report=False, record=False, linear=False,
                  gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
-                 direction=CLOCKWISE, process_events=True,
-                 address=uuid_definitions.HUB_TEST): # test hub
+                 direction=CLOCKWISE, address=uuid_definitions.HUB_TEST): # test hub
 
         super(SmartTrain, self).__init__(name, gui_id, lock, report=report, record=record, linear=linear,
                                           gui=gui, led_color=led_color,
@@ -466,13 +465,10 @@ class SmartTrain(Train):
         if h >= 1. or h <= 0.:
             return
 
-        # print(args, kwargs, r, g, b, h, s, v)
-
         if min(r, g, b) >= RGB_LIMIT and v >= V_LIMIT:
             for color in [RED, GREEN, BLUE, YELLOW]:
                 if (h >= HUE[color][0] and h <= HUE[color][1]) and \
                    (s >= SATURATION[color][0] and s <= SATURATION[color][1]):
-                    # print(args, kwargs, r, g, b, h, s, v, color)
                     self.sensor_event_filter.filter_event(color)
                     return
 
@@ -540,8 +536,8 @@ class LEDHandler:
 
     A Handler class is used to send/receive messages to/from a train hub, minimizing
     the number of actual Bluetooth messages. This helps in shielding the BLE environment
-    from a flurry of unecessary messages. It also uses a lock to set hub parameters, preventing
-    collisions in pylgbst.
+    from a flurry of unecessary messages. It also uses a lock to set hub parameters,
+    preventing collisions in pylgbst.
     '''
     STATIC = 0
     BLINKING = 1
@@ -578,11 +574,11 @@ class LEDHandler:
 
     def set_status_led(self, new_power_index):
         # here is the logic that prevents redundant BLE messages to be sent to the train hub
-        if self._led_desired_status(new_power_index) != self._led_desired_status(self.previous_power_index):
+        if self._led_desired_mode(new_power_index) != self._led_desired_mode(self.previous_power_index):
             self._cancel_led_thread()
             self._cancel_delay_timer()
 
-            if self._led_desired_status(new_power_index) == self.STATIC:
+            if self._led_desired_mode(new_power_index) == self.STATIC:
                 self.lock.acquire()
                 self.led.set_color(self.led_color)
                 self.lock.release()
@@ -598,7 +594,7 @@ class LEDHandler:
         self.led_thread_is_running = True
         self.led_thread.start()
 
-    def _led_desired_status(self, power_index):
+    def _led_desired_mode(self, power_index):
         return self.BLINKING if power_index == 0 else self.STATIC
 
     def _swap_led_color(self, c1, c2):

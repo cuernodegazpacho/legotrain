@@ -2,7 +2,7 @@ import time
 from time import sleep
 
 from pylgbst.hub import RemoteHandset
-from pylgbst.peripherals import RemoteButton, COLOR_PURPLE
+from pylgbst.peripherals import RemoteButton
 
 import uuid_definitions
 
@@ -28,19 +28,13 @@ class Controller:
 
     It accepts initialized instances of subclasses of Train.
 
-    This class creates a remote handset instance that allows the operator to control one
-    or two trains with one handset.
+    This class creates a remote handset instance that allows the operator to
+    control one or two trains with one handset.
     '''
     def __init__(self, train1, train2=None, handset_address=uuid_definitions.HANDSET_TEST):
         self.train1 = train1
         self.train2 = train2
         self.handset_address = handset_address
-
-        # these hold return values from a handset callback. The time
-        # stamp is used to support a long button press gesture.
-        # self.button = None
-        # self.set = None
-        # self.time = None
 
         sleep(5)
         self.handset = RemoteHandset(address=self.handset_address)
@@ -57,13 +51,11 @@ class Controller:
             RemoteButton.LEFT:
             {
                 RemoteButton.PLUS: self.train1.up_speed,
-                # RemoteButton.RED: self._handle_red_button,
                 RemoteButton.MINUS: self.train1.down_speed
             },
             RemoteButton.RIGHT:
             {
                 RemoteButton.PLUS: self.train2.up_speed,
-                # RemoteButton.RED: self._handle_red_button,
                 RemoteButton.MINUS: self.train2.down_speed
                 # RemoteButton.PLUS: self.train1.switch_semaphore,
                 # RemoteButton.RED: self.train1.switch_semaphore,
@@ -85,36 +77,13 @@ class Controller:
 
     def connect(self):
         # Subscribe callbacks with train actions to handset button gestures.
-        # We can either have one single callback and handle the button set choice in the
-        # callback, or have two separate callbacks, one associated with each button set
-        # from the start. Since we may be handling two trains identically, each one on one
-        # side of the handset, the one-callback approach seems better at preventing code
-        # duplication.
-
-        # self.handset.port_A.subscribe(self._handset_callback)
-        # self.handset.port_B.subscribe(self._handset_callback)
-
+        # We can either have one single callback and handle the button set choice
+        # in the callback, or have two separate callbacks, one associated with
+        # each button set from the start. Since we may be handling two trains
+        # identically, each one on one side of the handset, the one-callback
+        # approach seems better at preventing code duplication.
         self.handset_handler.handset.port_A.subscribe(self.handset_handler.callback_from_button, mode=2)
         self.handset_handler.handset.port_B.subscribe(self.handset_handler.callback_from_button)
-
-    # # handset callback handles most of the interactive logic associated with the buttons
-    # #TODO move this to handset handler class
-    # def _handset_callback(self, button, set):
-    #
-    #     # button release gesture clears memory of last gesture.
-    #     # This results in no callback call, just a silent return.
-    #     if self.button == RemoteButton.RELEASE:
-    #         self.button = None
-    #         self.set = None
-    #         return
-    #
-    #     # store values from most recent handset action
-    #     self.button = button
-    #     self.set = set
-    #     self.time = None
-    #
-    #     # select action on train speed based on which button was pressed
-    #     self.handset_actions[self.set][self.button]()
 
     def _handle_red_button(self, mode):
         # mode can be "dual" or "long"
@@ -128,8 +97,6 @@ class Controller:
         if isinstance(self.train1, SmartTrain) and isinstance(self.train2, SmartTrain):
             self.train1.auto = False
             self.train2.auto = False
-
-        # print("RESET_ALL: Long RED button press")
 
     def _restart(self):
         # this method assumes the trains are stopped at they designated stations,
@@ -145,10 +112,8 @@ class Controller:
             self.train2.initialize_sectors()
 
             self.train1.timed_stop_at_station()
-            time.sleep(1.0)
+            # time.sleep(1.0)
             self.train2.timed_stop_at_station()
-
-            # print("RESTART: Dual RED button press")
 
 
 
@@ -166,7 +131,6 @@ class HandsetHandler:
         self.buffer = []
 
     def callback_from_button(self, button, button_set):
-        # print("value from callback: ", button, button_set)
 
         event = HandsetEvent(button)
 
@@ -208,8 +172,7 @@ class HandsetHandler:
                     self.buffer = []
                     break
 
-                # short single press of either RED button should cause
-                # a train stop.
+                # fallback: responds to a short single press of either RED button
                 if button in [RemoteButton.RED]:
                     self.controller.handset_short_red_actions[button_set]()
 
