@@ -218,9 +218,9 @@ class EventProcessor:
                 # set up timer for sanity check to prevent false detections
                 # of a spurious end-of-sector signal
                 sector_time =self.train.sector.sector_time
-                self.train.sector_time = Timer(sector_time, self.train.mark_exit_valid)
+                self.train.time_in_sector = Timer(sector_time, self.train.mark_exit_valid)
                 self.train.just_entered_sector = True
-                self.train.sector_time.start()
+                self.train.time_in_sector.start()
 
                 # when entering sector, set timed speedup
                 if self.train.speedup_timer is not None:
