@@ -98,6 +98,9 @@ class Controller:
             self.train1.auto = False
             self.train2.auto = False
 
+            self.train1.initialize_sectors()
+            self.train2.initialize_sectors()
+
     def _restart(self):
         # this method assumes the trains are stopped at they designated stations,
         # after manual mode was entered, and they were driven manually to there.

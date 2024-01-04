@@ -466,9 +466,12 @@ class SmartTrain(Train):
             return
 
         if min(r, g, b) >= RGB_LIMIT and v >= V_LIMIT:
+
             for color in [RED, GREEN, BLUE, YELLOW]:
+
                 if (h >= HUE[color][0] and h <= HUE[color][1]) and \
                    (s >= SATURATION[color][0] and s <= SATURATION[color][1]):
+
                     self.sensor_event_filter.filter_event(color)
                     return
 

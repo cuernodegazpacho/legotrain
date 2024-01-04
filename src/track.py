@@ -3,6 +3,7 @@ from signal import RED, BLUE, YELLOW
 CLOCKWISE = "clockwise"
 COUNTER_CLOCKWISE = "counter_clockwise"
 
+DEFAULT_SECTOR_TIME = 6 #s
 FAST = 0
 SLOW = 1
 
@@ -11,7 +12,8 @@ MAX_SPEED_TIME = 8 # s
 
 
 class Sector():
-    def __init__(self, color, max_speed=MAX_SPEED, max_speed_time=MAX_SPEED_TIME):
+    def __init__(self, color, sector_time=DEFAULT_SECTOR_TIME,
+                 max_speed=MAX_SPEED, max_speed_time=MAX_SPEED_TIME):
         '''
         Encapsulates properties of a track sector. Sectors are used
         to isolate sections of a continuous track, such that only one
@@ -28,12 +30,19 @@ class Sector():
         setting that should be maintained for a given time, after which
         the train returns to its default auto-control speed.
 
+        The sector instance should be initialized with a time value in sec
+        that represents the typical time interval a train takes to traverse
+        the sector. This is used to prevent premature false detections of a
+        sector end mark.
+
         :param color: the sector's color
+        :param sector_time typical time needed to traverse a given sector
         :param max_speed: the speed setting to which the train must
             accelerate when entering the sector
         :param max_speed_time: the time to sustain max speed (in sec.)
         '''
         self.color = color
+        self.sector_time = sector_time
         self.max_speed = max_speed
         self.max_speed_time = max_speed_time
 
@@ -54,12 +63,16 @@ class StructuredSector(Sector):
     as the sector itself.
 
     :param color: the sector's color
+    :param sector_time typical time needed to traverse a given sector
     :param max_speed: the speed setting to which the train must
         accelerate when entering the sector
     :param max_speed_time: the time to sustain max speed (in sec.)
     '''
-    def __init__(self, color, max_speed=MAX_SPEED, max_speed_time=MAX_SPEED_TIME):
-        super(StructuredSector, self).__init__(color, max_speed=max_speed,
+    def __init__(self, color, sector_time=DEFAULT_SECTOR_TIME,
+                 max_speed=MAX_SPEED, max_speed_time=MAX_SPEED_TIME):
+
+        super(StructuredSector, self).__init__(color, sector_time=sector_time,
+                                               max_speed=max_speed,
                                                max_speed_time=max_speed_time)
 
         # defaults assume the train enters the sector via its FAST side.
@@ -78,9 +91,9 @@ def clear_track():
 
 # sectors
 sectors = {"RED_1": Sector(RED),
-           YELLOW: Sector(YELLOW),
+           YELLOW: Sector(YELLOW, sector_time=3),
            "RED_2": Sector(RED),
-           BLUE: StructuredSector(BLUE, max_speed_time=6)
+           BLUE: StructuredSector(BLUE, sector_time=12, max_speed_time=6)
            }
 
 station_sector_names = {COUNTER_CLOCKWISE: "RED_1",
