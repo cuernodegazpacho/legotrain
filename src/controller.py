@@ -30,6 +30,11 @@ class Controller:
 
     This class creates a remote handset instance that allows the operator to
     control one or two trains with one handset.
+
+    The class was last used to control two instances of SmartTrain in a
+    self-driving setup. Other configurations (such as CompoundTrain) may
+    not work without some additional work).
+
     '''
     def __init__(self, train1, train2=None, handset_address=uuid_definitions.HANDSET_TEST):
         self.train1 = train1
@@ -69,7 +74,7 @@ class Controller:
             RemoteButton.RIGHT: self.train2.stop
         }
 
-        # actions associated with red buttons
+        # actions associated with long and dual red button actions
         self.red_button_actions = {
             DUAL: self._restart,
             LONG: self._reset_all

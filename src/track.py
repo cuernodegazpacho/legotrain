@@ -62,6 +62,10 @@ class StructuredSector(Sector):
     located. The stretches are separated by a signal mark with same color
     as the sector itself.
 
+    Note that in this case, the time it takes to traverse a sector should be
+    the time it takes to reach the FAST-SLOW transition point only (otherwise
+    that transition point won't be detected)
+
     :param color: the sector's color
     :param sector_time typical time needed to traverse a given sector
     :param max_speed: the speed setting to which the train must
@@ -91,9 +95,9 @@ def clear_track():
 
 # sectors
 sectors = {"RED_1": Sector(RED),
-           YELLOW: Sector(YELLOW, sector_time=3),
+           YELLOW: Sector(YELLOW, sector_time=8, max_speed_time=4),
            "RED_2": Sector(RED),
-           BLUE: StructuredSector(BLUE, sector_time=12, max_speed_time=6)
+           BLUE: StructuredSector(BLUE, sector_time=2, max_speed_time=1)
            }
 
 station_sector_names = {COUNTER_CLOCKWISE: "RED_1",

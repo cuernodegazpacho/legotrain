@@ -11,15 +11,13 @@ from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN, COLOR_RED
 
 import uuid_definitions
 from track import CLOCKWISE, COUNTER_CLOCKWISE
-from track import sectors, station_sector_names
+from track import sectors, station_sector_names, MAX_SPEED
 from event import EventProcessor, DummyEventProcessor, SensorEventFilter
 from event import HUE, SATURATION, RGB_LIMIT, V_LIMIT
 from signal import RED, GREEN, BLUE, YELLOW
 from gui import tkinter_output_queue
 
 sign = lambda x: x and (1, -1)[x<0]
-
-MAX_AUTO_SPEED = 5   # max speed setting for smart trains
 
 
 class Train:
@@ -186,11 +184,12 @@ class Train:
 
         if self.speedup_timer is not None:
             self.stop_acceleration_thread = True
+            self.acceleration_thread = None
             self.speedup_timer.cancel()
             self.speedup_timer= None
 
     def return_to_default_speed(self):
-        self.accelerate([self.power_index, MAX_AUTO_SPEED], 1)
+        self.accelerate([self.power_index, MAX_SPEED], 1)
 
     # The `accelerate` method has to be run in a thread, and stopped whenever a
     # set_power call takes place coming, typically, from the up_speed, dow_speed,
@@ -420,7 +419,7 @@ class SmartTrain(Train):
             return
 
         # start a timed wait interval at a station, and handle the hub's LED behavior.
-        time_station = random.uniform(2., 8.)
+        time_station = random.uniform(2., 25.)
         self.timer_station = Timer(time_station, self.restart_movement)
         self.timer_station.start()
 
@@ -442,7 +441,7 @@ class SmartTrain(Train):
         self.led_handler.set_solid(COLOR_GREEN)
         if self.secondary_train is not None:
             self.secondary_train.led_handler.set_solid(COLOR_GREEN)
-        sleep(3)
+        sleep(1)
 
         # need to find out if this train is running forward or reverse
         # Cannot use self.power_index since it is set to zero when train is
@@ -453,7 +452,7 @@ class SmartTrain(Train):
         else:
             power_index_signal = -1
 
-        self.accelerate(list(range(1, MAX_AUTO_SPEED+1)), power_index_signal)
+        self.accelerate(list(range(1, MAX_SPEED+1)), power_index_signal)
 
     def _vision_sensor_callback(self, *args, **kwargs):
         # use HSV as criterion for mapping colors
@@ -467,7 +466,7 @@ class SmartTrain(Train):
 
         if min(r, g, b) >= RGB_LIMIT and v >= V_LIMIT:
 
-            for color in [RED, GREEN, BLUE, YELLOW]:
+            for color in [RED, BLUE, YELLOW]:
 
                 if (h >= HUE[color][0] and h <= HUE[color][1]) and \
                    (s >= SATURATION[color][0] and s <= SATURATION[color][1]):
@@ -477,7 +476,7 @@ class SmartTrain(Train):
 
     # this method will set a flag that tells that it's safe now to get an
     # end-of-sector signal. The flag is managed by a timer and is used
-    # to prevent spurious end-of-sector detections.
+    # to prevent spurious premature end-of-sector detections.
     def mark_exit_valid(self):
         self.just_entered_sector = False
 

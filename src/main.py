@@ -21,7 +21,7 @@ won't respond to button presses from this point on).
 
 if __name__ == '__main__':
 
-    # global lock for threading access
+    # global lock for threading access to BLE functionality
     lock = RLock()
     # lock = None
 
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     # controller = Controller(train)
     # controller.connect()
 
-    # ---------------------- Two-train setup ----------------------------
+    # ---------------------- Two-train setup (Smart self-driving) ----------------------------
 
     train1 = SmartTrain("Train 1", "1", lock=lock, report=True, record=True,
                          gui=gui, direction=COUNTER_CLOCKWISE, address=uuid_definitions.HUB_ORIG)
