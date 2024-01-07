@@ -5,12 +5,14 @@ from colorsys import rgb_to_hsv
 import numpy as np
 
 from pylgbst.hub import SmartHub
+from src import uuid_definitions
+
+LIMIT = 600
 
 
 def demo_color_sensor(smart_hub):
     print("Color sensor test: wave your hand in front of it")
     demo_color_sensor.cnt = 0
-    limit = 300
 
     bg_list = []
     gr_list = []
@@ -31,7 +33,7 @@ def demo_color_sensor(smart_hub):
         if h >= 1. or h <= 0.:
             return
 
-        if max(r, g, b) > 10.0 and v > 20.0:
+        if max(r, g, b) > 0.0 and v > 0.0:
             h_list.append(h)
             s_list.append(s)
             v_list.append(v)
@@ -60,9 +62,9 @@ def demo_color_sensor(smart_hub):
             # print(demo_color_sensor.cnt, limit, args, kwargs, h, s, v, bg, gr, red_detection)
             print(r, ",", g, ",", b)
 
-    smart_hub.vision_sensor.subscribe(callback, granularity=3, mode=6)
+    smart_hub.vision_sensor.subscribe(callback, granularity=2, mode=6)
 
-    while demo_color_sensor.cnt < limit:
+    while demo_color_sensor.cnt < LIMIT:
         sleep(1)
 
     smart_hub.vision_sensor.unsubscribe(callback)
@@ -87,25 +89,25 @@ def ingest(filename):
     return RGB_list
 
 if __name__ == '__main__':
-    # smart_hub = SmartHub(address='86996732-BF5A-433D-AACE-5611D4C6271D')   # test hub
-    # demo_color_sensor(smart_hub)
+    smart_hub = SmartHub(address=uuid_definitions.HUB_ORIG)   # original hub
+    demo_color_sensor(smart_hub)
 
-    # alternate form that reads RGB data from file
-    rgb_list = ingest("Red_tile_RGB.csv")
-
-    h_list = []
-    s_list = []
-    v_list = []
-
-    for rgb in rgb_list:
-        h, s, v = rgb_to_hsv(rgb[0], rgb[1], rgb[2])
-        h_list.append(h)
-        s_list.append(s)
-        v_list.append(v)
-
-    print("H stats: ", stat.mean(h_list), stat.stdev(h_list), min(h_list), max(h_list))
-    print("S stats: ", stat.mean(s_list), stat.stdev(s_list), min(s_list), max(s_list))
-    print("V stats: ", stat.mean(v_list), stat.stdev(v_list), min(v_list), max(v_list))
+    # # alternate form that reads RGB data from file
+    # rgb_list = ingest("data/Final_green_2.csv")
+    #
+    # h_list = []
+    # s_list = []
+    # v_list = []
+    #
+    # for rgb in rgb_list:
+    #     h, s, v = rgb_to_hsv(rgb[0], rgb[1], rgb[2])
+    #     h_list.append(h)
+    #     s_list.append(s)
+    #     v_list.append(v)
+    #
+    # print("H stats: ", stat.mean(h_list), stat.stdev(h_list), min(h_list), max(h_list))
+    # print("S stats: ", stat.mean(s_list), stat.stdev(s_list), min(s_list), max(s_list))
+    # print("V stats: ", stat.mean(v_list), stat.stdev(v_list), min(v_list), max(v_list))
 
 #--------------- RESULTS -----------------
 
@@ -124,3 +126,12 @@ if __name__ == '__main__':
 # S stats:  0.714 0.0231     0.643  0.756
 # V stats:  42.427 1.444    39.0 46.0
 
+# Green 1
+# H stats:  0.465 0.0174     0.4167 0.538
+# S stats:  0.455 0.038      0.3333 0.55
+# V stats:  19.5367 0.7237  17.0 21.0
+
+# Green 1
+# H stats:  0.464   0.0184     0.4167 0.5278
+# S stats:  0.4457  0.0400     0.3    0.55
+# V stats:  19.412  0.9035    17.0   21.0

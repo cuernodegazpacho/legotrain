@@ -1,16 +1,16 @@
-import logging
+import time
 from time import sleep
-from threading import RLock
 
 from pylgbst.hub import RemoteHandset
-from pylgbst.peripherals import RemoteButton, COLOR_PURPLE
+from pylgbst.peripherals import RemoteButton
 
 import uuid_definitions
-from train import SimpleTrain, SmartTrain, CompoundTrain
-from gui import GUI
 
-# logging.basicConfig(level=logging.DEBUG)
+import track
+from train import SmartTrain
 
+DUAL = "dual"
+LONG = "long"
 
 # class that provides dummy methods to be used in case train2 is None
 class _DummyTrain():
@@ -22,113 +22,170 @@ class _DummyTrain():
         return
 
 
-def controller(train1, train2=None):
+class Controller:
     '''
-    Main controller function.
+    Main controller class.
 
     It accepts initialized instances of subclasses of Train.
 
-    This function creates a remote handset instance that allows the operator to control one
-    or two trains with one handset.
+    This class creates a remote handset instance that allows the operator to
+    control one or two trains with one handset.
 
-    Correct startup sequence requires that, with the script already started, the train
-    hub(s) be connected first (by momentary press of the green button). Wait a few seconds
-    until the hub(s) connect(s). As soon as it(they) connect, press the green button on the remote
-    handset. As soon as it connects, the control loop starts running and the GUI pops up on screen.
-    Notice that the train LED will be set to its initialization color, and the LED in the handset
-    will go solid white. They won't change color (channel) by pressing the green button (the green
-    buttons in both train and handset won't respond to button presses from this point on).
+    The class was last used to control two instances of SmartTrain in a
+    self-driving setup. Other configurations (such as CompoundTrain) may
+    not work without some additional work).
+
     '''
-    sleep(5)
-    handset = RemoteHandset(address=uuid_definitions.HANDSET_TEST)
+    def __init__(self, train1, train2=None, handset_address=uuid_definitions.HANDSET_TEST):
+        self.train1 = train1
+        self.train2 = train2
+        self.handset_address = handset_address
 
-    # define sensible handset actions for a dummy train2 object
-    if train2 is None:
-        train2 = _DummyTrain()
+        sleep(5)
+        self.handset = RemoteHandset(address=self.handset_address)
+        self.handset_handler = HandsetHandler(self)
 
-    # actions associated with each handset button
-    handset_actions = {
-        RemoteButton.LEFT:
-        {
-            RemoteButton.PLUS: train1.up_speed,
-            RemoteButton.RED: train1.stop,
-            RemoteButton.MINUS: train1.down_speed
-        },
-        RemoteButton.RIGHT:
-        {
-            RemoteButton.PLUS: train2.up_speed,
-            RemoteButton.RED: train2.stop,
-            RemoteButton.MINUS: train2.down_speed
-        },
-    }
+        # define sensible handset actions for a dummy train2 object
+        if self.train2 is None:
+            self.train2 = _DummyTrain()
 
-    # handset callback handles most of the interactive logic associated with the buttons
-    def handset_callback(button, set):
+        # actions associated with each handset button. Note that
+        # the red buttons require special handling thus their
+        # events are processed elsewhere.
+        self.handset_actions = {
+            RemoteButton.LEFT:
+            {
+                RemoteButton.PLUS: self.train1.up_speed,
+                RemoteButton.MINUS: self.train1.down_speed
+            },
+            RemoteButton.RIGHT:
+            {
+                RemoteButton.PLUS: self.train2.up_speed,
+                RemoteButton.MINUS: self.train2.down_speed
+                # RemoteButton.PLUS: self.train1.switch_semaphore,
+                # RemoteButton.RED: self.train1.switch_semaphore,
+                # RemoteButton.MINUS: self.train1.switch_semaphore
+            },
+        }
 
-        # for now, ignore all button release actions.
-        if button == RemoteButton.RELEASE:
-            return
+        # actions associated with a short RED button press
+        self.handset_short_red_actions = {
+            RemoteButton.LEFT: self.train1.stop,
+            RemoteButton.RIGHT: self.train2.stop
+        }
 
-        # select action on train speed based on which button was pressed
-        handset_actions[set][button]()
+        # actions associated with long and dual red button actions
+        self.red_button_actions = {
+            DUAL: self._restart,
+            LONG: self._reset_all
+        }
 
-    # we can either have one single callback and handle the button set choice in the
-    # callback, or have two separate callbacks, one associated with each button set
-    # from the start. Since we may be handling two trains identically, each one on one
-    # side of the handset, the one-callback approach seems better at preventing code
-    # duplication.
-    handset.port_A.subscribe(handset_callback)
-    handset.port_B.subscribe(handset_callback)
+    def connect(self):
+        # Subscribe callbacks with train actions to handset button gestures.
+        # We can either have one single callback and handle the button set choice
+        # in the callback, or have two separate callbacks, one associated with
+        # each button set from the start. Since we may be handling two trains
+        # identically, each one on one side of the handset, the one-callback
+        # approach seems better at preventing code duplication.
+        self.handset_handler.handset.port_A.subscribe(self.handset_handler.callback_from_button, mode=2)
+        self.handset_handler.handset.port_B.subscribe(self.handset_handler.callback_from_button)
+
+    def _handle_red_button(self, mode):
+        # mode can be "dual" or "long"
+        self.red_button_actions[mode]()
+
+    def _reset_all(self):
+        self.train1.stop()
+        self.train2.stop()
+
+        # both trains should be conducted from now on just in manual mode
+        if isinstance(self.train1, SmartTrain) and isinstance(self.train2, SmartTrain):
+            self.train1.auto = False
+            self.train2.auto = False
+
+            self.train1.initialize_sectors()
+            self.train2.initialize_sectors()
+
+    def _restart(self):
+        # this method assumes the trains are stopped at they designated stations,
+        # after manual mode was entered, and they were driven manually to there.
+
+        track.clear_track()
+
+        if isinstance(self.train1, SmartTrain) and isinstance(self.train2, SmartTrain):
+            self.train1.auto = True
+            self.train2.auto = True
+
+            self.train1.initialize_sectors()
+            self.train2.initialize_sectors()
+
+            self.train1.timed_stop_at_station()
+            # time.sleep(1.0)
+            self.train2.timed_stop_at_station()
 
 
-if __name__ == '__main__':
 
-    # global lock for threading access
-    # lock = RLock()
-    lock = None
+class HandsetEvent:
+    def __init__(self, button):
+        self.button = button
+        self.timestamp = time.time()
 
-    # Tkinter window for displaying status information
-    gui = GUI()
 
-    # Use one of these setups to configure
+class HandsetHandler:
+    def __init__(self, controller):
+        self.handset = controller.handset
+        self.controller = controller
 
-    # ---------------------- Simple train setup --------------------------
+        self.buffer = []
 
-    # train = SimpleTrain("Train", "1", lock=lock, report=True, record=True,
-    #                           gui=gui, address=uuid_definitions.ORIG_HUB)
-    # controller(train)
+    def callback_from_button(self, button, button_set):
 
-    # ---------------------- Smart train setup ----------------------------
+        event = HandsetEvent(button)
 
-    # train = SmartTrain("Train", "1", lock=lock, report=True, record=True,
-    #                         gui=gui, address=uuid_definitions.TEST_HUB)
-    # controller(train)
+        # keep buffer small
+        if len(self.buffer) > 3:
+            self.buffer.pop(0)
 
-    # ---------------------- Two-train setup ----------------------------
+        # store button actions of interest
+        if button in [RemoteButton.RED, RemoteButton.RELEASE]:
+            self.buffer.append(event)
 
-    train1 = SmartTrain("Train 1", "1", led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
-                            gui=gui, address=uuid_definitions.TEST_HUB)
-    train2 = SimpleTrain("Train 2", "2", lock=lock, report=True, record=True,
-                              gui=gui, address=uuid_definitions.ORIG_HUB)
-    controller(train1, train2=train2)
+            # check that an event of interest happened
+            for i in range(len(self.buffer)-1):
 
-    # ---------------------- Compound train setup --------------------------
+                # retrieve properties of two consecutive events
+                try:
+                    button_0 = self.buffer[i].button
+                    button_1 = self.buffer[i+1].button
+                    timestamp_0 = self.buffer[i].timestamp
+                    timestamp_1 = self.buffer[i+1].timestamp
+                # get rid of harmless error message
+                except IndexError:
+                    pass
 
-    # # front train hub allows control over the LED headlight.
-    # train_front = SimpleTrain("Front", "1", lock=lock, report=True, record=True,
-    #                           gui=gui, address=uuid_definitions.ORIG_HUB)
-    #
-    # # rear train hub has a vision sensor
-    # train_rear = SmartTrain("Rear", "2", lock=lock, report=True, record=True,
-    #                         gui=gui, address=uuid_definitions.TEST_HUB)
-    #
-    # train = CompoundTrain("Massive train", train_front, train_rear)
-    #
-    # controller(train)
+                # a double button press is indicated by two consecutive
+                # appearances of the same button, with a minimal time
+                # difference between the button presses.
+                if button_0 is RemoteButton.RED and button_1 is RemoteButton.RED and \
+                    abs(timestamp_0 - timestamp_1) < 0.5:
+                    self.controller._handle_red_button(DUAL)
+                    self.buffer = []
+                    break
 
-    # --------------------------------------------------------------------------
+                # a long button press is indicated by a button press followed by a
+                # button release, with a significant time delay between them.
+                if button_0 is RemoteButton.RED and button_1 is RemoteButton.RELEASE and \
+                    abs(timestamp_0 - timestamp_1) > 1.:
+                    self.controller._handle_red_button(LONG)
+                    self.buffer = []
+                    break
 
-    # connect gui and start main loop
-    gui.root.after(100, gui.after_callback)
-    gui.root.mainloop()
+                # fallback: responds to a short single press of either RED button
+                if button in [RemoteButton.RED]:
+                    self.controller.handset_short_red_actions[button_set]()
+
+        # Not a button that needs special handling. Just process it by
+        # calling the controller method that process it.
+        else:
+            self.controller.handset_actions[button_set][button]()
 
