@@ -4,19 +4,21 @@ Python scripts to support Lego City trains
 This package depends on https://github.com/undera/pylgbst 
 
 Example of computer control using this software. The entire sequence is done 
-with hands off, although the handset controller remains fully functional. 
+with hands off, although the handset controller remains fully functional and
+available for the user to modify the train's default behavior
 https://www.youtube.com/watch?v=AUTcSPW_DJ4
 
 ## Design
 
 In the configuration currently implemented, two trains equipped with
 vision sensors (LEGO® Powered Up 88007 Color & Distance Sensor) 
-run on a simple (topologically) circular track equipped with  two lateral 
-branches that serve as train stations, each one dedicated to its own 
+run on a simple (topologically) circular track equipped with two lateral 
+branches that act as train stations, each one dedicated to its own 
 train. The trains run against each other, and the software takes care 
 of preventing collisions by ensuring that they can only cross each 
-other when one is parked on, or moving towards, its own station. 
-Switches that connect the station branch with the main line are fixed. 
+other when one is parked on its own station. Switches that connect the 
+station branches with the main line are fixed, effectively creating a unique
+and distinct path for each train.
 
 ### Trains
 
@@ -25,27 +27,33 @@ _Train_. The specific subclass capable of handling the vision sensor is
 _SmartTrain_. The corresponding module _train.py_ contains class definitions 
 for these, as well as for auxiliary objects that are used to control the 
 train's motors, their LED headlights (when so equipped), their hub's LED color 
-light, and vision sensors mounted pointing down that are used to detect 
-color tiles on the track.
+light, report battery status, and handle events from vision sensors mounted 
+pointing down that are used to detect color tiles on the track.
 
 Other classes exist to handle a simple train with no vision sensor, but which
 can optionally have LED headlights (_SimpleTrain_), and a composite train made
-by linking back-to-back the two engines, with all cars in between (_CompoundTrain_).
-Currentlly these may not work properly because most of the recent development
-work focused on the two-train configuration. 
+by linking back-to-back two engines, with all cars in between (_CompoundTrain_). 
+In this composite train, the front engine is represented by an instance of 
+_SimpleTrain_ equipped with LED headlights, and the rear engine is represented
+by an instance of _SmartTrain_. The control software handles the details of
+acceleration and braking with two engines working in reverse and with uneven 
+battery voltages as well (see video with example).
+
+Currentlly these special configurations may not work properly because most of the 
+recent development work focused on the two-train configuration. 
 
 ### Track
 
 The track for this initial project is topologically a simple circle with
 two branches that are used as train stations. Each one serves one 
-sensor-equipped train. The track is divided into segments; the main goal of the
+sensor-equipped train. The track is divided into segments; and the main goal of the
 software is to ensure that each segment is occupied by mostly one, and only one,
 train, at any given time. 
 
 The simple track configuration described above can be divided into four segments;
-two are associated with each one of the stations, and there are two other segments
-laid out in between the stations. Segments are marked by color tiles laid out on
-the track at each segment's ends, in such a way that a train, when moving over a color 
+two are associated with each one of the stations, and two segments laid out in between 
+the stations and connecting them. Segments are marked by color tiles laid out on
+the track at each segment end points, in such a way that a train, when moving over a color 
 tile, will send a signal to the controlling script. That way, the script can know where 
 the train is at that moment, and take actions accordingly. The station segments differ 
 slightly from the above configuration, by having a single red tile marking the point 
@@ -68,17 +76,26 @@ running in clockwise and counter-clockwise directions.
 
 ### Controller
 
+The _Controller_ class is responsible for establishing the connections in between the
+class instances that are passed to it by the _main.py_ module. It also creates an
+instance of _RemoteHandset_ that handles user input from the handset, and connects
+handset gestures to functions in the code.
+
+_Controller_ can handle a number of different train configurations. Examples of these 
+can be found in the _main.py_ module. The main module is the one that runs under the
+main thread in Python, thus it is the module that has to set up and maintain the 
+tkinter GUI.
 
 ### Vision sensors
 
-The 88007 sensors have trouble in telling apart many of the colors available in LEGO 
+The 88007 sensors can have trouble in telling apart many of the colors available in LEGO 
 bricks. We conducted many experiments with a variety of colors in order to select 
 particular combinations that would work for our project. So far, we found just three
 suitable colors: (color references here)
 
-Even with these "best" colors, the sensors generate a significant number of false and
-multiple detections, in part probably caused by interference with ambient light and the 
-colors of the track sleepers and the carpet underneath, and sensor sampling resolution.
-The code has a number of ways of, at least partially, handling these false and multiple
+Even with these "best" colors, the sensors generate a significant number of false positive
+and false negative detections, in part probably caused by interference with ambient light 
+and the colors of the track sleepers and the carpet underneath, and sensor sampling 
+resolution. The software has a number of ways of, at least partially, handling these false 
 detections by relying on timing information as the train moves along the track. 
 
