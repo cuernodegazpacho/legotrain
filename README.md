@@ -83,19 +83,31 @@ handset gestures to functions in the code.
 
 _Controller_ can handle a number of different train configurations. Examples of these 
 can be found in the _main.py_ module. The main module is the one that runs under the
-main thread in Python, thus it is the module that has to set up and maintain the 
+main thread in Python, thus it is the module that also sets up and maintains the 
 tkinter GUI.
 
 ### Vision sensors
 
 The 88007 sensors can have trouble in telling apart many of the colors available in LEGO 
-bricks. We conducted many experiments with a variety of colors in order to select 
-particular combinations that would work for our project. So far, we found just three
-suitable colors: (color references here)
+bricks. I conducted many experiments with a variety of colors in order to select 
+particular combinations that would work for our project. Software used for these 
+experiments is in directory _test_.
+
+The train control software uses color hue (H) and saturation (S) on the HSV color 
+space to uniquely identify colors. So far, I found just three colors that are well 
+separated from each other in the CIE (Commission Internationale de l'Eclairage) 
+standard normalized HSV diagram: Bright Red (SKU: 4560179), Dark Azur (SKU: 6206312), 
+and Vibrant Yellow (SKU: 6432185). Other colors tend to overlap partially with these 
+"best" colors, hindering the ability to correctly identify them. The yellows are 
+particularly tricky to be correctly picked out by the sensors, since they may apparently 
+contain a significant red component (invisible to our eyes but visible to the sensors), 
+they have lower saturation values, and they get easily confused with the light-yellowish 
+carpet under the track. 
 
 Even with these "best" colors, the sensors generate a significant number of false positive
-and false negative detections, in part probably caused by interference with ambient light 
-and the colors of the track sleepers and the carpet underneath, and sensor sampling 
-resolution. The software has a number of ways of, at least partially, handling these false 
-detections by relying on timing information as the train moves along the track. 
+and false negative detections. I believe they are caused in part by interference with 
+ambient light, confusion with the track sleepers and carpet underneath the track, and 
+sensor sampling resolution. The software has a number of ways of, at least partially, 
+handling these false detections by relying on timing information as the train moves 
+along the track. 
 
