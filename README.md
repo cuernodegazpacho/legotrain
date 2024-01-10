@@ -18,7 +18,18 @@ train. The trains run against each other, and the software takes care
 of preventing collisions by ensuring that they can only cross each 
 other when one is parked on its own station. Switches that connect the 
 station branches with the main line are fixed, effectively creating a unique
-and distinct path for each train.
+and distinct path for each train, although the paths overlap each other for
+most of the track length.
+
+The vision sensors are mounted in the train engine, pointing down throughout 
+an opening in the structural main plate. The sensors are used to detect color 
+tiles on the track.
+
+#### Vision sensor mounted on 60197 train engine
+
+| <img src="docs/pics/DSC00913.jpeg" width="400"></img> |
+  <img src="docs/pics/DSC00915.jpeg" width="400"></img> |
+
 
 ### Trains
 
@@ -27,8 +38,7 @@ _Train_. The specific subclass capable of handling the vision sensor is
 _SmartTrain_. The corresponding module _train.py_ contains class definitions 
 for these, as well as for auxiliary objects that are used to control the 
 train's motors, their LED headlights (when so equipped), their hub's LED color 
-light, report battery status, and handle events from vision sensors mounted 
-pointing down that are used to detect color tiles on the track.
+light, report battery status, and handle events from vision sensors.
 
 Other classes exist to handle a simple train with no vision sensor, but which
 can optionally have LED headlights (_SimpleTrain_), and a composite train made
@@ -78,13 +88,31 @@ running in clockwise and counter-clockwise directions.
 
 The _Controller_ class is responsible for establishing the connections in between the
 class instances that are passed to it by the _main.py_ module. It also creates an
-instance of _RemoteHandset_ that handles user input from the handset, and connects
+instance of class _RemoteHandset_ that handles user input from the handset, and connects
 handset gestures to functions in the code.
 
 _Controller_ can handle a number of different train configurations. Examples of these 
 can be found in the _main.py_ module. The main module is the one that runs under the
 main thread in Python, thus it is the module that also sets up and maintains the 
 tkinter GUI.
+
+#### Handset gestures
+
+Each set of buttons in the handset (left and right) controls one of the trains with the
+same gestures found by default in the Lego train set as it comes out of the box: plus 
+key increases train speed, minus key decreases train speed, red key stops the train. 
+
+Two additional gestures are accepted as well: 
+
+- pressing and holding for 1 sec or more any one of the red keys will stop both trains 
+and reset the entire system to manual mode. This means that the trains can only move 
+now under command of the handset left and right button sets, and they won't see the 
+track color marks any longer. This is useful to retrieve the trains from any undesired 
+situation and move each one to its own station. They can only be properly restarted in 
+automatic mode when are in this configuration.
+- momentarily pressing both red keys simultaneously will start both trains in auto mode.
+They will hold at each station for a certain time (randomly chosen) and then start
+moving in automatic mode.
 
 ### Vision sensors
 
@@ -111,8 +139,4 @@ sensor sampling resolution. The software has a number of ways of, at least parti
 handling these false detections by relying on timing information as the train moves 
 along the track. 
 
-#### Vision sensor mounted on 60197 train engine
-
-| <img src="docs/pics/DSC00913.jpeg" width="400"></img> |
-  <img src="docs/pics/DSC00915.jpeg" width="400"></img> |
 
