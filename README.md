@@ -114,6 +114,10 @@ automatic mode when are in this configuration.
 They will hold at each station for a certain time (randomly chosen) and then start
 moving in automatic mode.
 
+The system was envisioned to support the manual input of speed and stop commands from
+the user even when in automatic mode. This functionality wasn't extensively tested yet,
+so one may expect problems when manually interfering with the trains running in auto mode.
+
 ### Vision sensors
 
 The 88007 sensors can have trouble in telling apart many of the colors available in LEGO 
