@@ -3,9 +3,13 @@ Python scripts to automate Lego City trains
 
 This package depends on https://github.com/undera/pylgbst 
 
-Example of computer control using this software. The entire sequence is done 
-with hands off, although the handset controller remains fully functional and
-available for the user to modify the train's default behavior
+## Functional examples
+
+Example of computer control using this software. This is the "composite
+train" mode described below.
+
+<img src="docs/pics/CTrain.jpg" width="600"></img>
+
 https://www.youtube.com/watch?v=AUTcSPW_DJ4
 
 ## Design
