@@ -111,3 +111,8 @@ sensor sampling resolution. The software has a number of ways of, at least parti
 handling these false detections by relying on timing information as the train moves 
 along the track. 
 
+#### Vision sensor mounted on 60197 train engine
+
+| <img src="docs/pics/DSC00913.jpeg" width="400"></img> |
+  <img src="docs/pics/DSC00915.jpeg" width="400"></img> |
+
