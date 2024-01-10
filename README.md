@@ -1,5 +1,5 @@
 # legotrain
-Python scripts to support Lego City trains
+Python scripts to automate Lego City trains
 
 This package depends on https://github.com/undera/pylgbst 
 
@@ -118,7 +118,7 @@ moving in automatic mode.
 
 The 88007 sensors can have trouble in telling apart many of the colors available in LEGO 
 bricks. I conducted many experiments with a variety of colors in order to select 
-particular combinations that would work for our project. Software used for these 
+particular combinations that would work for this project. Software used for these 
 experiments is in directory _test_.
 
 The train control software uses color hue (H) and saturation (S) on the HSV color 
@@ -132,11 +132,11 @@ contain a significant red component (invisible to our eyes but visible to the se
 they have lower saturation values, and they get easily confused with the light-yellowish 
 carpet under the track. 
 
-Even with these "best" colors, the sensors generate a significant number of false positive
-and false negative detections. I believe they are caused in part by interference with 
-ambient light, confusion with the track sleepers and carpet underneath the track, and 
-sensor sampling resolution. The software has a number of ways of, at least partially, 
-handling these false detections by relying on timing information as the train moves 
-along the track. 
+Even with these "best" colors, the sensors generate a still significant number of 
+false positive and false negative detections. I believe they are caused in part by 
+interference with ambient light, confusion with the track sleepers and carpet 
+underneath the track, and sensor sampling resolution. The software has a number of 
+ways of, at least partially, handling these false detections by relying on timing 
+information as the train moves along the track. 
 
 
