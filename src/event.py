@@ -180,6 +180,7 @@ class EventProcessor:
                         else:
                             # next sector is free. Grab it.
                             next_sector.occupier = self.train.name
+                            self.train.down_speed()
 
                     else:
                         # leaving SLOW sub-sector, thus leaving the entire sector as well.

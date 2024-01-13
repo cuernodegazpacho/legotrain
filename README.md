@@ -5,8 +5,9 @@ This package depends on https://github.com/undera/pylgbst
 
 ## Functional examples
 
-Example of computer control using this software. This is the "composite
-train" mode described below.
+***still to come: two-train mode***
+
+Composite train mode described below:
 
 <img src="docs/pics/CTrain.jpg" width="600"></img>
 
@@ -42,7 +43,7 @@ _Train_. The specific subclass capable of handling the vision sensor is
 _SmartTrain_. The corresponding module _train.py_ contains class definitions 
 for these, as well as for auxiliary objects that are used to control the 
 train's motors, their LED headlights (when so equipped), their hub's LED color 
-light, report battery status, and handle events from vision sensors.
+light (see below), report battery status, and handle events from vision sensors.
 
 Other classes exist to handle a simple train with no vision sensor, but which
 can optionally have LED headlights (_SimpleTrain_), and a composite train made
@@ -55,6 +56,21 @@ battery voltages as well (see video with example).
 
 Currentlly these special configurations may not work properly because most of the 
 recent development work focused on the two-train configuration. 
+
+#### Color LED signals
+
+The train hub LED is used to convey status information about the train. The 
+implemented signals are:
+
+- **solid color** - this is the color used when calling the constructor for the particular
+_Train_ subclass. It is used to identify the train. When the train is moving and its
+status is normal, that is the color it displays.
+- **blinking** between the train color and orange - this signals that the train is stopped
+and waiting for control inputs, either from the control script or the handset.
+- **green** - the train received a start command from the control script and is free to 
+move (simulates the train engineer seeing a green light).
+- **red** - the train received a start command from the control script but is not free
+to move (simulates the train engineer seeing a red light)
 
 ### Track
 
@@ -88,6 +104,18 @@ The track layout is defined by a static data structure made of nested dictionari
 track layouts are actually necessary, since the layout may look different for trains 
 running in clockwise and counter-clockwise directions.
 
+This picture shows one among many possible physical realizations of the current track 
+layout. Note the blue tiles marking a structured segment. The actual positioning of the 
+color tiles must account at least in part for train inertia when stopping or changing 
+speed. This kind of effect is already handled by the control software, but needs 
+improvement. Since train inertia depends on the number of cars, a future version will 
+let the train instances be initialized with the number of cars in the train, and then 
+the software may take that into account when computing the acceleration and braking 
+voltage ramps. This is all a consequence of the train motors being DC motors and not 
+step motors as in other Lego robotic components.
+
+<img src="docs/pics/image0.jpeg" width="600"></img>
+
 ### Controller
 
 The _Controller_ class is responsible for establishing the connections in between the
@@ -103,8 +131,11 @@ tkinter GUI.
 #### Handset gestures
 
 Each set of buttons in the handset (left and right) controls one of the trains with the
-same gestures found by default in the Lego train set as it comes out of the box: plus 
-key increases train speed, minus key decreases train speed, red key stops the train. 
+same gestures found by default in the Lego train set as it comes out of the box: 
+
+- plus key - increases train speed
+- minus key - decreases train speed
+- red key - stops the train
 
 Two additional gestures are accepted as well: 
 
@@ -138,14 +169,15 @@ and Vibrant Yellow (SKU: 6432185). Other colors tend to overlap partially with t
 "best" colors, hindering the ability to correctly identify them. The yellows are 
 particularly tricky to be correctly picked out by the sensors, since they may apparently 
 contain a significant red component (invisible to our eyes but visible to the sensors), 
-they have lower saturation values, and they get easily confused with the light-yellowish 
-carpet under the track. 
+they have tipically low saturation values, and they get easily confused with the 
+light-yellowish carpet under the track. 
 
 Even with these "best" colors, the sensors generate a still significant number of 
 false positive and false negative detections. I believe they are caused in part by 
 interference with ambient light, confusion with the track sleepers and carpet 
 underneath the track, and sensor sampling resolution. The software has a number of 
 ways of, at least partially, handling these false detections by relying on timing 
-information as the train moves along the track. 
+information as the train moves along the track. More work is planned in order to
+minimize this problem.
 
 
