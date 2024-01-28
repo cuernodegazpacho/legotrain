@@ -158,18 +158,18 @@ class Train:
 
     def stop(self):
         self.check_acceleration_thread()
-        self.set_power(0)
+        self.set_power(0, force_led_blink=True)
 
     def _bump_motor_power(self, step):
         self.check_acceleration_thread()
         power_index = max(min(self.power_index + step, 10), -10)
         self.set_power(power_index)
 
-    def set_power(self, power_index):
+    def set_power(self, power_index, force_led_blink=False):
         self.check_timer_station()
         self.power_index = power_index
         self.motor_handler.set_motor_power(self.power_index, self.voltage)
-        self.led_handler.set_status_led(self.power_index)
+        self.led_handler.set_status_led(self.power_index, force_blink=force_led_blink)
 
     def check_timer_station(self):
         if self.timer_station is not None:
@@ -574,9 +574,11 @@ class LEDHandler:
         self.led.set_color(color)
         self.lock.release()
 
-    def set_status_led(self, new_power_index):
+    def set_status_led(self, new_power_index, force_blink=False):
         # here is the logic that prevents redundant BLE messages to be sent to the train hub
-        if self._led_desired_mode(new_power_index) != self._led_desired_mode(self.previous_power_index):
+        if (self._led_desired_mode(new_power_index) != self._led_desired_mode(self.previous_power_index)) \
+                or force_blink:
+
             self._cancel_led_thread()
             self._cancel_delay_timer()
 

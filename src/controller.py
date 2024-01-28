@@ -120,7 +120,7 @@ class Controller:
             self.train2.initialize_sectors()
 
             self.train1.timed_stop_at_station()
-            # time.sleep(1.0)
+            time.sleep(0.2)
             self.train2.timed_stop_at_station()
 
 

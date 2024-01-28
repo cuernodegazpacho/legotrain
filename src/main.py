@@ -46,9 +46,9 @@ if __name__ == '__main__':
 
     # ---------------------- Two-train setup (Smart self-driving) ----------------------------
 
-    train1 = SmartTrain("Train 1", "1", lock=lock, report=True, record=True,
+    train1 = SmartTrain("Blue", "1", lock=lock, report=True, record=True,
                          gui=gui, direction=COUNTER_CLOCKWISE, address=uuid_definitions.HUB_ORIG)
-    train2 = SmartTrain("Train 2", "2", led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
+    train2 = SmartTrain("Purple", "2", led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
                             gui=gui, address=uuid_definitions.HUB_TEST)
 
     controller = Controller(train1, train2=train2)

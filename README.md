@@ -1,8 +1,6 @@
 # legotrain
 Python scripts to automate Lego City trains
 
-This package depends on https://github.com/undera/pylgbst 
-
 ## Functional examples
 
 ***still to come: two-train mode***
@@ -13,20 +11,47 @@ Composite train mode described below:
 
 https://www.youtube.com/watch?v=AUTcSPW_DJ4
 
+## Requirements and installation
+
+This is *not* a plug-and-play software distribution. In order to use it,
+you should install from the source code. You should be familiar with
+Python installation procedures and environment set up, as well as have at 
+least cursory familiarity with *git* and GitHub. 
+
+This is so because the software very likely will have to be tuned to your
+specific train setup. Most of this tuning can be performed by editing a few
+parameters in the source code. If you are familiar with Python development and
+OO design principles, you should be able to even modify the code itself, once 
+you get familiar with it, in order to better adjust some of the algorithms 
+to you specific needs. 
+
+Thus, familiarity with a good Python IDE, as well as some experience in using
+GitHub resources such as forking and branching, would greatly enhance your
+experience (and fun) with the software.
+
+The basic dependence is with package  https://github.com/undera/pylgbst 
+It in turn will require installation of a Python Bluetooth library that
+supports the BLE (Bluetooth Low Energy) standard. I used *bleak*, but others
+are available as well. See the documentation at the  *pylgbst* repo for
+further details.
+
+My installation runs under Python 3.10 on a MacBook M1 Pro with Sonoma 14.2. 
+
+
 ## Design
 
 In the configuration currently implemented, two trains equipped with
 vision sensors (LEGO® Powered Up 88007 Color & Distance Sensor) 
-run on a simple (topologically) circular track equipped with two lateral 
-branches that act as train stations, each one dedicated to its own 
+run on a simple (topologically) circular track equipped with two passing 
+loops that act as train stations, each one dedicated to its own 
 train. The trains run against each other, and the software takes care 
 of preventing collisions by ensuring that they can only cross each 
 other when one is parked on its own station. Switches that connect the 
-station branches with the main line are fixed, effectively creating a unique
-and distinct path for each train, although the paths overlap each other for
+station loops to the main line are fixed, effectively creating a unique
+and distinct path for each train. Although the paths overlap each other for
 most of the track length.
 
-The vision sensors are mounted in the train engine, pointing down throughout 
+The vision sensors are mounted in the train engines, pointing down throughout 
 an opening in the structural main plate. The sensors are used to detect color 
 tiles on the track.
 
@@ -75,7 +100,7 @@ to move (simulates the train engineer seeing a red light)
 ### Track
 
 The track for this initial project is topologically a simple circle with
-two branches that are used as train stations. Each one serves one 
+two passing loops that are used as train stations. Each one serves one 
 sensor-equipped train. The track is divided into segments; and the main goal of the
 software is to ensure that each segment is occupied by mostly one, and only one,
 train, at any given time. 
@@ -96,7 +121,7 @@ marked by a color tile of the same color used to mark the segment end points. Th
 of the sub-segments is to allow the train to know where it is inside the segment, giving
 it enough time to interrogate the next segment about its occupancy status, allowing it to
 prepare in advance of arriving at the inter-segment transition region. Plain segments can
-be used when no such advanced preparation is necesssary (as, for instance, when the next
+be used when no such advanced preparation is necessary (as, for instance, when the next
 segment in the track layout is a station segment where a mandatory stop has to take
 place anyway).
 
