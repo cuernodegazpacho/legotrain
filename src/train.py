@@ -63,6 +63,7 @@ class Train:
         self.voltage = 0.
         self.led_color = led_color
         self.led_secondary_color = led_secondary_color
+        self.astation = 0
 
         # In this current implementation, these attributes are only used
         # by subclasses or events that should be aware of the sector
@@ -134,7 +135,8 @@ class Train:
                 # updated directly from here.
                 output_buffer = self.gui.encode_basic_variables(self.name, self.gui_id, self.voltage,
                                                                 self.current, self.power_index,
-                                                                self.motor_handler.power)
+                                                                self.motor_handler.power,
+                                                                self.astation)
                 tkinter_output_queue.put(output_buffer)
 
         def _report_voltage(value):
@@ -423,7 +425,11 @@ class SmartTrain(Train):
         self.timer_station = Timer(time_station, self.restart_movement)
         self.timer_station.start()
 
+        self.astation = time_station
+
     def restart_movement(self):
+        self.astation = 0
+
         # Check occupancy status of next sector. Note that restart_movement
         # is always called immediately *after* the train is internally set to
         # indicate it left a sector. Thus, train.sector was set to None, and

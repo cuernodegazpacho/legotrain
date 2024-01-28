@@ -9,7 +9,7 @@ QUEUE_POLLING = 50 # ms
 class GUI():
     def __init__(self):
         self.root = T.Tk()
-        self.root.geometry("650x350")
+        self.root.geometry("650x380")
         font = ('Helvetica', 36)
 
         self.root.title("Lego train control")
@@ -19,47 +19,55 @@ class GUI():
         right_frame = T.Frame(self.root)
 
         # left frame: field names
-        T.Label(left_frame, text="",        font=font, justify=LEFT).pack(side=TOP)
-        T.Label(left_frame, text="Voltage", font=font, justify=LEFT).pack(side=TOP)
-        T.Label(left_frame, text="Current", font=font, justify=LEFT).pack(side=TOP)
-        T.Label(left_frame, text="Speed",   font=font, justify=LEFT).pack(side=TOP)
-        T.Label(left_frame, text="Power",   font=font, justify=LEFT).pack(side=TOP)
+        T.Label(left_frame, text="",          font=font, justify=LEFT).pack(side=TOP)
+        T.Label(left_frame, text="Voltage",   font=font, justify=LEFT).pack(side=TOP)
+        T.Label(left_frame, text="Current",   font=font, justify=LEFT).pack(side=TOP)
+        T.Label(left_frame, text="Speed",     font=font, justify=LEFT).pack(side=TOP)
+        T.Label(left_frame, text="Power",     font=font, justify=LEFT).pack(side=TOP)
+        T.Label(left_frame, text="@ station", font=font, justify=LEFT).pack(side=TOP)
 
         # text variables
-        self.name_1_text = StringVar(center_frame, '')
-        self.voltage_1_text = StringVar(center_frame, '- - -')
-        self.current_1_text = StringVar(center_frame, '- - -')
-        self.speed_1_text = StringVar(center_frame, '- - -')
-        self.power_1_text = StringVar(center_frame, '- - -')
-        self.name_2_text = StringVar(right_frame, '')
-        self.voltage_2_text = StringVar(right_frame, '- - -')
-        self.current_2_text = StringVar(right_frame, '- - -')
-        self.speed_2_text = StringVar(right_frame, '- - -')
-        self.power_2_text = StringVar(right_frame, '- - -')
+        self.name_1_text     = StringVar(center_frame, '')
+        self.voltage_1_text  = StringVar(center_frame, '- - -')
+        self.current_1_text  = StringVar(center_frame, '- - -')
+        self.speed_1_text    = StringVar(center_frame, '- - -')
+        self.power_1_text    = StringVar(center_frame, '- - -')
+        self.astation_1_text = StringVar(center_frame, '- - -')
+
+        self.name_2_text     = StringVar(right_frame, '')
+        self.voltage_2_text  = StringVar(right_frame, '- - -')
+        self.current_2_text  = StringVar(right_frame, '- - -')
+        self.speed_2_text    = StringVar(right_frame, '- - -')
+        self.power_2_text    = StringVar(right_frame, '- - -')
+        self.astation_2_text = StringVar(center_frame, '- - -')
 
         # center frame: fields associated with id 1
-        self.name_1_label = T.Label(center_frame, textvariable=self.name_1_text, font=font)
-        self.voltage_1_label = T.Label(center_frame, textvariable=self.voltage_1_text, font=font, width=10, anchor="e")
-        self.current_1_label = T.Label(center_frame, textvariable=self.current_1_text, font=font, width=10, anchor="e")
-        self.speed_1_label =   T.Label(center_frame, textvariable=self.speed_1_text, font=font, width=10, anchor="e")
-        self.power_1_label =   T.Label(center_frame, textvariable=self.power_1_text, font=font, width=10, anchor="e")
+        self.name_1_label     = T.Label(center_frame, textvariable=self.name_1_text, font=font)
+        self.voltage_1_label  = T.Label(center_frame, textvariable=self.voltage_1_text, font=font, width=10, anchor="e")
+        self.current_1_label  = T.Label(center_frame, textvariable=self.current_1_text, font=font, width=10, anchor="e")
+        self.speed_1_label    = T.Label(center_frame, textvariable=self.speed_1_text, font=font, width=10, anchor="e")
+        self.power_1_label    = T.Label(center_frame, textvariable=self.power_1_text, font=font, width=10, anchor="e")
+        self.astation_1_label = T.Label(center_frame, textvariable=self.astation_1_text, font=font, width=10, anchor="e")
         self.name_1_label.pack(side=TOP)
         self.voltage_1_label.pack(side=TOP)
         self.current_1_label.pack(side=TOP)
         self.speed_1_label.pack(side=TOP)
         self.power_1_label.pack(side=TOP)
+        self.astation_1_label.pack(side=TOP)
 
         # right frame: fields associated with id 2
-        self.name_2_label = T.Label(right_frame, textvariable=self.name_2_text, font=font)
-        self.voltage_2_label = T.Label(right_frame,  textvariable=self.voltage_2_text, font=font, width=10, anchor="e")
-        self.current_2_label = T.Label(right_frame,  textvariable=self.current_2_text, font=font, width=10, anchor="e")
-        self.speed_2_label =   T.Label(right_frame, textvariable=self.speed_2_text, font=font, width=10, anchor="e")
-        self.power_2_label =   T.Label(right_frame, textvariable=self.power_2_text, font=font, width=10, anchor="e")
+        self.name_2_label     = T.Label(right_frame, textvariable=self.name_2_text, font=font)
+        self.voltage_2_label  = T.Label(right_frame,  textvariable=self.voltage_2_text, font=font, width=10, anchor="e")
+        self.current_2_label  = T.Label(right_frame,  textvariable=self.current_2_text, font=font, width=10, anchor="e")
+        self.speed_2_label    = T.Label(right_frame, textvariable=self.speed_2_text, font=font, width=10, anchor="e")
+        self.power_2_label    = T.Label(right_frame, textvariable=self.power_2_text, font=font, width=10, anchor="e")
+        self.astation_2_label = T.Label(right_frame, textvariable=self.astation_2_text, font=font, width=10, anchor="e")
         self.name_2_label.pack(side=TOP)
         self.voltage_2_label.pack(side=TOP)
         self.current_2_label.pack(side=TOP)
         self.speed_2_label.pack(side=TOP)
         self.power_2_label.pack(side=TOP)
+        self.astation_2_label.pack(side=TOP)
 
         left_frame.pack(side=LEFT)
         center_frame.pack(side=LEFT)
@@ -79,8 +87,9 @@ class GUI():
             # we're not done yet, let's come back later
             self.root.after(QUEUE_POLLING, self.after_callback)
 
-    def encode_basic_variables(self, name, id, voltage, current, power_index, power):
-        message = ("BASIC, %s, %1s, %5.2f, %5.3f, %i, %4.2f" % (name, id, voltage, current, power_index, power))
+    def encode_basic_variables(self, name, id, voltage, current, power_index, power, astation):
+        message = ("BASIC, %s, %1s, %5.2f, %5.3f, %i, %4.2f %3i" % \
+                   (name, id, voltage, current, power_index, power, astation))
         return message
 
     def _decode_message_and_update(self, message):
@@ -95,6 +104,7 @@ class GUI():
         current_value = tokens[4]
         speed = tokens[5]
         power = tokens[6]
+        astation = tokens[7]
 
         vname = f"name_{id}_text".format(id=id)
         self.__dict__[vname].set(name)
@@ -106,9 +116,17 @@ class GUI():
         self.__dict__[vname].set(speed)
         vname = f"power_{id}_text".format(id=id)
         self.__dict__[vname].set(power)
+        vname = f"astation_{id}_text".format(id=id)
+        self.__dict__[vname].set(astation)
 
 
 if __name__ == '__main__':
     g = GUI()
-    g.voltage_1_text.set("12.0")
+
+    g.voltage_1_text.set("8.1")
+    g.name_1_text.set("Blue")
+
+    g.voltage_2_text.set("7.9")
+    g.name_2_text.set("Purple")
+
     g.root.mainloop()
