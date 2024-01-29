@@ -87,37 +87,46 @@ class GUI():
             # we're not done yet, let's come back later
             self.root.after(QUEUE_POLLING, self.after_callback)
 
-    def encode_basic_variables(self, name, id, voltage, current, power_index, power, astation):
-        message = ("BASIC, %s, %1s, %5.2f, %5.3f, %i, %4.2f %3i" % \
-                   (name, id, voltage, current, power_index, power, astation))
+    def encode_basic_variables(self, name, id, voltage, current, power_index, power):
+        message = ("BASIC, %s, %1s, %5.2f, %5.3f, %i, %4.2f" %
+                   (name, id, voltage, current, power_index, power))
+        return message
+
+    def encode_variables(self, message_type, name, id, value):
+        message = (message_type + ", %s, %1s, %3i" % (name, id, value))
         return message
 
     def _decode_message_and_update(self, message):
         tokens = message.split(',')
 
-        if tokens[0] != "BASIC":
-            return
+        if tokens[0] == "BASIC":
+            name = tokens[1]
+            id = tokens[2].strip()
+            voltage_value = tokens[3]
+            current_value = tokens[4]
+            speed = tokens[5]
+            power = tokens[6]
 
-        name = tokens[1]
-        id = tokens[2].strip()
-        voltage_value = tokens[3]
-        current_value = tokens[4]
-        speed = tokens[5]
-        power = tokens[6]
-        astation = tokens[7]
+            vname = f"name_{id}_text".format(id=id)
+            self.__dict__[vname].set(name)
+            vname = f"voltage_{id}_text".format(id=id)
+            self.__dict__[vname].set(voltage_value)
+            vname = f"current_{id}_text".format(id=id)
+            self.__dict__[vname].set(current_value)
+            vname = f"speed_{id}_text".format(id=id)
+            self.__dict__[vname].set(speed)
+            vname = f"power_{id}_text".format(id=id)
+            self.__dict__[vname].set(power)
 
-        vname = f"name_{id}_text".format(id=id)
-        self.__dict__[vname].set(name)
-        vname = f"voltage_{id}_text".format(id=id)
-        self.__dict__[vname].set(voltage_value)
-        vname = f"current_{id}_text".format(id=id)
-        self.__dict__[vname].set(current_value)
-        vname = f"speed_{id}_text".format(id=id)
-        self.__dict__[vname].set(speed)
-        vname = f"power_{id}_text".format(id=id)
-        self.__dict__[vname].set(power)
-        vname = f"astation_{id}_text".format(id=id)
-        self.__dict__[vname].set(astation)
+        elif tokens[0] == "@STATION":
+            name = tokens[1]
+            id = tokens[2].strip()
+            astation = tokens[3]
+
+            vname = f"name_{id}_text".format(id=id)
+            self.__dict__[vname].set(name)
+            vname = f"astation_{id}_text".format(id=id)
+            self.__dict__[vname].set(astation)
 
 
 if __name__ == '__main__':

@@ -135,8 +135,7 @@ class Train:
                 # updated directly from here.
                 output_buffer = self.gui.encode_basic_variables(self.name, self.gui_id, self.voltage,
                                                                 self.current, self.power_index,
-                                                                self.motor_handler.power,
-                                                                self.astation)
+                                                                self.motor_handler.power)
                 tkinter_output_queue.put(output_buffer)
 
         def _report_voltage(value):
@@ -426,9 +425,11 @@ class SmartTrain(Train):
         self.timer_station.start()
 
         self.astation = time_station
+        self._report_astation()
 
     def restart_movement(self):
         self.astation = 0
+        self._report_astation()
 
         # Check occupancy status of next sector. Note that restart_movement
         # is always called immediately *after* the train is internally set to
@@ -459,6 +460,12 @@ class SmartTrain(Train):
             power_index_signal = -1
 
         self.accelerate(list(range(1, MAX_SPEED+1)), power_index_signal)
+
+    def _report_astation(self):
+        # update GUI with @station value
+        if self.gui is not None and self.gui_id != "0":
+            output_buffer = self.gui.encode_variables("@STATION", self.name, self.gui_id, self.astation)
+            tkinter_output_queue.put(output_buffer)
 
     def _vision_sensor_callback(self, *args, **kwargs):
         # use HSV as criterion for mapping colors
