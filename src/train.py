@@ -15,7 +15,7 @@ from track import sectors, station_sector_names, MAX_SPEED
 from event import EventProcessor, DummyEventProcessor, SensorEventFilter
 from event import HUE, SATURATION, RGB_LIMIT, V_LIMIT
 from signal import RED, GREEN, BLUE, YELLOW
-from gui import tkinter_output_queue
+from gui import tkinter_output_queue, ASTATION, SECTOR
 
 sign = lambda x: x and (1, -1)[x<0]
 
@@ -361,8 +361,8 @@ class SimpleTrain(Train):
         if self.headlight_handler is not None:
             self.headlight_handler.set_headlight_brightness(self.power_index)
 
-    def set_power(self, power_index):
-        super(SimpleTrain, self).set_power(power_index)
+    def set_power(self, power_index, force_led_blink=False):
+        super(SimpleTrain, self).set_power(power_index, force_led_blink=force_led_blink)
         if self.headlight_handler is not None:
             self.headlight_handler.set_headlight_brightness(self.power_index)
 
@@ -410,9 +410,14 @@ class SmartTrain(Train):
         self.initialize_sectors()
 
     def initialize_sectors(self):
-        # assume train is departing from station
+        # assume train is departing from station; initialize its sector reference
+        # to the inter-sector zone.
         self.sector = None
         self.previous_sector = sectors[station_sector_names[self.direction]]
+
+        if self.gui is not None:
+            output_buffer = self.gui.encode_str_variable(SECTOR, self.name, self.gui_id, "gray51")
+            tkinter_output_queue.put(output_buffer)
 
     def timed_stop_at_station(self):
         # this only happens in auto mode
@@ -464,7 +469,7 @@ class SmartTrain(Train):
     def _report_astation(self):
         # update GUI with @station value
         if self.gui is not None and self.gui_id != "0":
-            output_buffer = self.gui.encode_variables("@STATION", self.name, self.gui_id, self.astation)
+            output_buffer = self.gui.encode_int_variable(ASTATION, self.name, self.gui_id, self.astation)
             tkinter_output_queue.put(output_buffer)
 
     def _vision_sensor_callback(self, *args, **kwargs):
