@@ -2,9 +2,24 @@ import queue
 import tkinter as T
 from tkinter import StringVar, LEFT, TOP
 
+from signal import RED, GREEN, BLUE, YELLOW, INTER_SECTOR
+
 tkinter_output_queue = queue.Queue()
 QUEUE_POLLING = 50 # ms
 
+# tkinter color names
+TK_GRAY = "gray52"
+TK_RED = "red"
+TK_BLUE = "blue"
+TK_YELLOW = "yellow"
+
+# translation between signal colors and tkinter colors
+tk_color = {RED: TK_RED,
+            BLUE: TK_BLUE,
+            YELLOW: TK_YELLOW,
+            INTER_SECTOR: TK_GRAY}
+
+# message types
 BASIC = "BASIC"
 ASTATION = "@STATION"
 SECTOR = "SECTOR"

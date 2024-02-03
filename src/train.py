@@ -12,10 +12,11 @@ from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN, COLOR_RED
 import uuid_definitions
 from track import CLOCKWISE, COUNTER_CLOCKWISE
 from track import sectors, station_sector_names, MAX_SPEED
+from signal import INTER_SECTOR
 from event import EventProcessor, DummyEventProcessor, SensorEventFilter
 from event import HUE, SATURATION, RGB_LIMIT, V_LIMIT
 from signal import RED, GREEN, BLUE, YELLOW
-from gui import tkinter_output_queue, ASTATION, SECTOR
+from gui import tkinter_output_queue, tk_color, ASTATION, SECTOR
 
 sign = lambda x: x and (1, -1)[x<0]
 
@@ -149,25 +150,33 @@ class Train:
         self.hub.voltage.subscribe(_report_voltage, mode=Voltage.VOLTAGE_L, granularity=20)
         self.hub.current.subscribe(_report_current, mode=Current.CURRENT_L, granularity=20)
 
-    # In the most basic application, these speed controls are to be used
-    # by the controlling script to respond to key presses in the handset.
+    # up_speed and down_speed are used only by handset actions. They should
+    # kill both the station wait and the accelerate threads; that way, the
+    # state the train is after the user input is defined solely by that input.
     def up_speed(self):
         self._bump_motor_power(1)
 
     def down_speed(self):
         self._bump_motor_power(-1)
 
-    def stop(self):
-        self.check_acceleration_thread()
-        self.set_power(0, force_led_blink=True)
-
     def _bump_motor_power(self, step):
+        self.check_timer_station()
         self.check_acceleration_thread()
+
         power_index = max(min(self.power_index + step, 10), -10)
         self.set_power(power_index)
 
+    # stop is used by both handset and script in auto mode. It should behave like
+    # up_speed and down_speed when activated by a handset call, but should not cancel
+    # control threads when called by the script in auto mode.
+    def stop(self, from_handset=True):
+        if from_handset:
+            self.check_timer_station()
+            self.check_acceleration_thread()
+
+        self.set_power(0, force_led_blink=True)
+
     def set_power(self, power_index, force_led_blink=False):
-        self.check_timer_station()
         self.power_index = power_index
         self.motor_handler.set_motor_power(self.power_index, self.voltage)
         self.led_handler.set_status_led(self.power_index, force_blink=force_led_blink)
@@ -190,7 +199,7 @@ class Train:
             self.speedup_timer= None
 
     def return_to_default_speed(self):
-        self.accelerate([self.power_index, MAX_SPEED], 1)
+        self.accelerate([self.power_index, MAX_SPEED-2], 1)
 
     # The `accelerate` method has to be run in a thread, and stopped whenever a
     # set_power call takes place coming, typically, from the up_speed, dow_speed,
@@ -356,8 +365,8 @@ class SimpleTrain(Train):
         if self.headlight_handler is not None:
             self.headlight_handler.set_headlight_brightness(self.power_index)
 
-    def stop(self):
-        super(SimpleTrain, self).stop()
+    def stop(self, from_handset=True):
+        super(SimpleTrain, self).stop(from_handset=from_handset)
         if self.headlight_handler is not None:
             self.headlight_handler.set_headlight_brightness(self.power_index)
 
@@ -416,7 +425,11 @@ class SmartTrain(Train):
         self.previous_sector = sectors[station_sector_names[self.direction]]
 
         if self.gui is not None:
-            output_buffer = self.gui.encode_str_variable(SECTOR, self.name, self.gui_id, "gray51")
+            # train is initialized as if it were in the inter-sector zone right after
+            # the station. To prevent confusion, we report sector as based instead on
+            # the previous sector color.
+            output_buffer = self.gui.encode_str_variable(SECTOR, self.name, self.gui_id,
+                                                         tk_color[self.previous_sector.color])
             tkinter_output_queue.put(output_buffer)
 
     def timed_stop_at_station(self):
@@ -424,8 +437,10 @@ class SmartTrain(Train):
         if not self.auto:
             return
 
-        # start a timed wait interval at a station, and handle the hub's LED behavior.
-        time_station = random.uniform(2., 25.)
+        self.check_timer_station()
+
+        # start a timed wait interval at a station
+        time_station = random.uniform(3., 20.)
         self.timer_station = Timer(time_station, self.restart_movement)
         self.timer_station.start()
 
@@ -450,6 +465,12 @@ class SmartTrain(Train):
         # immediately occupy next sector
         next_sector.occupier = self.name
 
+        # train is departing from station, so gui displays inter-sector color
+        if self.gui is not None:
+            output_buffer = self.gui.encode_str_variable(SECTOR, self.name, self.gui_id,
+                                                         tk_color[INTER_SECTOR])
+            tkinter_output_queue.put(output_buffer)
+
         self.led_handler.set_solid(COLOR_GREEN)
         if self.secondary_train is not None:
             self.secondary_train.led_handler.set_solid(COLOR_GREEN)
@@ -468,7 +489,7 @@ class SmartTrain(Train):
 
     def _report_astation(self):
         # update GUI with @station value
-        if self.gui is not None and self.gui_id != "0":
+        if self.gui is not None:
             output_buffer = self.gui.encode_int_variable(ASTATION, self.name, self.gui_id, self.astation)
             tkinter_output_queue.put(output_buffer)
 
@@ -544,9 +565,9 @@ class CompoundTrain():
         self.train_front.down_speed()
         self.train_rear.up_speed()
 
-    def stop(self):
-        self.train_front.stop()
-        self.train_rear.stop()
+    def stop(self, from_handset=True):
+        self.train_front.stop(from_handset=from_handset)
+        self.train_rear.stop(from_handset=from_handset)
 
 
 class LEDHandler:

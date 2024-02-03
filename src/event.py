@@ -2,8 +2,10 @@ import time
 from time import sleep
 from threading import Timer
 
-from signal import RED, GREEN, BLUE, YELLOW
-from track import StructuredSector, FAST, SLOW, sectors
+from signal import RED, GREEN, BLUE, YELLOW, INTER_SECTOR
+from track import StructuredSector, sectors
+from track import FAST, SLOW
+from gui import tkinter_output_queue, tk_color, SECTOR
 
 
 TIME_THRESHOLD = 0.4 # seconds
@@ -108,7 +110,14 @@ class EventProcessor:
             self.train.check_acceleration_thread()
 
             sleep(0.01)
-            self.train.stop()
+            self.train.stop(from_handset=False)
+
+            # gui displays station color
+            if self.train.gui is not None:
+                output_buffer = self.train.gui.encode_str_variable(SECTOR, self.train.name,
+                                                                   self.train.gui_id,
+                                                                   tk_color[event])
+                tkinter_output_queue.put(output_buffer)
 
             # make sure previous sector is released.
             self.train.previous_sector.occupier = None
@@ -125,7 +134,7 @@ class EventProcessor:
             # method. But *do not* call its timed delay routine, since this
             # functionality must be commanded by the current train only.
             if self.train.secondary_train is not None:
-                self.train.secondary_train.stop()
+                self.train.secondary_train.stop(from_handset=False)
 
             # when departing from station, re-initialize train sector tracking.
             # This means:
@@ -205,6 +214,12 @@ class EventProcessor:
                 # train is moving from inter-sector zone into new sector
                 self.train.sector = self.train.previous_sector.next[self.train.direction]
 
+                if self.train.gui is not None:
+                    output_buffer = self.train.gui.encode_str_variable(SECTOR, self.train.name,
+                                                                       self.train.gui_id,
+                                                                       tk_color[event])
+                    tkinter_output_queue.put(output_buffer)
+
                 # structured segments start with a FAST sub-sector
                 if isinstance(self.train.sector, StructuredSector):
                     self.train.sector.sub_sector_type = FAST
@@ -242,6 +257,11 @@ class EventProcessor:
         # entering inter-sector zone
         self.train.sector = None
 
+        if self.train.gui is not None:
+            output_buffer = self.train.gui.encode_str_variable(SECTOR, self.train.name,
+                                                               self.train.gui_id, tk_color[INTER_SECTOR])
+            tkinter_output_queue.put(output_buffer)
+
     def _slowdown(self):
         # the train might be moving backwards, so first we generate
         # a positive representation of the current power index (the
@@ -267,7 +287,7 @@ class EventProcessor:
         self.train.accelerate(power_index_range, sign(self.train.power_index), sleep_time=sleep_time)
 
     def _stop_and_wait(self, next_sector):
-        self.train.stop()
+        self.train.stop(from_handset=False)
 
         # make sure we wait for the next sector to go free. This
         # may be redundant here, since train.restart_movement should

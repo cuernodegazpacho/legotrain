@@ -1,15 +1,14 @@
-from signal import RED, BLUE, YELLOW
+from signal import RED, BLUE, YELLOW, INTER_SECTOR
 
 CLOCKWISE = "clockwise"
 COUNTER_CLOCKWISE = "counter_clockwise"
 
-DEFAULT_SECTOR_TIME = 6 #s
+DEFAULT_SECTOR_TIME = 6.0 #s
 FAST = 0
 SLOW = 1
 
-MAX_SPEED = 5
-MAX_SPEED_TIME = 8 # s
-
+MAX_SPEED = 6
+MAX_SPEED_TIME = 8.0 # s
 
 class Sector():
     def __init__(self, color, sector_time=DEFAULT_SECTOR_TIME,
@@ -67,10 +66,12 @@ class StructuredSector(Sector):
     that transition point won't be detected)
 
     :param color: the sector's color
-    :param sector_time typical time needed to traverse a given sector
+    :param sector_time typical time needed to traverse a given sector.
+        End-of-sector events are ignored if happening before this time limit.
     :param max_speed: the speed setting to which the train must
         accelerate when entering the sector
-    :param max_speed_time: the time to sustain max speed (in sec.)
+    :param max_speed_time: the time to sustain max speed (in sec.). After that,
+        the speed in bumped down twice.
     '''
     def __init__(self, color, sector_time=DEFAULT_SECTOR_TIME,
                  max_speed=MAX_SPEED, max_speed_time=MAX_SPEED_TIME):
@@ -95,9 +96,9 @@ def clear_track():
 
 # sectors
 sectors = {"RED_1": Sector(RED),
-           YELLOW: Sector(YELLOW, sector_time=8, max_speed_time=4),
+           YELLOW: Sector(YELLOW, sector_time=6, max_speed_time=5),
            "RED_2": Sector(RED),
-           BLUE: StructuredSector(BLUE, sector_time=2, max_speed_time=1)
+           BLUE: StructuredSector(BLUE, sector_time=3.5, max_speed_time=3)
            }
 
 station_sector_names = {COUNTER_CLOCKWISE: "RED_1",
