@@ -9,6 +9,7 @@ SLOW = 1
 
 MAX_SPEED = 6
 MAX_SPEED_TIME = 8.0 # s
+DEFAULT_SPEED = 4
 
 class Sector():
     def __init__(self, color, sector_time=DEFAULT_SECTOR_TIME,
@@ -96,9 +97,9 @@ def clear_track():
 
 # sectors
 sectors = {"RED_1": Sector(RED),
-           YELLOW: Sector(YELLOW, sector_time=6, max_speed_time=5),
+           YELLOW: Sector(YELLOW, sector_time=6, max_speed_time=7.5),
            "RED_2": Sector(RED),
-           BLUE: StructuredSector(BLUE, sector_time=3.5, max_speed_time=3)
+           BLUE: StructuredSector(BLUE, sector_time=3., max_speed_time=3.5)
            }
 
 station_sector_names = {COUNTER_CLOCKWISE: "RED_1",

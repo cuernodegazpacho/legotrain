@@ -11,7 +11,7 @@ from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN, COLOR_RED
 
 import uuid_definitions
 from track import CLOCKWISE, COUNTER_CLOCKWISE
-from track import sectors, station_sector_names, MAX_SPEED
+from track import sectors, station_sector_names, clear_track, DEFAULT_SPEED
 from signal import INTER_SECTOR
 from event import EventProcessor, DummyEventProcessor, SensorEventFilter
 from event import HUE, SATURATION, RGB_LIMIT, V_LIMIT
@@ -147,8 +147,14 @@ class Train:
             self.current = value
             _print_values()
 
-        self.hub.voltage.subscribe(_report_voltage, mode=Voltage.VOLTAGE_L, granularity=20)
-        self.hub.current.subscribe(_report_current, mode=Current.CURRENT_L, granularity=20)
+        self.hub.voltage.subscribe(_report_voltage, mode=Voltage.VOLTAGE_L, granularity=5)
+        self.hub.current.subscribe(_report_current, mode=Current.CURRENT_L, granularity=7)
+
+    def report_astation(self):
+        # update GUI with @station value
+        if self.gui is not None:
+            output_buffer = self.gui.encode_int_variable(ASTATION, self.name, self.gui_id, self.astation)
+            tkinter_output_queue.put(output_buffer)
 
     # up_speed and down_speed are used only by handset actions. They should
     # kill both the station wait and the accelerate threads; that way, the
@@ -173,6 +179,8 @@ class Train:
         if from_handset:
             self.check_timer_station()
             self.check_acceleration_thread()
+            self.astation = 0
+            self.report_astation()
 
         self.set_power(0, force_led_blink=True)
 
@@ -192,14 +200,13 @@ class Train:
             self.stop_acceleration_thread = True
             self.acceleration_thread = None
 
+    def check_speedup_timer(self):
         if self.speedup_timer is not None:
-            self.stop_acceleration_thread = True
-            self.acceleration_thread = None
             self.speedup_timer.cancel()
-            self.speedup_timer= None
+            self.speedup_timer = None
 
     def return_to_default_speed(self):
-        self.accelerate([self.power_index, MAX_SPEED-2], 1)
+        self.accelerate(list(range(self.power_index, DEFAULT_SPEED-1, -1)), 1, sleep_time=0.2)
 
     # The `accelerate` method has to be run in a thread, and stopped whenever a
     # set_power call takes place coming, typically, from the up_speed, dow_speed,
@@ -408,7 +415,7 @@ class SmartTrain(Train):
                                           direction=direction,
                                           address=address)
 
-        self.hub.vision_sensor.subscribe(self._vision_sensor_callback, granularity=5, mode=6)
+        self.hub.vision_sensor.subscribe(self._vision_sensor_callback, granularity=4, mode=6)
 
         # events coming from the vision sensor need to be pre-processed in order
         # to filter out multiple detections, before being handled.
@@ -417,6 +424,7 @@ class SmartTrain(Train):
         # self.event_processor = DummyEventProcessor(self) # for debugging only
 
         self.initialize_sectors()
+        clear_track()
 
     def initialize_sectors(self):
         # assume train is departing from station; initialize its sector reference
@@ -440,16 +448,16 @@ class SmartTrain(Train):
         self.check_timer_station()
 
         # start a timed wait interval at a station
-        time_station = random.uniform(3., 20.)
+        time_station = random.uniform(3., 10.)
         self.timer_station = Timer(time_station, self.restart_movement)
         self.timer_station.start()
 
         self.astation = time_station
-        self._report_astation()
+        self.report_astation()
 
     def restart_movement(self):
         self.astation = 0
-        self._report_astation()
+        self.report_astation()
 
         # Check occupancy status of next sector. Note that restart_movement
         # is always called immediately *after* the train is internally set to
@@ -485,13 +493,9 @@ class SmartTrain(Train):
         else:
             power_index_signal = -1
 
-        self.accelerate(list(range(1, MAX_SPEED+1)), power_index_signal)
-
-    def _report_astation(self):
-        # update GUI with @station value
-        if self.gui is not None:
-            output_buffer = self.gui.encode_int_variable(ASTATION, self.name, self.gui_id, self.astation)
-            tkinter_output_queue.put(output_buffer)
+        # accelerate just to move train out of station area into inter-sector
+        # zone. Train will regain full speed when crossing sector signal.
+        self.accelerate(list(range(1, 4)), power_index_signal, sleep_time=0.5)
 
     def _vision_sensor_callback(self, *args, **kwargs):
         # use HSV as criterion for mapping colors

@@ -20,6 +20,10 @@ class _DummyTrain():
         return
     def down_speed(self):
         return
+    def initialize_sectors(self):
+        return
+    def timed_stop_at_station(self):
+        return
 
 
 class Controller:
@@ -99,7 +103,8 @@ class Controller:
         self.train2.stop()
 
         # both trains should be conducted in manual mode from now on
-        if isinstance(self.train1, SmartTrain) and isinstance(self.train2, SmartTrain):
+        if isinstance(self.train1, SmartTrain) and (isinstance(self.train2, SmartTrain) or
+                isinstance(self.train2, _DummyTrain)):
             self.train1.auto = False
             self.train2.auto = False
 
@@ -112,7 +117,8 @@ class Controller:
 
         track.clear_track()
 
-        if isinstance(self.train1, SmartTrain) and isinstance(self.train2, SmartTrain):
+        if isinstance(self.train1, SmartTrain) and (isinstance(self.train2, SmartTrain) or
+                isinstance(self.train2, _DummyTrain)):
             self.train1.auto = True
             self.train2.auto = True
 
@@ -137,8 +143,8 @@ class HandsetHandler:
         self.controller = controller
 
         # helper variables for handling more complex gestures
-        self.previous_red_event = None
-        self.previous_event = HandsetEvent(RemoteButton.RELEASE) # dummy event
+        self.previous_red_event = HandsetEvent(RemoteButton.RED)
+        self.previous_event = HandsetEvent(RemoteButton.RELEASE)
         self.events_to_skip = 0
 
     def callback_from_button(self, button, button_set):
@@ -155,7 +161,7 @@ class HandsetHandler:
         # - dual button simultaneous quick press - RED and RED with short time interval
         # - long press - RED and RELEASE with long time interval
 
-        # if no valid previous event is know, store current event and
+        # if no valid previous RED event is know, store current RED event and
         # return without doing anything else
         if event.button in [RemoteButton.RED] and self.previous_red_event is None:
             self.previous_red_event = event
@@ -186,7 +192,7 @@ class HandsetHandler:
 
             if d_timestamp < 0.3:
                 # the two RELEASE events associated with these two RED events
-                # must be ignored. This forces the next two calls to this method
+                # must be ignored. We force the next two calls to this method
                 # to be skipped.
                 self.events_to_skip = 2
                 self.controller._handle_red_button(DUAL)
