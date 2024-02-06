@@ -166,8 +166,8 @@ class Train:
         self._bump_motor_power(-1)
 
     def _bump_motor_power(self, step):
-        self.check_timer_station()
-        self.check_acceleration_thread()
+        self.cancel_station_timer()
+        self.cancel_acceleration_thread()
 
         power_index = max(min(self.power_index + step, 10), -10)
         self.set_power(power_index)
@@ -177,8 +177,8 @@ class Train:
     # control threads when called by the script in auto mode.
     def stop(self, from_handset=True):
         if from_handset:
-            self.check_timer_station()
-            self.check_acceleration_thread()
+            self.cancel_station_timer()
+            self.cancel_acceleration_thread()
             self.astation = 0
             self.report_astation()
 
@@ -189,18 +189,18 @@ class Train:
         self.motor_handler.set_motor_power(self.power_index, self.voltage)
         self.led_handler.set_status_led(self.power_index, force_blink=force_led_blink)
 
-    def check_timer_station(self):
+    def cancel_station_timer(self):
         if self.timer_station is not None:
             self.timer_station.cancel()
             self.timer_station = None
             self.led_handler.set_solid(self.led_color)
 
-    def check_acceleration_thread(self):
+    def cancel_acceleration_thread(self):
         if self.acceleration_thread is not None:
             self.stop_acceleration_thread = True
             self.acceleration_thread = None
 
-    def check_speedup_timer(self):
+    def cancel_speedup_timer(self):
         if self.speedup_timer is not None:
             self.speedup_timer.cancel()
             self.speedup_timer = None
@@ -214,7 +214,7 @@ class Train:
     # itself, as for instance in response from a sensor signal.
     def accelerate(self, power_index_values, power_index_signal, sleep_time=0.3):
         # if already running, stop it before starting a new acceleration ramp
-        self.check_acceleration_thread()
+        self.cancel_acceleration_thread()
 
         self.acceleration_thread = Thread(target=self._accelerate,
                                           args=(power_index_values,
@@ -427,6 +427,18 @@ class SmartTrain(Train):
         clear_track()
 
     def initialize_sectors(self):
+        '''
+        When departing from a station, or when any situation requires a full
+        reset, re-initialize train sector tracking. This means:
+        1 - set current sector in train to None (train will formally be in the
+            inter-sector zone)
+        2 - set previous sector in train to the corresponding station
+            sector from which it will depart.
+        Note that the train will be put immediately in the state represented
+        by this method, even though it is still stopped at the station, under
+        control of the timing thread set by method timed_stop_at_station
+        '''
+
         # assume train is departing from station; initialize its sector reference
         # to the inter-sector zone.
         self.sector = None
@@ -445,7 +457,7 @@ class SmartTrain(Train):
         if not self.auto:
             return
 
-        self.check_timer_station()
+        self.cancel_station_timer()
 
         # start a timed wait interval at a station
         time_station = random.uniform(3., 10.)
