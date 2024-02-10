@@ -10,7 +10,7 @@ from pylgbst.peripherals import Voltage, Current, LEDLight
 from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN, COLOR_RED
 
 import uuid_definitions
-from track import CLOCKWISE, COUNTER_CLOCKWISE
+from track import CLOCKWISE, COUNTER_CLOCKWISE, MINIMUM_TIME_STATION, MAXIMUM_TIME_STATION
 from track import sectors, station_sector_names, clear_track, DEFAULT_SPEED
 from signal import INTER_SECTOR
 from event import EventProcessor, DummyEventProcessor, SensorEventFilter
@@ -33,9 +33,9 @@ class Train:
     is set to zero (train is stopped). The original blinking with red color signaling low
     battery remains unchanged.
 
-    This class can report voltage and current at stdout. It can also record these measurements
-    in a text file that is named as the train instance, with suffix ".txt". If a file of the
-    same name already exists, it will be appended with data from the current run.
+    This class can report voltage and current at stdout and the GUI. It can also record these
+    measurements in a text file that is named as the train instance, with suffix ".txt". If a
+    file of the same name already exists, it will be appended with data from the current run.
 
     A thread lock mechanism is used to prevent collisions in the thread-unsafe pylgbst
     environment. A per-hub lock is provided by default, a global lock can be provided by the
@@ -43,6 +43,7 @@ class Train:
 
     :param name: train name, used in the report
     :param gui_id: str used by the GUI to direct report to appropriate field
+    :param ncars: int number of cars; used to normalize speed settings
     :param lock: global lock used for threading access
     :param gui: instance of GUI, used to report status info
     :param led_color: primary LED color used in this train instance
@@ -53,18 +54,22 @@ class Train:
     :param address: UUID of the train's internal hub
     :param direction: direction of movement on the track
     '''
-    def __init__(self, name, gui_id="0", lock=None, report=False, record=False, linear=False,
+    def __init__(self, name, gui_id="0", ncars=2, lock=None, report=False, record=False, linear=False,
                  gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  direction=CLOCKWISE, address=uuid_definitions.HUB_TEST):
 
         self.name = name
         self.gui_id = gui_id
+        self.ncars = ncars
         self.hub = SmartHub(address=address)
         self.current = 0.
         self.voltage = 0.
         self.led_color = led_color
         self.led_secondary_color = led_secondary_color
         self.astation = 0
+
+        # dispatcher allows system-wide communications
+        self.dispatcher = None
 
         # In this current implementation, these attributes are only used
         # by subclasses or events that should be aware of the sector
@@ -95,7 +100,7 @@ class Train:
 
         # motor
         self.motor = self.hub.port_A
-        self.motor_handler = MotorHandler(self.motor, self.lock, linear)
+        self.motor_handler = MotorHandler(self.motor, self.ncars, self.lock, linear)
         self.power_index = 0
 
         # led control. Set initial status to current power index
@@ -154,6 +159,12 @@ class Train:
         # update GUI with @station value
         if self.gui is not None:
             output_buffer = self.gui.encode_int_variable(ASTATION, self.name, self.gui_id, self.astation)
+            tkinter_output_queue.put(output_buffer)
+
+    def report_sector(self, tkcolor, subtext=""):
+        if self.gui is not None:
+            output_buffer = self.gui.encode_str_variable(SECTOR, self.name, self.gui_id,
+                                                         tkcolor, subtext=subtext)
             tkinter_output_queue.put(output_buffer)
 
     # up_speed and down_speed are used only by handset actions. They should
@@ -283,8 +294,14 @@ class MotorHandler:
        10:  1.0, -10: -1.0,
     }
 
-    def __init__(self, motor, lock, linear=False):
+    # experimental correction for number of cars. The correction should
+    # be unity for default number of cars (2), and decrease voltage with one
+    # or zero cars.
+    ncars_correction = [0.85, 0.92, 1.]
+
+    def __init__(self, motor, ncars, lock, linear=False):
         self.motor = motor
+        self.ncars = ncars
         self.power = 0.
         self.lock = lock
         self.linear = linear
@@ -309,7 +326,9 @@ class MotorHandler:
 
     # compute power correction factor based on voltage drop from nominal value
     def _voltage_correcion(self, voltage):
-        return self.voltage_slope * voltage + self.voltage_zero
+        voltage_corrected = self.voltage_slope * voltage + self.voltage_zero
+        voltage_corrected *= self.ncars_correction[self.ncars]
+        return (voltage_corrected)
 
     @property
     def get_power(self):
@@ -330,6 +349,7 @@ class SimpleTrain(Train):
 
     :param name: train name, used in the report
     :param gui_id: str used by the GUI to direct report to appropriate field
+    :param ncars: int number of cars; used to normalize speed settings
     :param lock: lock used for threading access
     :param gui: instance of GUI, used to report status info
     :param led_color: primary LED color used in this train instance
@@ -340,12 +360,13 @@ class SimpleTrain(Train):
     :param address: UUID of the train's internal hub
     :param direction: direction of movement on the track
     '''
-    def __init__(self, name, gui_id="0", lock=None, report=False, record=False, linear=False,
+    def __init__(self, name, gui_id="0", ncars=2, lock=None, report=False, record=False, linear=False,
                  gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  direction=CLOCKWISE,
                  address=uuid_definitions.HUB_TEST): # test hub
 
-        super(SimpleTrain, self).__init__(name, gui_id, lock, report=report, record=record, linear=linear,
+        super(SimpleTrain, self).__init__(name, gui_id, ncars=ncars, lock=lock,
+                                          report=report, record=record, linear=linear,
                                           gui=gui, led_color=led_color,
                                           led_secondary_color=led_secondary_color,
                                           direction=direction,
@@ -395,6 +416,7 @@ class SmartTrain(Train):
 
     :param name: train name, used in the report
     :param gui_id: str used by the GUI to direct report to appropriate field
+    :param ncars: int number of cars; used to normalize speed settings
     :param lock: lock used for threading access
     :param gui: instance of GUI, used to report status info
     :param led_color: primary LED color used in this train instance
@@ -405,11 +427,12 @@ class SmartTrain(Train):
     :param address: UUID of the train's internal hub
     :param direction: direction of movement on the track
     '''
-    def __init__(self, name, gui_id="0", lock=None, report=False, record=False, linear=False,
+    def __init__(self, name, gui_id="0", ncars=2, lock=None, report=False, record=False, linear=False,
                  gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  direction=CLOCKWISE, address=uuid_definitions.HUB_TEST): # test hub
 
-        super(SmartTrain, self).__init__(name, gui_id, lock, report=report, record=record, linear=linear,
+        super(SmartTrain, self).__init__(name, gui_id, ncars=ncars, lock=lock,
+                                         report=report, record=record, linear=linear,
                                           gui=gui, led_color=led_color,
                                           led_secondary_color=led_secondary_color,
                                           direction=direction,
@@ -444,13 +467,10 @@ class SmartTrain(Train):
         self.sector = None
         self.previous_sector = sectors[station_sector_names[self.direction]]
 
-        if self.gui is not None:
-            # train is initialized as if it were in the inter-sector zone right after
-            # the station. To prevent confusion, we report sector as based instead on
-            # the previous sector color.
-            output_buffer = self.gui.encode_str_variable(SECTOR, self.name, self.gui_id,
-                                                         tk_color[self.previous_sector.color])
-            tkinter_output_queue.put(output_buffer)
+        # train is initialized as if it were in the inter-sector zone right after
+        # the station. To prevent confusion, we report sector as based instead on
+        # the previous sector color.
+        self.report_sector(tk_color[self.previous_sector.color])
 
     def timed_stop_at_station(self):
         # this only happens in auto mode
@@ -460,7 +480,7 @@ class SmartTrain(Train):
         self.cancel_station_timer()
 
         # start a timed wait interval at a station
-        time_station = random.uniform(3., 10.)
+        time_station = random.uniform(MINIMUM_TIME_STATION, MAXIMUM_TIME_STATION)
         self.timer_station = Timer(time_station, self.restart_movement)
         self.timer_station.start()
 
@@ -486,10 +506,7 @@ class SmartTrain(Train):
         next_sector.occupier = self.name
 
         # train is departing from station, so gui displays inter-sector color
-        if self.gui is not None:
-            output_buffer = self.gui.encode_str_variable(SECTOR, self.name, self.gui_id,
-                                                         tk_color[INTER_SECTOR])
-            tkinter_output_queue.put(output_buffer)
+        self.report_sector(tk_color[INTER_SECTOR])
 
         self.led_handler.set_solid(COLOR_GREEN)
         if self.secondary_train is not None:

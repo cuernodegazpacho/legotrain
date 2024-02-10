@@ -8,7 +8,7 @@ from track import FAST, SLOW, DEFAULT_SPEED
 from gui import tkinter_output_queue, tk_color, SECTOR
 
 
-TIME_THRESHOLD = 1.0 # seconds
+TIME_THRESHOLD = 1.4 # seconds
 
 # Vision sensor colorimetry parameters.
 # TODO preliminary values taken from colorimetry analysis
@@ -130,7 +130,7 @@ class EventProcessor:
                     # place, immediately start a slowdown to minimum speed. Note that
                     # this logic depends in part of the specific track layout.
                     # TODO generalize handling for regular sectors anywhere in the track.
-                    self._slowdown()
+                    self._slowdown(time=2)
                     self._exit_sector(event)
 
             elif self.train.sector is None:
@@ -139,38 +139,23 @@ class EventProcessor:
                 self._enter_sector(event)
 
             else:
-                #TODO this situation may happen when moving from BLUE to YELLOW and missing
-                # the BLUE end-of-sector signal. The next signal to be detected is YELLOW, so
-                # it is interpreted as a spurious signal. We may attempt to fix the situation
-                # by forcing the current sector to be this last sensed event, YELLOW. This
-                # requires that:
-                # - the train.sector attribute be updated;
-                # - the track sectors be updated
-                # These updates are contingent upon the availability of sectors. Any conflict
-                # should result in an emergency stop. Could we try a recovery sequence after this
-                # stop?
-                # Maybe we don't need to handle the other similar case, that is, missing the
-                # YELLOW end-of-sector signal, because a station reset will happen anyway (provided
-                # the RED signal be detected).
-                print("ERROR: detected spurious signal inside sector")
+                # handle unusual situations
+                self.recover(event)
 
     def _enter_sector(self, event):
         '''
-        This method handles the situation of a train moving from a
-        inter-sector zone into a new sector
+        This method handles the situation of a train moving from the
+        inter-sector zone into the sector ahead
         '''
         # update current sector in Train instance
         self.train.sector = self.train.previous_sector.next[self.train.direction]
 
-        if self.train.gui is not None:
-            output_buffer = self.train.gui.encode_str_variable(SECTOR, self.train.name,
-                                                               self.train.gui_id,
-                                                               tk_color[event])
-            tkinter_output_queue.put(output_buffer)
+        self.train.report_sector(tk_color[event])
 
         # structured segments start with a FAST sub-sector
         if isinstance(self.train.sector, StructuredSector):
             self.train.sector.sub_sector_type = FAST
+            self.train.report_sector(tk_color[event], subtext="F")
 
         # lock sector. This was probably handled somewhere else, before
         # the train had taken the decision to enter the sector. But we do
@@ -184,7 +169,7 @@ class EventProcessor:
         # of a spurious end-of-sector signal. The sector_time parameter
         # defines a time interval, counted from the instant of sector
         # entry, during which the train is blind from sector signals.
-        # This therad acts just on the ability of a signal event to be
+        # This thrad acts just on the ability of a signal event to be
         # detected; it doesn't affect train movement.
         sector_time = self.train.sector.sector_time
         self.train.time_in_sector = Timer(sector_time, self.train.mark_exit_valid)
@@ -218,7 +203,7 @@ class EventProcessor:
 
         if self.train.sector.sub_sector_type == FAST:
 
-            self._handle_subsector_transition(next_sector)
+            self._handle_subsector_transition(next_sector, event)
 
         else:
             # leaving SLOW sub-sector, thus leaving the entire structured
@@ -233,7 +218,7 @@ class EventProcessor:
                 # and keep moving
                 self._exit_sector(event)
 
-    def _handle_subsector_transition(self, next_sector):
+    def _handle_subsector_transition(self, next_sector, event):
         '''
         Logic for handling the sub-sector transition signal within structured sectors.
         '''
@@ -242,6 +227,7 @@ class EventProcessor:
         # transition signal, and thus the train is leaving the FAST sub-sector
         # and entering SLOW
         self.train.sector.sub_sector_type = SLOW
+        self.train.report_sector(tk_color[event], subtext="S")
 
         # Decision on how to behave from now on depends on the occupancy status
         # of the next sector ahead of train. Train should slow down and eventually
@@ -257,7 +243,7 @@ class EventProcessor:
 
             # drop speed to a reasonable value to cross over the inter-sector zone,
             # but avoid using train.down_speed(), since it kills any underlying threads.
-            new_power_index_value = min(DEFAULT_SPEED - 2, self.train.power_index)
+            new_power_index_value = min(DEFAULT_SPEED - 1, self.train.power_index)
             self._slowdown(new_power_index=new_power_index_value)
 
     def _process_station_event(self, event):
@@ -273,11 +259,7 @@ class EventProcessor:
         self.train.stop(from_handset=False)
 
         # gui displays station color
-        if self.train.gui is not None:
-            output_buffer = self.train.gui.encode_str_variable(SECTOR, self.train.name,
-                                                               self.train.gui_id,
-                                                               tk_color[event])
-            tkinter_output_queue.put(output_buffer)
+        self.train.report_sector(tk_color[event])
 
         # make sure previous sector is released.
         self.train.previous_sector.occupier = None
@@ -312,13 +294,9 @@ class EventProcessor:
 
         # entering inter-sector zone
         self.train.sector = None
+        self.train.report_sector(tk_color[INTER_SECTOR])
 
-        if self.train.gui is not None:
-            output_buffer = self.train.gui.encode_str_variable(SECTOR, self.train.name,
-                                                               self.train.gui_id, tk_color[INTER_SECTOR])
-            tkinter_output_queue.put(output_buffer)
-
-    def _slowdown(self, new_power_index=0):
+    def _slowdown(self, new_power_index=0, time=1):
         '''
         Slowdown the train from current power setting to the new power
         setting, taking about 1 sec to do that
@@ -340,7 +318,7 @@ class EventProcessor:
         # a sequence of 6 deceleration steps has 5 sleeping intervals. It
         # is executed in approx. 1 sec. Normalize so it takes about the
         # same time regardless of current speed.
-        sleep_time = current_power_index_value / len(power_index_range) * 0.15
+        sleep_time = current_power_index_value / len(power_index_range) * 0.15 * time
         # sleep_time = current_power_index_value / len(power_index_range) * 0.1  # TODO test for fast stop (2-car = 0.1, 1-car = 0.05)
         # sleep_time *= current_power_index_value / current_power_index_value
         # sleep_time *= 1.1  # fudge factor
@@ -358,6 +336,43 @@ class EventProcessor:
 
         self._exit_sector("from stop and wait")
         self.train.restart_movement()
+
+    def recover(self, event):
+        # TODO this situation may happen when moving from BLUE to YELLOW (or vice-versa)
+        # and missing the BLUE end-of-sector signal. The next signal to be detected is
+        # YELLOW, so it is interpreted as a spurious signal. We may attempt to fix the
+        # situation by forcing the current sector to be this last sensed event, YELLOW.
+        # This requires that:
+        # - the train.sector attribute be updated;
+        # - the track sectors be updated
+        # These updates are contingent upon the availability of sectors. Any conflict
+        # should result in an emergency stop. Could we try a recovery sequence after this
+        # stop?
+        # Maybe we don't need to handle the other similar case, that is, missing the
+        # YELLOW end-of-sector signal, because a station reset will happen anyway (provided
+        # the RED signal be detected).
+        print("ERROR: spurious signal inside sector. Train sector: ", self.train.sector.color,
+              "  event: ", event, "  just entered: ", self.train.just_entered_sector)
+
+        # # event color matches train's next sector color. This means that the end-of-sector
+        # # signal was missed and the train already entered the next sector.
+        #
+        # if not self.train.just_entered_sector:
+        #
+        #     if event == self.train.sector.next[self.train.direction].color:
+        #
+        #         # if next sector (where the train is physically in now) is not occupied,
+        #         # grab it
+        #         if self.train.sector.next[self.train.direction].occupier is None:
+        #             self.train.sector.next[self.train.direction].occupier = self.train.name
+        #             self.train.previous_sector = self.train.sector
+        #             self.train.sector = self.train.sector.next
+        #
+        #             print("Fixed!")
+        #
+        #         # if next sector is occupied, emergency abort
+        #         else:
+        #             self.train.dispatcher.emergency_stop()
 
 
     def _debug(self, msg):

@@ -10,7 +10,7 @@ QUEUE_POLLING = 50 # ms
 # tkinter color names
 TK_GRAY = "gray52"
 TK_RED = "red"
-TK_BLUE = "blue"
+TK_BLUE = "lightblue"
 TK_YELLOW = "yellow"
 
 # translation between signal colors and tkinter colors
@@ -127,8 +127,8 @@ class GUI():
         message = (message_type + ", %s, %1s, %3i" % (name, id, value))
         return message
 
-    def encode_str_variable(self, message_type, name, id, value):
-        message = (message_type + ", %s, %1s, %s" % (name, id, value))
+    def encode_str_variable(self, message_type, name, id, value, subtext=""):
+        message = (message_type + ", %s, %1s, %s, %s" % (name, id, value, subtext))
         return message
 
     def _decode_message_and_update(self, message):
@@ -162,10 +162,11 @@ class GUI():
 
         elif tokens[0] == SECTOR:
             id = tokens[2].strip()
-            color = tokens[3].strip()
 
+            color = tokens[3].strip()
+            subtext = tokens[4].strip()
             vname = f"sector_{id}_label".format(id=id)
-            self.__dict__[vname].configure(bg=color)
+            self.__dict__[vname].configure(text=subtext, bg=color)
 
 
 if __name__ == '__main__':
@@ -177,7 +178,7 @@ if __name__ == '__main__':
     g.voltage_2_text.set("7.9")
     g.name_2_text.set("Purple")
 
-    g.sector_1_label.configure(bg='blue')
-    g.sector_2_label.configure(bg='yellow')
+    g.sector_1_label.configure(text="", bg='lightblue')
+    g.sector_2_label.configure(text="S", bg='yellow')
 
     g.root.mainloop()

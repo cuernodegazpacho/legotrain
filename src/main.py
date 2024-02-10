@@ -35,24 +35,21 @@ if __name__ == '__main__':
     # train = SimpleTrain("Train", "1", lock=lock, report=True, record=True,
     #                           gui=gui, address=uuid_definitions.HUB_ORIG)
     # controller = Controller(train)
-    # controller.connect()
 
     # ---------------------- Smart train setup ----------------------------
 
-    train = SmartTrain("Train 1", "1", lock=lock, report=True, record=True,
-                            gui=gui, address=uuid_definitions.HUB_ORIG)
-    controller = Controller(train)
-    controller.connect()
+    # train = SmartTrain("Train 1", "1", lock=lock, report=True, record=True,
+    #                         gui=gui, address=uuid_definitions.HUB_ORIG)
+    # controller = Controller(train)
 
     # ---------------------- Two-train setup (Smart self-driving) ----------------------------
 
-    # train1 = SmartTrain("Blue", "1", lock=lock, report=True, record=True,
-    #                      gui=gui, direction=COUNTER_CLOCKWISE, address=uuid_definitions.HUB_ORIG)
-    # train2 = SmartTrain("Purple", "2", led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
-    #                         gui=gui, address=uuid_definitions.HUB_TEST)
-    #
-    # controller = Controller(train1, train2=train2)
-    # controller.connect()
+    train1 = SmartTrain("Blue", "1", lock=lock, report=True, record=True,
+                         gui=gui, direction=COUNTER_CLOCKWISE, address=uuid_definitions.HUB_ORIG)
+    train2 = SmartTrain("Purple", "2", ncars=1, led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
+                            gui=gui, address=uuid_definitions.HUB_TEST)
+
+    controller = Controller(train1, train2=train2)
 
     # ---------------------- Compound train setup --------------------------
 
@@ -67,10 +64,10 @@ if __name__ == '__main__':
     # train = CompoundTrain("Massive train", train_front, train_rear)
     #
     # controller = Controller(train)
-    # controller.connect()
 
     # --------------------------------------------------------------------------
 
-    # connect gui and start main loop
+    # connect everything and start main loop
+    # controller.connect_handset()
     gui.root.after(100, gui.after_callback)
     gui.root.mainloop()
