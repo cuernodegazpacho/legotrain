@@ -75,6 +75,15 @@ def demo_color_sensor(smart_hub):
     print("BG stats: ", stat.mean(bg_list), stat.stdev(bg_list), min(bg_list), max(bg_list))
     print("GR stats: ", stat.mean(gr_list), stat.stdev(gr_list), min(gr_list), max(gr_list))
 
+def demo_color_sensor_modes(smart_hub, mode):
+    def callback(*args, **kwargs):
+        print(args, kwargs)
+
+    smart_hub.vision_sensor.subscribe(callback, granularity=0, mode=mode)
+
+    while 1:
+        pass
+
 def ingest(filename):
     points_list = []
     with open(filename, mode='r') as csv_file:
@@ -91,9 +100,10 @@ def ingest(filename):
 if __name__ == '__main__':
     smart_hub = SmartHub(address=uuid_definitions.HUB_ORIG)   # original hub
     demo_color_sensor(smart_hub)
+    # demo_color_sensor_modes(smart_hub, 6)
 
     # # alternate form that reads RGB data from file
-    # rgb_list = ingest("data/Final_green_2.csv")
+    # rgb_list = ingest("data/LightPink_brick_RGB.csv")
     #
     # h_list = []
     # s_list = []
@@ -126,12 +136,37 @@ if __name__ == '__main__':
 # S stats:  0.714 0.0231     0.643  0.756
 # V stats:  42.427 1.444    39.0 46.0
 
+# Red (Final_red.csv)
+# H stats:  0.963  0.0101   0.93  0.990
+# S stats:  0.570  0.033    0.451  0.677
+# V stats:  31.49  1.621    27.0 36.0
+
+# Red (Final_red_2.csv)
+# H stats:  0.962  0.040     0.011   0.999
+# S stats:  0.571  0.040     0.409   0.741
+# V stats:  30.96  2.179    22.0    37.0
+
 # Green 1
 # H stats:  0.465 0.0174     0.4167 0.538
 # S stats:  0.455 0.038      0.3333 0.55
 # V stats:  19.5367 0.7237  17.0 21.0
 
-# Green 1
+# Green 2
 # H stats:  0.464   0.0184     0.4167 0.5278
 # S stats:  0.4457  0.0400     0.3    0.55
 # V stats:  19.412  0.9035    17.0   21.0
+
+# Purple
+# H stats:  0.918   0.01204    0.886  0.94
+# S stats:  0.605   0.0325     0.53   0.69
+# V stats:  32.52   1.736     29.0   37.0
+
+# LightPink brick new
+# H stats:  0.709   0.011      0.66   0.75
+# S stats:  0.386   0.035      0.26   0.48
+# V stats:  42.89   1.879    39.0 48.0
+
+# LightPink brick
+# H stats:  0.8299134333902546 0.022800139212454572 0.7592592592592592 0.8974358974358975
+# S stats:  0.3612333944473226 0.036313459444262196 0.20689655172413793 0.4666666666666667
+# V stats:  30.589403973509935 1.9420169480683007 26.0 36.0
