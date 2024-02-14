@@ -102,8 +102,8 @@ if __name__ == '__main__':
     demo_color_sensor(smart_hub)
     # demo_color_sensor_modes(smart_hub, 6)
 
-    # # alternate form that reads RGB data from file
-    # rgb_list = ingest("data/LightPink_brick_RGB.csv")
+    # alternate form that reads RGB data from file
+    # rgb_list = ingest("data/Green_plate_RGB.csv")
     #
     # h_list = []
     # s_list = []
@@ -125,6 +125,11 @@ if __name__ == '__main__':
 # H stats:  0.684 0.0377      0.611  0.767
 # S stats:  0.291 0.0478      0.190  0.429
 # V stats:  21.394 0.6206    21.0   24.0
+
+# Carpet 2
+# H stats:  0.8111111111111111 0.11480293465201054 0.05555555555555556 0.9583333333333334
+# S stats:  0.1554682053917893 0.05897602905459415 0.06666666666666667 0.3157894736842105
+# V stats:  14.731397459165155 0.9479612803335979 12.0 19.0
 
 # Azur (Azur_tile_RGB.csv):
 # H stats:  0.597 0.0048      0.583  0.609
@@ -166,7 +171,7 @@ if __name__ == '__main__':
 # S stats:  0.386   0.035      0.26   0.48
 # V stats:  42.89   1.879    39.0 48.0
 
-# LightPink brick
-# H stats:  0.8299134333902546 0.022800139212454572 0.7592592592592592 0.8974358974358975
-# S stats:  0.3612333944473226 0.036313459444262196 0.20689655172413793 0.4666666666666667
-# V stats:  30.589403973509935 1.9420169480683007 26.0 36.0
+# Light green new brick
+# H stats:  0.276   0.072      0.08    0.888
+# S stats:  0.170   0.053      0.047   0.304
+# V stats:  21.00   1.730     16.0    27.0
