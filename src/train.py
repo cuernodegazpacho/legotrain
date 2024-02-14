@@ -14,7 +14,7 @@ from track import CLOCKWISE, COUNTER_CLOCKWISE, MINIMUM_TIME_STATION, MAXIMUM_TI
 from track import sectors, station_sector_names, clear_track, DEFAULT_SPEED
 from signal import INTER_SECTOR
 from event import EventProcessor, DummyEventProcessor, SensorEventFilter
-from event import HUE, SATURATION, RGB_LIMIT, V_LIMIT
+from signal import HUE, SATURATION, RGB_LIMIT, V_LIMIT
 from signal import RED, GREEN, BLUE, YELLOW
 from gui import tkinter_output_queue, tk_color, ASTATION, SECTOR
 
@@ -535,6 +535,11 @@ class SmartTrain(Train):
 
         if h >= 1. or h <= 0.:
             return
+
+        # RED hue flips back to zero when crossing 1. We add 1. here
+        # so the comparison logic downstream works.
+        if h > 0. and h <= 0.05:
+            h += 1.
 
         if min(r, g, b) >= RGB_LIMIT and v >= V_LIMIT:
 

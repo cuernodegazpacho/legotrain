@@ -10,23 +10,6 @@ from gui import tkinter_output_queue, tk_color, SECTOR
 
 TIME_THRESHOLD = 1.4 # seconds
 
-# Vision sensor colorimetry parameters.
-# TODO preliminary values taken from colorimetry analysis
-HUE = {}
-SATURATION = {}
-
-RGB_LIMIT = 10.0
-V_LIMIT = 23.0
-
-HUE[RED]    = (0.93, 1.00)  # min and max hue
-HUE[GREEN]  = (0.37, 0.54)
-HUE[BLUE]   = (0.58, 0.63)
-HUE[YELLOW] = (0.66, 0.72)
-
-SATURATION[RED]    = (0.41, 0.74)  # min and max saturation
-SATURATION[GREEN]  = (0.20, 0.59)
-SATURATION[BLUE]   = (0.56, 0.76)
-SATURATION[YELLOW] = (0.40, 0.51)
 
 sign = lambda x: x and (1, -1)[x<0]
 

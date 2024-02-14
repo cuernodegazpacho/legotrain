@@ -79,22 +79,31 @@ def from_files():
 
     for filename in filelist:
 
-        rgb_list = ingest(filename)
+        rgb_table = ingest(filename)
 
         h_list = []
         s_list = []
         v_list = []
+        r_list = []
+        g_list = []
+        b_list = []
 
-        for rgb in rgb_list:
+        for rgb in rgb_table:
             h, s, v = rgb_to_hsv(rgb[0], rgb[1], rgb[2])
             h_list.append(h)
             s_list.append(s)
             v_list.append(v)
+            r_list.append(rgb[0])
+            g_list.append(rgb[1])
+            b_list.append(rgb[2])
 
         print(filename)
         print("H stats: ", stat.mean(h_list), stat.stdev(h_list), min(h_list), max(h_list))
         print("S stats: ", stat.mean(s_list), stat.stdev(s_list), min(s_list), max(s_list))
         print("V stats: ", stat.mean(v_list), stat.stdev(v_list), min(v_list), max(v_list))
+        print("R stats: ", stat.mean(r_list), stat.stdev(r_list), min(r_list), max(r_list))
+        print("G stats: ", stat.mean(g_list), stat.stdev(g_list), min(g_list), max(g_list))
+        print("B stats: ", stat.mean(b_list), stat.stdev(b_list), min(b_list), max(b_list))
         print()
 
 if __name__ == '__main__':
