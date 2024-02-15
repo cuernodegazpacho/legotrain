@@ -83,6 +83,10 @@ class EventProcessor:
         if not self.train.auto:
             return
 
+        # train may be blinded against signals
+        if self.train.signal_blind:
+            return
+
         # RED events are reserved for handling sectors that contain a
         # train stop (station). As such, they require a specialized logic
         # that differs from the logic applied to regular track sectors.
@@ -168,6 +172,8 @@ class EventProcessor:
         self.train.speedup_timer.start()
         self.train.accelerate(list(range(self.train.power_index, self.train.sector.max_speed + 1)), 1)
 
+        # print("Train ", self.train.name, " entered sector ", self.train.sector.color, " with event ", event)
+
     def _handle_structured_sector(self, event):
         '''
         Structured sectors are divided in two sub-sectors, named FAST and SLOW.
@@ -226,7 +232,7 @@ class EventProcessor:
 
             # drop speed to a reasonable value to cross over the inter-sector zone,
             # but avoid using train.down_speed(), since it kills any underlying threads.
-            new_power_index_value = min(DEFAULT_SPEED - 1, self.train.power_index)
+            new_power_index_value = min(DEFAULT_SPEED - 2, self.train.power_index)
             self._slowdown(new_power_index=new_power_index_value)
 
     def _process_station_event(self, event):
@@ -278,6 +284,8 @@ class EventProcessor:
         # entering inter-sector zone
         self.train.sector = None
         self.train.report_sector(tk_color[INTER_SECTOR])
+
+        # print("Train ", self.train.name,  "exited sector ", self.train.previous_sector.color)
 
     def _slowdown(self, new_power_index=0, time=1):
         '''
@@ -334,8 +342,9 @@ class EventProcessor:
         # Maybe we don't need to handle the other similar case, that is, missing the
         # YELLOW end-of-sector signal, because a station reset will happen anyway (provided
         # the RED signal be detected).
-        print("ERROR: spurious signal inside sector. Train sector: ", self.train.sector.color,
-              "  event: ", event, "  just entered: ", self.train.just_entered_sector)
+        pass
+        # print("ERROR: spurious signal inside sector. Train sector: ", self.train.sector.color,
+        #       "  event: ", event, "  just entered: ", self.train.just_entered_sector)
 
         # # event color matches train's next sector color. This means that the end-of-sector
         # # signal was missed and the train already entered the next sector.

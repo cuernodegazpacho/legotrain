@@ -32,11 +32,6 @@ class Controller:
         self.train2 = train2
         self.handset_address = handset_address
 
-        # enable system-wide communications
-        self.dispatcher = Dispatcher(self)
-        self.train1.dispatcher = self.dispatcher
-        self.train2.dispatcher = self.dispatcher
-
         sleep(5)
         self.handset = RemoteHandset(address=self.handset_address)
         self.handset_handler = HandsetHandler(self)
@@ -53,6 +48,11 @@ class Controller:
         # define sensible handset actions for a dummy train2 object
         if self.train2 is None:
             self.train2 = _DummyTrain()
+
+        # enable system-wide communications
+        self.dispatcher = Dispatcher(self)
+        self.train1.dispatcher = self.dispatcher
+        self.train2.dispatcher = self.dispatcher
 
         # actions associated with each handset button. Note that
         # the red buttons require special handling thus their
