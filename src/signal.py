@@ -12,8 +12,8 @@ PURPLE = "PURPLE"   # may slightly overlap with RED
 INTER_SECTOR = "inter-sector"
 
 # Vision sensor colorimetry parameters.
-RGB_LIMIT = 10.0
-V_LIMIT = 100.
+RGB_MINIMUM = 10.0
+V_MINIMUM = 100.
 
 HUE = {}
 SATURATION = {}
