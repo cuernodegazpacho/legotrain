@@ -208,7 +208,6 @@ class Train:
         if self.timer_station is not None:
             self.timer_station.cancel()
             self.timer_station = None
-            self.led_handler.set_solid(self.led_color)
 
     def cancel_acceleration_thread(self):
         if self.acceleration_thread is not None:

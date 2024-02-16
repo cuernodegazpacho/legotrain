@@ -117,7 +117,7 @@ class EventProcessor:
                     # place, immediately start a slowdown to minimum speed. Note that
                     # this logic depends in part of the specific track layout.
                     # TODO generalize handling for regular sectors anywhere in the track.
-                    self._slowdown(time=2)
+                    self._slowdown(time=4)
                     self._exit_sector(event)
 
             elif self.train.sector is None:
@@ -342,9 +342,8 @@ class EventProcessor:
         # Maybe we don't need to handle the other similar case, that is, missing the
         # YELLOW end-of-sector signal, because a station reset will happen anyway (provided
         # the RED signal be detected).
-        pass
-        # print("ERROR: spurious signal inside sector. Train sector: ", self.train.sector.color,
-        #       "  event: ", event, "  just entered: ", self.train.just_entered_sector)
+        print("ERROR: spurious signal inside sector. Train sector: ", self.train.sector.color,
+              "  event: ", event, "  just entered: ", self.train.just_entered_sector)
 
         # # event color matches train's next sector color. This means that the end-of-sector
         # # signal was missed and the train already entered the next sector.
