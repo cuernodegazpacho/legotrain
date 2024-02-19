@@ -10,11 +10,13 @@ QUEUE_POLLING = 50 # ms
 # tkinter color names
 TK_GRAY = "gray52"
 TK_RED = "red"
+TK_GREEN = "green"
 TK_BLUE = "lightblue"
 TK_YELLOW = "yellow"
 
 # translation between signal colors and tkinter colors
 tk_color = {RED: TK_RED,
+            GREEN: TK_GREEN,
             BLUE: TK_BLUE,
             YELLOW: TK_YELLOW,
             INTER_SECTOR: TK_GRAY}

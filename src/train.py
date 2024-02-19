@@ -556,8 +556,16 @@ class SmartTrain(Train):
         # ignore events with low signal-to-noise ratio
         if min(r, g, b) >= RGB_MINIMUM and v >= V_MINIMUM:
 
-            # find matching color
-            for color in [RED, BLUE, YELLOW]:
+            # find matching color. Here we call the color detection criteria
+            # in order of priority. That is, YELLOW is checked first, RED, last.
+            # This is because the YELLOW signal needs faster response (train is
+            # moving faster), and RED can wait a bit (train is moving slower). This
+            # is related to one particular track layout tough. For other layouts,
+            # maybe a different sequence would be better. We don't know if this is
+            # relevant tough. It might have no importance whatsoever since the computer
+            # should be much faster than the speed that events happen in the physical
+            # train set.
+            for color in [YELLOW, BLUE, GREEN, RED]:
 
                 if (h >= HUE[color][0] and h <= HUE[color][1]) and \
                    (s >= SATURATION[color][0] and s <= SATURATION[color][1]):
@@ -580,12 +588,12 @@ class SmartTrain(Train):
         # It should be called by a handset right button when in 1-train
         # configuration. That way, pressing the button causes the sector
         # to open and close.
-        if sectors[YELLOW].occupier is None:
-            sectors[YELLOW].occupier = "AAAA"
-            print("YELLOW sector OCCUPIED")
+        if sectors[GREEN].occupier is None:
+            sectors[GREEN].occupier = "AAAA"
+            print("GREEN sector OCCUPIED")
         else:
-            sectors[YELLOW].occupier = None
-            print("YELLOW sector OPEN")
+            sectors[GREEN].occupier = None
+            print("GREEN sector OPEN")
 
 
 

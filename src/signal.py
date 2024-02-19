@@ -1,5 +1,5 @@
 '''
-This file contains colorimetry data used to define signals.
+This file contains colorimetry data used to sense the signal tiles.
 '''
 
 RED = "RED"

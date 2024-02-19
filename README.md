@@ -51,16 +51,6 @@ station loops to the main line are fixed, effectively creating a unique
 and distinct path for each train. Although the paths overlap each other for
 most of the track length.
 
-The vision sensors are mounted in the train engines, pointing down throughout 
-an opening in the structural main plate. The sensors are used to detect color 
-tiles on the track.
-
-#### Vision sensor mounted on 60197 train engine
-
-| <img src="docs/pics/DSC00913.jpeg" width="400"></img> |
-  <img src="docs/pics/DSC00915.jpeg" width="400"></img> |
-
-
 ### Trains
 
 Each train in the system is represented by an instance of a subclass of 
@@ -181,28 +171,50 @@ in auto mode.
 
 ### Vision sensors
 
-The 88007 sensors can have trouble in telling apart many of the colors available in LEGO 
-bricks. I conducted many experiments with a variety of colors in order to select 
-particular combinations that would work for this project. Software used for these 
-experiments is in directory _test_.
+The vision sensors are mounted in the train engines, pointing down throughout an opening 
+in the structural main plate. The sensors are used to detect color tiles on the tracks as
+the train moves over them. 
 
-The train control software uses color hue (H) and saturation (S) on the HSV color 
-space to uniquely identify colors. So far, I found just three colors that are well 
-separated from each other in the CIE (Commission Internationale de l'Eclairage) 
-standard normalized HSV diagram: Bright Red (SKU: 4560179), Dark Azur (SKU: 6206312), 
-and Vibrant Yellow (SKU: 6432185). Other colors tend to overlap partially with these 
-"best" colors, hindering the ability to correctly identify them. The yellows are 
-particularly tricky to be correctly picked out by the sensors, since they may apparently 
-contain a significant red component (invisible to our eyes but visible to the sensors), 
-they have tipically low saturation values, and they get easily confused with the 
-light-yellowish carpet under the track. 
+Make sure you mount the sensors in the same way as in the pictures below. They should protrude 
+below the main plate so the sensor heads stays close to the color tiles on the track. Mounting 
+them fully inside the train decreases their sensitivity and signal-to-noise ratio by a 
+significant amount, making detection very unreliable.
 
-Even with these "best" colors, the sensors generate a still significant number of 
-false positive and false negative detections. I believe they are caused in part by 
-interference with ambient light, confusion with the track sleepers and carpet 
-underneath the track, and sensor sampling resolution. The software has a number of 
-ways of, at least partially, handling these false detections by relying on timing 
-information as the train moves along the track. More work is planned in order to
-minimize this problem.
+#### Vision sensor mounted on 60197 train engine
+
+| <img src="docs/pics/DSC00921.jpeg" width="350"></img> |
+  <img src="docs/pics/DSC00923a.jpeg" width="350"></img> |
+  <img src="docs/pics/DSC00928a.jpeg" width="350"></img> |
+
+This video by [BrickGuy](https://www.youtube.com/@brickguy) shows how to do it: 
+
+https://www.youtube.com/watch?v=S83go28JEiU
+
+I conducted experiments with a variety of colors in order to select particular combinations 
+that would work best for this project. Software used for these experiments can be found in 
+directory _test_.
+
+The train control software uses color hue (H), saturation (S, and value (V, also known as intensity
+or brightness)) on the HSV color space to uniquely identify colors. I found a few colors that are 
+well separated from each other in the CIE (Commission Internationale de l'Eclairage) standard 
+normalized HSV diagram: 
+
+Bright Red (SKU: 4560179), Dark Azur (SKU: 6206312), 
+Vibrant Yellow (SKU: 6432185). 
+
+Colors that tend to partially overlap with each other, or sit close by, on the diagram, are 
+unsuitable for reliable detection. We should also strive for colors with higher saturation S, 
+and especially with higher values of brightness V. For instance, in the case of my installation over 
+a light cream color carpet, it is possible to very reliably reject sensor readings coming from the 
+dark gray track (low V) and from the carpet (low S). Users should adjust the software parameters 
+(in file _src/signal.py_) to their own particular situations.
+
+Even with these "best" colors, the sensors may eventually generate false positive or false 
+negative detections. I believe they are caused in part by interference with ambient light, and 
+sensor sampling resolution. The software has a number of ways of, at least partially, handling 
+these false detections by relying on timing information as the train moves along the track. A 
+few parameters associated with timing controls can be found in file _src/track.py_, but are also 
+interspersed in the code itself (this is work in progress!).
+
 
 
