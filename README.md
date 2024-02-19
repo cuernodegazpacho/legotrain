@@ -91,28 +91,28 @@ to move (simulates the train engineer seeing a red light)
 
 The track for this initial project is topologically a simple circle with
 two passing loops that are used as train stations. Each one serves one 
-sensor-equipped train. The track is divided into segments; and the main goal of the
-software is to ensure that each segment is occupied by mostly one, and only one,
+sensor-equipped train. The track is divided into sectors; and the main goal of the
+software is to ensure that each sector is occupied by mostly one, and only one,
 train, at any given time. 
 
-The simple track configuration described above can be divided into four segments;
-two are associated with each one of the stations, and two segments laid out in between 
-the stations and connecting them. Segments are marked by color tiles laid out on
-the track at each segment end points, in such a way that a train, when moving over a color 
+The simple track configuration described above can be divided into four sectors;
+two are associated with each one of the stations, and two sectors laid out in between 
+the stations and connecting them. Sectors are marked by color tiles laid out on
+the track at each sectors end points, in such a way that a train, when moving over a color 
 tile, will send a signal to the controlling script. That way, the script can know where 
-the train is at that moment, and take actions accordingly. The station segments differ 
+the train is at that moment, and take actions accordingly. The station sectors differ 
 slightly from the above configuration, by having a single red tile marking the point 
 where the train should stop when arriving at the station.
 
-The segment classes and the track layout are defined in module _track.py_. There are 
-two kinds of segments, a plain, and a structured segment. The structured segment has
-two sub-segments inside it, named 'fast' and 'slow'. The transition between them is 
-marked by a color tile of the same color used to mark the segment end points. The purpose
-of the sub-segments is to allow the train to know where it is inside the segment, giving
-it enough time to interrogate the next segment about its occupancy status, allowing it to
-prepare in advance of arriving at the inter-segment transition region. Plain segments can
+The sector classes and the track layout are defined in module _track.py_. There are 
+two kinds of sectors, a plain, and a structured sector. The structured sector has
+two sub-sectors inside it, named 'fast' and 'slow'. The transition between them is 
+marked by a color tile of the same color used to mark the sector's end points. The purpose
+of the sub-sectors is to allow the train to know where it is inside the sector, giving
+it enough time to interrogate the next sector about its occupancy status, allowing it to
+prepare in advance of arriving at the inter-sector transition region. Plain sectors can
 be used when no such advanced preparation is necessary (as, for instance, when the next
-segment in the track layout is a station segment where a mandatory stop has to take
+sector in the track layout is a station sector where a mandatory stop has to take
 place anyway).
 
 The track layout is defined by a static data structure made of nested dictionaries. Two
@@ -120,7 +120,7 @@ track layouts are actually necessary, since the layout may look different for tr
 running in clockwise and counter-clockwise directions.
 
 This picture shows one among many possible physical realizations of the current track 
-layout. Note the blue tiles marking a structured segment. The actual positioning of the 
+layout. Note the blue tiles marking a structured sector. The actual positioning of the 
 color tiles must account at least in part for train inertia when stopping or changing 
 speed. This kind of effect is already handled by the control software, but needs 
 improvement. Since train inertia depends on the number of cars, a future version will 
