@@ -122,19 +122,18 @@ running in clockwise and counter-clockwise directions.
 This picture shows one among many possible physical realizations of the current track 
 layout. Note the blue tiles marking a structured sector. The actual positioning of the 
 color tiles must account at least in part for train inertia when stopping or changing 
-speed. This kind of effect is already handled by the control software, but needs 
-improvement. Since train inertia depends on the number of cars, a future version will 
-let the train instances be initialized with the number of cars in the train, and then 
-the software may take that into account when computing the acceleration and braking 
-voltage ramps. This is all a consequence of the train motors being DC motors and not 
-step motors as in other Lego robotic components.
+speed. This kind of effect is already partially handled by the control software. Since 
+train inertia depends on the number of cars, the train instances are initialized with 
+the number of cars in the train, enabling the software to approximately account for train
+mass when computing the acceleration and braking voltage ramps. This is all a consequence 
+of the train motors being DC motors and not step motors as in other Lego robotic components.
 
 <img src="docs/pics/image0.jpeg" width="600"></img>
 
 ### Controller
 
 The _Controller_ class is responsible for establishing the connections in between the
-class instances that are passed to it by the _main.py_ module. It also creates an
+train class instances that are passed to it by the _main.py_ module. It also creates an
 instance of class _RemoteHandset_ that handles user input from the handset, and connects
 handset gestures to functions in the code.
 
@@ -156,8 +155,8 @@ Two additional gestures are accepted as well:
 
 - pressing and holding for 1 sec or more any one of the red keys will stop both trains 
 and reset the entire system to manual mode. This means that the trains can only move 
-now under command of the handset left and right button sets, and they won't see the 
-track color marks any longer. This is useful to retrieve the trains from any undesired 
+now under command of the handset left and right button sets, and they will ignore the
+track color marks. This is useful to retrieve the trains from any undesired 
 situation and move each one to its own station. They can only be properly restarted in 
 automatic mode when are in this configuration.
 - momentarily pressing both red keys simultaneously will start both trains in auto mode.
@@ -199,8 +198,9 @@ or brightness)) on the HSV color space to uniquely identify colors. I found a fe
 well separated from each other in the CIE (Commission Internationale de l'Eclairage) standard 
 normalized HSV diagram: 
 
-Bright Red (SKU: 4560179), Dark Azur (SKU: 6206312), 
-Vibrant Yellow (SKU: 6432185). 
+- Bright Red (SKU: 4560179)
+- Dark Azur (SKU: 6206312)
+- Vibrant Yellow (SKU: 6432185). 
 
 Colors that tend to partially overlap with each other, or sit close by, on the diagram, are 
 unsuitable for reliable detection. We should also strive for colors with higher saturation S, 
