@@ -304,7 +304,7 @@ class EventProcessor:
         self._slowdown(new_power_index=new_power_index_value, time=0.1)
 
         # time do cross bridge
-        time.sleep(1.)
+        time.sleep(2.)
 
         # accelerate back to entry speed
         power_index_range = list(range(self.train.power_index,

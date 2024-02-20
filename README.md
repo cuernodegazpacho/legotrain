@@ -170,9 +170,9 @@ in auto mode.
 
 ### Vision sensors
 
-The vision sensors are mounted in the train engines, pointing down throughout an opening 
-in the structural main plate. The sensors are used to detect color tiles on the tracks as
-the train moves over them. 
+The vision sensors are mounted in the train engines, sticking throughout an opening in the 
+structural main plate. The sensors are used to detect color tiles on the tracks as the train 
+moves over them. 
 
 Make sure you mount the sensors in the same way as in the pictures below. They should protrude 
 below the main plate so the sensor heads stays close to the color tiles on the track. Mounting 
@@ -194,13 +194,17 @@ that would work best for this project. Software used for these experiments can b
 directory _test_.
 
 The train control software uses color hue (H), saturation (S, and value (V, also known as intensity
-or brightness)) on the HSV color space to uniquely identify colors. I found a few colors that are 
-well separated from each other in the CIE (Commission Internationale de l'Eclairage) standard 
-normalized HSV diagram: 
+or brightness)) on the HSV color space to uniquely identify colors. Using the CIE (Commission 
+Internationale de l'Eclairage) standard normalized HSV diagram ([See here](docs/Colorimetry.md)), 
+I found a few colors that present adequate separation from each other: 
 
-- Bright Red (SKU: 4560179)
-- Dark Azur (SKU: 6206312)
-- Vibrant Yellow (SKU: 6432185). 
+- Bright Red
+- Dark Green
+- Dark Azur
+- Medium Azur
+- Bright Yellow
+- Vibrant Yellow (appears as bluish to some eyes) 
+- Bright Redish Violet
 
 Colors that tend to partially overlap with each other, or sit close by, on the diagram, are 
 unsuitable for reliable detection. We should also strive for colors with higher saturation S, 
@@ -215,6 +219,3 @@ sensor sampling resolution. The software has a number of ways of, at least parti
 these false detections by relying on timing information as the train moves along the track. A 
 few parameters associated with timing controls can be found in file _src/track.py_, but are also 
 interspersed in the code itself (this is work in progress!).
-
-
-
