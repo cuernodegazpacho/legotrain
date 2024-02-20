@@ -134,14 +134,13 @@ of the train motors being DC motors and not step motors as in other LEGO® robot
 ### Controller
 
 The _Controller_ class is responsible for establishing the connections in between the
-train class instances that are passed to it by the _main.py_ module. It also creates an
-instance of class _RemoteHandset_ that handles user input from the handset, and connects
-handset gestures to functions in the code.
+train class instances that are passed to it by the _main.py_ module, and the handset. 
+It also creates an instance of class _RemoteHandset_ that handles user input from the 
+handset, and connects handset gestures to functions in the code.
 
 _Controller_ can handle a number of different train configurations. Examples of these 
 can be found in the _main.py_ module. The main module is the one that runs under the
-main thread in Python, thus it is the module that also sets up and maintains the 
-tkinter GUI.
+main thread in Python, thus it is the module that also sets up and starts the tkinter GUI.
 
 #### Handset gestures
 
@@ -154,11 +153,11 @@ same gestures found by default in the LEGO® train set as it comes out of the bo
 
 Two additional gestures are accepted as well: 
 
-- pressing and holding for 1 sec or more any one of the red keys will stop both trains 
-and reset the entire system to manual mode. This means that the trains can only move 
-now under command of the handset left and right button sets, and they will ignore the
-track color marks. This is useful to retrieve the trains from any undesired 
-situation and move each one to its own station. They can only be properly restarted in 
+- pressing and holding for 1 sec or more any one of the red keys, upon key release will 
+stop both trains and reset the entire system to manual mode. This means that the trains 
+can only move now under command of the handset left and right button sets, and they will 
+ignore the track color signals. This is useful to retrieve the trains from any undesired 
+situation and move each one back to its own station. They can only be properly restarted in 
 automatic mode when are in this configuration.
 - momentarily pressing both red keys simultaneously will start both trains in auto mode.
 They will hold at each station for a certain time (randomly chosen) and then start
@@ -177,8 +176,8 @@ moves over them.
 
 Make sure you mount the sensors in the same way as in the pictures below. They should protrude 
 below the main plate so the sensor heads stays close to the color tiles on the track. Mounting 
-them fully inside the train decreases their sensitivity and signal-to-noise ratio by a 
-significant amount, making detection very unreliable.
+them fully recessed inside the train decreases their sensitivity and signal-to-noise ratio by a 
+significant amount, rendering color signal detection very unreliable.
 
 #### Vision sensor mounted on 60197 train engine
 
@@ -195,17 +194,20 @@ that would work best for this project. Software used for these experiments can b
 directory _test_.
 
 The train control software uses color hue (H), saturation (S), and value (V, also known as intensity
-or brightness)) on the HSV coordinate space to uniquely identify colors. Using the CIE (Commission 
+or brightness) on the HSV coordinate space to uniquely identify colors. Using the CIE (Commission 
 Internationale de l'Eclairage) standard normalized HSV diagram (See [here](docs/Colorimetry.md) 
-results from colorimetry analysis), I found a few colors that present adequate separation from each other: 
+results from colorimetry analysis), I found a few tile colors that present adequate separation 
+from each other: 
 
-- Bright Red
-- Dark Green
-- Dark Azur
-- Medium Azur
-- Bright Yellow
-- Vibrant Yellow (appears as bluish to some eyes) 
-- Bright Redish Violet
+- Used in current configuration
+  - Bright Red
+  - Dark Green
+  - Dark Azur
+  - Bright Yellow
+- Currently not used
+  - Medium Azur
+  - Vibrant Yellow (appears as bluish to some eyes) 
+  - Bright Redish Violet
 
 Colors that tend to partially overlap with each other, or sit close by, on the diagram, are 
 unsuitable for reliable detection. We should also strive for colors with higher saturation S, 
