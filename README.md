@@ -1,6 +1,6 @@
 # legotrain
 
-Python scripts to automate Lego City trains.
+Python scripts to automate LEGO® City trains.
 
 ## Functional examples
 
@@ -127,7 +127,7 @@ speed. This kind of effect is already partially handled by the control software.
 train inertia depends on the number of cars, the train instances are initialized with 
 the number of cars in the train, enabling the software to approximately account for train
 mass when computing the acceleration and braking voltage ramps. This is all a consequence 
-of the train motors being DC motors and not step motors as in other Lego robotic components.
+of the train motors being DC motors and not step motors as in other LEGO® robotic components.
 
 <img src="docs/pics/image0.jpeg" width="600"></img>
 
@@ -146,7 +146,7 @@ tkinter GUI.
 #### Handset gestures
 
 Each set of buttons in the handset (left and right) controls one of the trains with the
-same gestures found by default in the Lego train set as it comes out of the box: 
+same gestures found by default in the LEGO® train set as it comes out of the box: 
 
 - plus key - increases train speed
 - minus key - decreases train speed

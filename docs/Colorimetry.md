@@ -9,8 +9,8 @@ colors that lie the furthest away from each other (in the _xy_ space) as possibl
 
 The top diagram shows the entire CIE _xy_ color space. The colored region represents the
 entire gamut of colors perceived by a "standard human observer" (see note **1**) The data 
-points were obtained from each Lego tile color. The bottom diagram is a blow-up of the 
-central part, with each Lego color name next to the cloud of points that correspond to a
+points were obtained from each LEGO® tile color. The bottom diagram is a blow-up of the 
+central part, with each LEGO® color name next to the cloud of points that correspond to a
 given tile color. Data sets for each tile color are in directory _test/data_.
 
 By plotting the data points on this diagram, we are in a way comparing the sensor's "eye" 
