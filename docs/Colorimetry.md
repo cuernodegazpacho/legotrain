@@ -1,17 +1,17 @@
-# colorimetry
+# Colorimetry analysis
 
 Vision sensor calibration can be optimally achieved using the CIE 1931 _xy_ chromaticity
-diagram. This [article](https://en.wikipedia.org/wiki/CIE_1931_color_space)
+diagram. [This article](https://en.wikipedia.org/wiki/CIE_1931_color_space)
 presents an excellent basic discussion on the diagram and its role in color science.
 
 In the chromaticity diagram, and for this particular application, we strive for 
-colors that lie the furthest away from each other as possible. 
+colors that lie the furthest away from each other (in the _xy_ space) as possible. 
 
 The top diagram shows the entire CIE _xy_ color space. The colored region represents the
-entire gamut of colors perceived by a "standard human observer". (1) The data points were 
-obtained from each Lego tile color. The bottom diagram is a blow-up of the central part, 
-with each Lego color name next to the cloud of points that correspond to a given tile 
-color. Data sets for each tile color are in directory _test/data_.
+entire gamut of colors perceived by a "standard human observer" (see note **1**) The data 
+points were obtained from each Lego tile color. The bottom diagram is a blow-up of the 
+central part, with each Lego color name next to the cloud of points that correspond to a
+given tile color. Data sets for each tile color are in directory _test/data_.
 
 By plotting the data points on this diagram, we are in a way comparing the sensor's "eye" 
 color response with the human eye's. 
@@ -38,12 +38,12 @@ _test/Sensor_chromaticity_analysis.ipynb_)
 
 ## Notes
 
-(1) The triangle represents the [_sRGB_](https://en.wikipedia.org/wiki/SRGB#:~:text=sRGB%20is%20a%20standard%20RGB,%2D2%2D1%3A1999.)
+(**1**) The triangle represents the [_sRGB_](https://en.wikipedia.org/wiki/SRGB#:~:text=sRGB%20is%20a%20standard%20RGB,%2D2%2D1%3A1999.)
 color space, which describes the entire gamut of colors representable with fidelity
 by typical color devices used in consumer-level computers (displays, printers, smartphones,
 tablets, etc). This means that the colors you are seeing outside the triangle are not 
-represented correctly by your display. They exist in nature, can be seen by our eyes, 
-some are representable by certain high-end digital devices, but are only approximately 
-represented by most computer displays.
+represented correctly by your display. They "exist in nature", so to speak, because they
+can be seen by our eyes. Some are representable by certain high-end digital devices, 
+but can only be approximately represented by most computer displays.
 
 

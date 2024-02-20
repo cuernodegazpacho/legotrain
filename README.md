@@ -1,5 +1,6 @@
 # legotrain
-Python scripts to automate Lego City trains
+
+Python scripts to automate Lego City trains.
 
 ## Functional examples
 
@@ -193,10 +194,10 @@ I conducted experiments with a variety of colors in order to select particular c
 that would work best for this project. Software used for these experiments can be found in 
 directory _test_.
 
-The train control software uses color hue (H), saturation (S, and value (V, also known as intensity
-or brightness)) on the HSV color space to uniquely identify colors. Using the CIE (Commission 
-Internationale de l'Eclairage) standard normalized HSV diagram ([See here](docs/Colorimetry.md)), 
-I found a few colors that present adequate separation from each other: 
+The train control software uses color hue (H), saturation (S), and value (V, also known as intensity
+or brightness)) on the HSV coordinate space to uniquely identify colors. Using the CIE (Commission 
+Internationale de l'Eclairage) standard normalized HSV diagram (See [here](docs/Colorimetry.md) 
+results from colorimetry analysis), I found a few colors that present adequate separation from each other: 
 
 - Bright Red
 - Dark Green
