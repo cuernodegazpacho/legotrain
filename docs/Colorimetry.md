@@ -25,7 +25,7 @@ The _src/vision_sensor_analysis.py_ script also computes basic statistics for ea
 taken; these stats were used as the basis for populating the HUE and SATURATION 
 dictionaries in _src/signal.py_. To use tile colors not included in here, one can always 
 run the script to collect data from other tile colors and expand the dictionaries with 
-new entries. Of course, the code itself that uses this dictionary (in _src/event.py) will
+new entries. Of course, the code itself that uses this dictionary (in _src/event.py_) will
 have to be upgraded to handle the new colors (presumably associated with new 
 functionality and/or new logic). 
 

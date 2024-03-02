@@ -4,7 +4,7 @@ from threading import Timer
 
 from signal import RED, GREEN, BLUE, YELLOW, INTER_SECTOR
 from track import StructuredSector, sectors
-from track import FAST, SLOW, DEFAULT_SPEED
+from track import FAST, SLOW, DEFAULT_SPEED, COUNTER_CLOCKWISE
 from gui import tkinter_output_queue, tk_color, SECTOR
 
 
@@ -95,6 +95,8 @@ class EventProcessor:
         if event in [YELLOW]:
 
             self._process_braking_event()
+            pass
+
 
         # RED events are reserved for handling sectors that contain a
         # train stop (station). As such, they require a specialized logic
@@ -242,7 +244,7 @@ class EventProcessor:
             # drop speed to a reasonable value to cross over the inter-sector zone,
             # but avoid using train.down_speed(), since it kills any underlying threads.
             new_power_index_value = min(DEFAULT_SPEED - 1, self.train.power_index)
-            self._slowdown(new_power_index=new_power_index_value)
+            self._slowdown(new_power_index=new_power_index_value, time=0.2)
 
     def _process_station_event(self, event):
         '''
@@ -300,18 +302,26 @@ class EventProcessor:
         initial_power_index = self.train.power_index
 
         # fast braking
-        new_power_index_value = 2
+        new_power_index_value = 1
         self._slowdown(new_power_index=new_power_index_value, time=0.1)
 
         # time do cross bridge
-        time.sleep(2.)
+        time.sleep(1.5)
 
-        # accelerate back to entry speed
-        power_index_range = list(range(self.train.power_index,
-                                       initial_power_index,
-                                       1))
-        sleep_time = 2. / len(power_index_range)
+        # accelerate back to sector speed
+        # #TODO speed depends on proximity to end of sector. Generalize this
+
+        if self.train.direction == COUNTER_CLOCKWISE:
+            power_index_range = list(range(self.train.power_index,
+                                           self.train.sector.max_speed + 1,
+                                           1))
+        else:
+            power_index_range = [1,2]
+
+        self.train.cancel_acceleration_thread()
+        sleep_time = 1.0 / len(power_index_range)
         self.train.accelerate(power_index_range, sign(self.train.power_index), sleep_time=sleep_time)
+
 
     def _slowdown(self, new_power_index=1, time=1.0):
         '''

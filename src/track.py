@@ -100,9 +100,9 @@ def clear_track():
 
 # sectors
 sectors = {"RED_1": Sector(RED),
-           GREEN: Sector(GREEN, sector_time=6, max_speed_time=7.5),
+           GREEN: Sector(GREEN, sector_time=2, max_speed=4, max_speed_time=5.0),
            "RED_2": Sector(RED),
-           BLUE: StructuredSector(BLUE, sector_time=3., max_speed_time=3.5)
+           BLUE: StructuredSector(BLUE, sector_time=1., max_speed_time=3.0)
            }
 
 station_sector_names = {COUNTER_CLOCKWISE: "RED_1",
