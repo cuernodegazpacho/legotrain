@@ -514,7 +514,7 @@ class SmartTrain(Train):
         self.led_handler.set_solid(COLOR_GREEN)
         if self.secondary_train is not None:
             self.secondary_train.led_handler.set_solid(COLOR_GREEN)
-        sleep(2)
+        sleep(1.5)
 
         # need to find out if this train is running forward or reverse
         # Cannot use self.power_index since it is set to zero when train is
