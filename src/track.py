@@ -4,6 +4,7 @@ CLOCKWISE = "clockwise"
 COUNTER_CLOCKWISE = "counter_clockwise"
 
 DEFAULT_SECTOR_TIME = 6.0 #s
+TIME_BLIND = 1.0
 FAST = 0
 SLOW = 1
 
@@ -13,10 +14,12 @@ MAXIMUM_TIME_STATION = 4.
 MAX_SPEED = 5
 MAX_SPEED_TIME = 8.0 # s
 DEFAULT_SPEED = 4
+SECTOR_EXIT_SPEED = 3
 
 class Sector():
     def __init__(self, color, sector_time=DEFAULT_SECTOR_TIME,
-                 max_speed=MAX_SPEED, max_speed_time=MAX_SPEED_TIME):
+                 max_speed=MAX_SPEED, max_speed_time=MAX_SPEED_TIME,
+                 exit_speed=SECTOR_EXIT_SPEED):
         '''
         Encapsulates properties of a track sector. Sectors are used
         to isolate sections of a continuous track, such that only one
@@ -43,11 +46,14 @@ class Sector():
         :param max_speed: the speed setting to which the train must
             accelerate when entering the sector
         :param max_speed_time: the time to sustain max speed (in sec.)
+        :param exit_speed: the speed setting to which the train must
+            accelerate when exiting the sector
         '''
         self.color = color
         self.sector_time = sector_time
         self.max_speed = max_speed
         self.max_speed_time = max_speed_time
+        self.exit_speed = exit_speed
 
         # Describes sector position in track. For now, this is a 2-element dict
         # with pointers to the two neighboring sectors, keyed by the train's
@@ -76,13 +82,17 @@ class StructuredSector(Sector):
         accelerate when entering the sector
     :param max_speed_time: the time to sustain max speed (in sec.). After that,
         the speed in bumped down twice.
+    :param exit_speed: the speed setting to which the train must
+        accelerate when exiting the sector
     '''
     def __init__(self, color, sector_time=DEFAULT_SECTOR_TIME,
-                 max_speed=MAX_SPEED, max_speed_time=MAX_SPEED_TIME):
+                 max_speed=MAX_SPEED, max_speed_time=MAX_SPEED_TIME,
+                 exit_speed=SECTOR_EXIT_SPEED):
 
         super(StructuredSector, self).__init__(color, sector_time=sector_time,
                                                max_speed=max_speed,
-                                               max_speed_time=max_speed_time)
+                                               max_speed_time=max_speed_time,
+                                               exit_speed=exit_speed)
 
         # defaults assume the train enters the sector via its FAST side.
         # Note that a physical sector may have two SLOW sub-sectors, one

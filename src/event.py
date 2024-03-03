@@ -4,7 +4,7 @@ from threading import Timer
 
 from signal import RED, GREEN, BLUE, YELLOW, INTER_SECTOR
 from track import StructuredSector, sectors
-from track import FAST, SLOW, DEFAULT_SPEED, COUNTER_CLOCKWISE
+from track import FAST, SLOW, DEFAULT_SPEED, MAX_SPEED, DEFAULT_SPEED, COUNTER_CLOCKWISE
 from gui import tkinter_output_queue, tk_color, SECTOR
 
 
@@ -93,10 +93,7 @@ class EventProcessor:
         # doesn't speed up too much while going over the descending part of the
         # track.
         if event in [YELLOW]:
-
             self._process_braking_event()
-            pass
-
 
         # RED events are reserved for handling sectors that contain a
         # train stop (station). As such, they require a specialized logic
@@ -179,14 +176,19 @@ class EventProcessor:
         if self.train.speedup_timer is not None:
             self.train.speedup_timer.cancel()
         self.train.speedup_timer = Timer(self.train.sector.max_speed_time,
-                                         self.train.return_to_default_speed)
+                                         self._return_to_sector_speed)
         self.train.speedup_timer.start()
 
-        #TODO replace by new acceleration method
+        # enter sector at max speed setting
+        self._accelerate(new_power_index=self.train.sector.max_speed)
 
-        self.train.accelerate(list(range(self.train.power_index, self.train.sector.max_speed + 1)), 1)
+    def _return_to_sector_speed(self):
+        if self.train.sector is not None:
+            speed = self.train.sector.exit_speed
+        else:
+            speed = DEFAULT_SPEED
 
-        # print("Train ", self.train.name, " entered sector ", self.train.sector.color, " with event ", event)
+        self._accelerate(new_power_index=speed, time=0.2)
 
     def _handle_structured_sector(self, event):
         '''
@@ -299,37 +301,26 @@ class EventProcessor:
         self.train.sector = None
         self.train.report_sector(tk_color[INTER_SECTOR])
 
-        # print("Train ", self.train.name,  "exited sector ", self.train.previous_sector.color)
-
     def _process_braking_event(self):
-        initial_power_index = self.train.power_index
-
-        #TODO replace everywhere by new acceleration method
-
-
-
         # fast braking
-        new_power_index_value = 1
-        self._accelerate(new_power_index=new_power_index_value, time=0.1)
+        self._accelerate(new_power_index=1, time=0.1)
 
         # time do cross bridge
         time.sleep(1.5)
 
-        # accelerate back to sector speed
-        # #TODO speed depends on proximity to end of sector. Generalize this
-
+        # accelerate back to sector speed or to exit speed, depending on direction
         if self.train.direction == COUNTER_CLOCKWISE:
-            power_index_range = list(range(self.train.power_index,
-                                           self.train.sector.max_speed + 1,
-                                           1))
+            if self.train.sector is not None:
+                pi = self.train.sector.max_speed
+            else:
+                pi = MAX_SPEED
         else:
-            power_index_range = [1,2]
+            if self.train.sector is not None:
+                pi = self.train.sector.exit_speed
+            else:
+                pi = DEFAULT_SPEED
 
-        self.train.cancel_acceleration_thread() #TODO not needed; train.accelerate already does that
-
-        sleep_time = 1.0 / len(power_index_range)
-        self.train.accelerate(power_index_range, sign(self.train.power_index), sleep_time=sleep_time)
-
+        self._accelerate(new_power_index=pi)
 
     def _accelerate(self, new_power_index=1, time=1.0):
         '''
@@ -363,8 +354,8 @@ class EventProcessor:
         if power_index_sign == 0:
             power_index_sign = current_power_index_sign
 
-        # generate sequence of power index values. We add +-1 to account for the
-        # way the range function works.
+        # generate sequence of power index values. We add the step value
+        # to account for the way the range function works.
         power_index_range = list(range(current_power_index_abs_value,
                                        new_power_index_abs_value + power_index_step,
                                        power_index_step))

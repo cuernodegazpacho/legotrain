@@ -10,7 +10,7 @@ from pylgbst.peripherals import Voltage, Current, LEDLight
 from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN, COLOR_RED
 
 import uuid_definitions
-from track import CLOCKWISE, COUNTER_CLOCKWISE, MINIMUM_TIME_STATION, MAXIMUM_TIME_STATION
+from track import CLOCKWISE, TIME_BLIND, MINIMUM_TIME_STATION, MAXIMUM_TIME_STATION
 from track import sectors, station_sector_names, clear_track, DEFAULT_SPEED
 from signal import INTER_SECTOR
 from event import EventProcessor, DummyEventProcessor, SensorEventFilter
@@ -218,9 +218,6 @@ class Train:
         if self.speedup_timer is not None:
             self.speedup_timer.cancel()
             self.speedup_timer = None
-
-    def return_to_default_speed(self):
-        self.accelerate(list(range(self.power_index, DEFAULT_SPEED-1, -1)), 1, sleep_time=0.2)
 
     # The `accelerate` method has to be run in a thread, and stopped whenever a
     # set_power call takes place coming, typically, from the up_speed, dow_speed,
@@ -531,7 +528,7 @@ class SmartTrain(Train):
         # stopped right over a signal on the track. In that situation, as
         # soon as the movement starts, a false signal can be issued.
         self.signal_blind = True
-        self.signal_blind_timer = Timer(0.5, self.activate_signals)
+        self.signal_blind_timer = Timer(TIME_BLIND, self.activate_signals)
         self.signal_blind_timer.start()
 
         # accelerate just to move train out of station area into inter-sector
