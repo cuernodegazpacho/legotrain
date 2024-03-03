@@ -7,10 +7,10 @@ DEFAULT_SECTOR_TIME = 6.0 #s
 FAST = 0
 SLOW = 1
 
-MINIMUM_TIME_STATION = 4.
-MAXIMUM_TIME_STATION = 20.
+MINIMUM_TIME_STATION = 2.
+MAXIMUM_TIME_STATION = 4.
 
-MAX_SPEED = 6
+MAX_SPEED = 5
 MAX_SPEED_TIME = 8.0 # s
 DEFAULT_SPEED = 4
 
@@ -102,7 +102,7 @@ def clear_track():
 sectors = {"RED_1": Sector(RED),
            GREEN: Sector(GREEN, sector_time=2, max_speed=4, max_speed_time=5.0),
            "RED_2": Sector(RED),
-           BLUE: StructuredSector(BLUE, sector_time=1., max_speed_time=3.0)
+           BLUE: StructuredSector(BLUE, sector_time=2., max_speed_time=3.0)
            }
 
 station_sector_names = {COUNTER_CLOCKWISE: "RED_1",

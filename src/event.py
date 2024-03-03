@@ -128,7 +128,7 @@ class EventProcessor:
                     # place, immediately start a slowdown to minimum speed. Note that
                     # this logic depends in part of the specific track layout.
                     # TODO generalize handling for regular sectors anywhere in the track.
-                    self._slowdown(time=2)
+                    self._accelerate(time=2)
                     self._exit_sector(event)
 
             elif self.train.sector is None:
@@ -181,6 +181,9 @@ class EventProcessor:
         self.train.speedup_timer = Timer(self.train.sector.max_speed_time,
                                          self.train.return_to_default_speed)
         self.train.speedup_timer.start()
+
+        #TODO replace by new acceleration method
+
         self.train.accelerate(list(range(self.train.power_index, self.train.sector.max_speed + 1)), 1)
 
         # print("Train ", self.train.name, " entered sector ", self.train.sector.color, " with event ", event)
@@ -235,7 +238,7 @@ class EventProcessor:
         if next_sector.occupier is not None and next_sector.occupier != self.train.name:
             # next sector is occupied: slow down to minimum speed and wait for
             # end-of-sector signal.
-            self._slowdown()
+            self._accelerate()
 
         else:
             # next sector is free. Grab it.
@@ -244,7 +247,7 @@ class EventProcessor:
             # drop speed to a reasonable value to cross over the inter-sector zone,
             # but avoid using train.down_speed(), since it kills any underlying threads.
             new_power_index_value = min(DEFAULT_SPEED - 1, self.train.power_index)
-            self._slowdown(new_power_index=new_power_index_value, time=0.2)
+            self._accelerate(new_power_index=new_power_index_value, time=0.2)
 
     def _process_station_event(self, event):
         '''
@@ -301,9 +304,13 @@ class EventProcessor:
     def _process_braking_event(self):
         initial_power_index = self.train.power_index
 
+        #TODO replace everywhere by new acceleration method
+
+
+
         # fast braking
         new_power_index_value = 1
-        self._slowdown(new_power_index=new_power_index_value, time=0.1)
+        self._accelerate(new_power_index=new_power_index_value, time=0.1)
 
         # time do cross bridge
         time.sleep(1.5)
@@ -318,35 +325,54 @@ class EventProcessor:
         else:
             power_index_range = [1,2]
 
-        self.train.cancel_acceleration_thread()
+        self.train.cancel_acceleration_thread() #TODO not needed; train.accelerate already does that
+
         sleep_time = 1.0 / len(power_index_range)
         self.train.accelerate(power_index_range, sign(self.train.power_index), sleep_time=sleep_time)
 
 
-    def _slowdown(self, new_power_index=1, time=1.0):
+    def _accelerate(self, new_power_index=1, time=1.0):
         '''
-        Slowdown the train from current power setting to the new power
-        setting, taking by default about 1 sec to do that
+        Accelerates the train from current power setting to the new power
+        setting, taking by default about 1 sec to do that.
+
+        This seems to be generic enough to even handle the compound train
         '''
+        # new power index must have same sign as current power index
+        current_power_index_sign = sign(self.train.power_index)
+        new_power_index_sign = sign(new_power_index)
 
-        # the train might be moving backwards, so first we generate
-        # a positive representation of the current power index (the
-        # `accelerate` method will handle the actual sense of movement
-        # for the new speed values).
-        current_power_index_value = self.train.power_index * sign(self.train.power_index)
+        # only check if non-zero
+        if self.train.power_index != 0 and new_power_index != 0 and \
+            new_power_index_sign != current_power_index_sign:
+            raise RuntimeError("error in power index signs")
 
-        # generate downward sequence of power index values. We subtract 1 because
-        # to account for the way the range function works.
-        new_power_index_value = new_power_index - 1
-        power_index_step = -1
-        power_index_range = list(range(current_power_index_value,
-                                       new_power_index_value,
+        current_power_index_abs_value = abs(self.train.power_index)
+        new_power_index_abs_value = abs(new_power_index)
+
+        # find sense of required sequence
+        downward = new_power_index_abs_value < current_power_index_abs_value
+        if downward:
+            power_index_step = -1
+        else:
+            power_index_step = 1
+
+        # find sign of power indices. Mind that power index can be
+        # zero, and thus has no sign
+        power_index_sign = new_power_index_sign
+        if power_index_sign == 0:
+            power_index_sign = current_power_index_sign
+
+        # generate sequence of power index values. We add +-1 to account for the
+        # way the range function works.
+        power_index_range = list(range(current_power_index_abs_value,
+                                       new_power_index_abs_value + power_index_step,
                                        power_index_step))
 
-        # accelerate needs the time between each speed setting in the ramp
+        # train.accelerate needs the time between each speed setting in the ramp
         sleep_time = time / len(power_index_range)
 
-        self.train.accelerate(power_index_range, sign(self.train.power_index), sleep_time=sleep_time)
+        self.train.accelerate(power_index_range, power_index_sign, sleep_time=sleep_time)
 
     def _stop_and_wait(self, next_sector):
         self.train.stop(from_handset=False)

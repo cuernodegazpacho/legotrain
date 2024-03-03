@@ -51,12 +51,12 @@ class _TestTrain():
         # accelerate needs the time between each speed setting in the ramp
         sleep_time = time / len(power_index_range)
 
-        return self.accelerate_in_threasd(power_index_range, power_index_sign, sleep_time=sleep_time)
+        return self._accelerate_in_thread(power_index_range, power_index_sign, sleep_time=sleep_time)
 
     # dummy method that just return the sequence of values. In the real application,
     # it should call the appropriate method in the train instance that would ultimately
     # access the train motor via a thread.
-    def accelerate_in_threasd(self, power_index_values, power_index_signal, sleep_time=0.3):
+    def _accelerate_in_thread(self, power_index_values, power_index_signal, sleep_time=0.3):
         return [x * power_index_signal for x in power_index_values]
 
 
