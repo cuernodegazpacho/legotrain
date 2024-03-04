@@ -4,7 +4,7 @@ from threading import Timer
 
 from signal import RED, GREEN, BLUE, YELLOW, INTER_SECTOR
 from track import StructuredSector, sectors
-from track import FAST, SLOW, DEFAULT_SPEED, MAX_SPEED, DEFAULT_SPEED, COUNTER_CLOCKWISE
+from track import FAST, SLOW, DEFAULT_SPEED, BRAKING_TIME, MAX_SPEED, DEFAULT_SPEED, DIRECTION_B
 from gui import tkinter_output_queue, tk_color, SECTOR
 
 
@@ -305,20 +305,14 @@ class EventProcessor:
         # fast braking
         self._accelerate(new_power_index=1, time=0.1)
 
-        # time do cross bridge
-        time.sleep(1.5)
+        # keep brake applied
+        time.sleep(BRAKING_TIME)
 
-        # accelerate back to sector speed or to exit speed, depending on direction
-        if self.train.direction == COUNTER_CLOCKWISE:
-            if self.train.sector is not None:
-                pi = self.train.sector.max_speed
-            else:
-                pi = MAX_SPEED
+        # accelerate back to sector speed
+        if self.train.sector is not None:
+            pi = self.train.sector.max_speed
         else:
-            if self.train.sector is not None:
-                pi = self.train.sector.exit_speed
-            else:
-                pi = DEFAULT_SPEED
+            pi = MAX_SPEED
 
         self._accelerate(new_power_index=pi)
 

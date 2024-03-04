@@ -6,7 +6,7 @@ import uuid_definitions
 from train import SimpleTrain, SmartTrain, CompoundTrain
 from gui import GUI
 from controller import Controller
-from track import COUNTER_CLOCKWISE
+from track import DIRECTION_B
 
 '''
 Correct startup sequence requires that, with the script already started, the train
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     # ---------------------- Smart train setup ----------------------------
 
     # train = SmartTrain("Train 1", "1", lock=lock, report=True, record=True,
-    #                         gui=gui, direction=COUNTER_CLOCKWISE, address=uuid_definitions.HUB_ORIG)
+    #                         gui=gui, direction=DIRECTION_B, address=uuid_definitions.HUB_ORIG)
     # train = SmartTrain("Train 2", "2", lock=lock, report=True, record=True,
     #                         gui=gui, address=uuid_definitions.HUB_TEST)
     # controller = Controller(train)
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     # ---------------------- Two-train setup (Smart self-driving) ----------------------------
 
     train1 = SmartTrain("Blue", "1", lock=lock, report=True, record=True,
-                         gui=gui, direction=COUNTER_CLOCKWISE, address=uuid_definitions.HUB_ORIG)
+                        gui=gui, direction=DIRECTION_B, address=uuid_definitions.HUB_ORIG)
     train2 = SmartTrain("Purple", "2", ncars=1, led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
                             gui=gui, address=uuid_definitions.HUB_TEST)
 

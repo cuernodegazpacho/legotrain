@@ -118,7 +118,7 @@ place anyway).
 
 The track layout is defined by a static data structure made of nested dictionaries. Two
 track layouts are actually necessary, since the layout may look different for trains 
-running in clockwise and counter-clockwise directions.
+running in different directions.
 
 This picture shows one among many possible physical realizations of the current track 
 layout. Note the blue tiles marking a structured sector. The actual positioning of the 

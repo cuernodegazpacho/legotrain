@@ -10,7 +10,7 @@ from pylgbst.peripherals import Voltage, Current, LEDLight
 from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN, COLOR_RED
 
 import uuid_definitions
-from track import CLOCKWISE, TIME_BLIND, MINIMUM_TIME_STATION, MAXIMUM_TIME_STATION
+from track import DIRECTION_A, TIME_BLIND, MINIMUM_TIME_STATION, MAXIMUM_TIME_STATION
 from track import sectors, station_sector_names, clear_track, DEFAULT_SPEED
 from signal import INTER_SECTOR
 from event import EventProcessor, DummyEventProcessor, SensorEventFilter
@@ -56,7 +56,7 @@ class Train:
     '''
     def __init__(self, name, gui_id="0", ncars=2, lock=None, report=False, record=False, linear=False,
                  gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
-                 direction=CLOCKWISE, address=uuid_definitions.HUB_TEST):
+                 direction=DIRECTION_A, address=uuid_definitions.HUB_TEST):
 
         self.name = name
         self.gui_id = gui_id
@@ -362,7 +362,7 @@ class SimpleTrain(Train):
     '''
     def __init__(self, name, gui_id="0", ncars=2, lock=None, report=False, record=False, linear=False,
                  gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
-                 direction=CLOCKWISE,
+                 direction=DIRECTION_A,
                  address=uuid_definitions.HUB_TEST): # test hub
 
         super(SimpleTrain, self).__init__(name, gui_id, ncars=ncars, lock=lock,
@@ -429,7 +429,7 @@ class SmartTrain(Train):
     '''
     def __init__(self, name, gui_id="0", ncars=2, lock=None, report=False, record=False, linear=False,
                  gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
-                 direction=CLOCKWISE, address=uuid_definitions.HUB_TEST): # test hub
+                 direction=DIRECTION_A, address=uuid_definitions.HUB_TEST): # test hub
 
         super(SmartTrain, self).__init__(name, gui_id, ncars=ncars, lock=lock,
                                          report=report, record=record, linear=linear,

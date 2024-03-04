@@ -1,17 +1,18 @@
 from signal import RED, GREEN, BLUE, YELLOW, INTER_SECTOR
 
-CLOCKWISE = "clockwise"
-COUNTER_CLOCKWISE = "counter_clockwise"
+DIRECTION_A = "clockwise"
+DIRECTION_B = "counter_clockwise"
 
-DEFAULT_SECTOR_TIME = 6.0 #s
-TIME_BLIND = 1.0
 FAST = 0
 SLOW = 1
 
+DEFAULT_SECTOR_TIME = 6.0 #s
+TIME_BLIND = 1.0
+BRAKING_TIME = 2.0
 MINIMUM_TIME_STATION = 2.
-MAXIMUM_TIME_STATION = 4.
+MAXIMUM_TIME_STATION = 20.
 
-MAX_SPEED = 5
+MAX_SPEED = 6
 MAX_SPEED_TIME = 8.0 # s
 DEFAULT_SPEED = 4
 SECTOR_EXIT_SPEED = 3
@@ -57,7 +58,7 @@ class Sector():
 
         # Describes sector position in track. For now, this is a 2-element dict
         # with pointers to the two neighboring sectors, keyed by the train's
-        # sense of motion (clockwise or counter-clockwise).
+        # sense of motion (A or B).
         self.next = {}
 
         # This attribute tells what train owns the sector.
@@ -110,13 +111,13 @@ def clear_track():
 
 # sectors
 sectors = {"RED_1": Sector(RED),
-           GREEN: Sector(GREEN, sector_time=2, max_speed=4, max_speed_time=5.0),
+           GREEN: Sector(GREEN, sector_time=1, max_speed=4, max_speed_time=1.0),
            "RED_2": Sector(RED),
-           BLUE: StructuredSector(BLUE, sector_time=2., max_speed_time=3.0)
+           BLUE: StructuredSector(BLUE, sector_time=2., max_speed_time=10.0)
            }
 
-station_sector_names = {COUNTER_CLOCKWISE: "RED_1",
-                        CLOCKWISE: "RED_2"}
+station_sector_names = {DIRECTION_B: "RED_1",
+                        DIRECTION_A: "RED_2"}
 
 # The track layout is defined by how the sectors connect to each
 # other. There are actually two tracks, one for each direction of
@@ -130,12 +131,12 @@ station_sector_names = {COUNTER_CLOCKWISE: "RED_1",
 # (stations), we use a special string to key them into the 'sectors'
 # dict.
 
-# clockwise track
-sectors["RED_2"].next[CLOCKWISE] = sectors[BLUE]
-sectors[BLUE].next[CLOCKWISE] = sectors[GREEN]
-sectors[GREEN].next[CLOCKWISE] = sectors["RED_2"]
+# A track
+sectors["RED_2"].next[DIRECTION_A] = sectors[BLUE]
+sectors[BLUE].next[DIRECTION_A] = sectors[GREEN]
+sectors[GREEN].next[DIRECTION_A] = sectors["RED_2"]
 
-# counter-clockwise track
-sectors["RED_1"].next[COUNTER_CLOCKWISE] = sectors[BLUE]
-sectors[BLUE].next[COUNTER_CLOCKWISE] = sectors[GREEN]
-sectors[GREEN].next[COUNTER_CLOCKWISE] = sectors["RED_1"]
+# B track
+sectors["RED_1"].next[DIRECTION_B] = sectors[BLUE]
+sectors[BLUE].next[DIRECTION_B] = sectors[GREEN]
+sectors[GREEN].next[DIRECTION_B] = sectors["RED_1"]
