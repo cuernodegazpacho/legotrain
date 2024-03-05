@@ -4,8 +4,8 @@ from threading import Timer
 
 from signal import RED, GREEN, BLUE, YELLOW, INTER_SECTOR
 from track import StructuredSector, sectors
-from track import FAST, SLOW, DEFAULT_SPEED, BRAKING_TIME, MAX_SPEED, DEFAULT_SPEED, DIRECTION_B
-from gui import tkinter_output_queue, tk_color, SECTOR
+from track import FAST, SLOW, BRAKING_TIME, MAX_SPEED, DEFAULT_SPEED
+from gui import tk_color
 
 
 TIME_THRESHOLD = 1.4  # seconds
@@ -125,7 +125,7 @@ class EventProcessor:
                     # place, immediately start a slowdown to minimum speed. Note that
                     # this logic depends in part of the specific track layout.
                     # TODO generalize handling for regular sectors anywhere in the track.
-                    self._accelerate(time=2)
+                    self._accelerate(1)
                     self._exit_sector(event)
 
             elif self.train.sector is None:
@@ -164,7 +164,7 @@ class EventProcessor:
         # of a spurious end-of-sector signal. The sector_time parameter
         # defines a time interval, counted from the instant of sector
         # entry, during which the train is blind from sector signals.
-        # This thrad acts just on the ability of a signal event to be
+        # This thread acts just on the ability of a signal event to be
         # detected; it doesn't affect train movement.
         sector_time = self.train.sector.sector_time
         self.train.time_in_sector = Timer(sector_time, self.train.mark_exit_valid)
@@ -180,7 +180,7 @@ class EventProcessor:
         self.train.speedup_timer.start()
 
         # enter sector at max speed setting
-        self._accelerate(new_power_index=self.train.sector.max_speed)
+        self._accelerate(self.train.sector.max_speed)
 
     def _return_to_sector_speed(self):
         if self.train.sector is not None:
@@ -188,7 +188,7 @@ class EventProcessor:
         else:
             speed = DEFAULT_SPEED
 
-        self._accelerate(new_power_index=speed, time=0.2)
+        self._accelerate(speed, time=0.5)
 
     def _handle_structured_sector(self, event):
         '''
@@ -240,7 +240,7 @@ class EventProcessor:
         if next_sector.occupier is not None and next_sector.occupier != self.train.name:
             # next sector is occupied: slow down to minimum speed and wait for
             # end-of-sector signal.
-            self._accelerate()
+            self._accelerate(1, time=0.2)
 
         else:
             # next sector is free. Grab it.
@@ -248,8 +248,8 @@ class EventProcessor:
 
             # drop speed to a reasonable value to cross over the inter-sector zone,
             # but avoid using train.down_speed(), since it kills any underlying threads.
-            new_power_index_value = min(DEFAULT_SPEED - 1, self.train.power_index)
-            self._accelerate(new_power_index=new_power_index_value, time=0.2)
+            speed = min(DEFAULT_SPEED - 1, self.train.power_index)
+            self._accelerate(speed, time=0.2)
 
     def _process_station_event(self, event):
         '''
@@ -303,7 +303,7 @@ class EventProcessor:
 
     def _process_braking_event(self):
         # fast braking
-        self._accelerate(new_power_index=1, time=0.1)
+        self._accelerate(1, time=0.1)
 
         # keep brake applied
         time.sleep(BRAKING_TIME)
@@ -314,9 +314,9 @@ class EventProcessor:
         else:
             pi = MAX_SPEED
 
-        self._accelerate(new_power_index=pi)
+        self._accelerate(pi)
 
-    def _accelerate(self, new_power_index=1, time=1.0):
+    def _accelerate(self, new_power_index, time=1.0):
         '''
         Accelerates the train from current power setting to the new power
         setting, taking by default about 1 sec to do that.
@@ -367,7 +367,7 @@ class EventProcessor:
         # be doing the same check anyway. We do just in case though.
         while next_sector.occupier is not None and \
               next_sector.occupier != self.train.name:
-            time.sleep(0.5)
+            time.sleep(0.3)
 
         self._exit_sector("from stop and wait")
         self.train.restart_movement()
