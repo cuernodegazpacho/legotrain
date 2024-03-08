@@ -2,13 +2,13 @@ import time
 from time import sleep
 from threading import Timer
 
-from signal import RED, GREEN, BLUE, YELLOW, INTER_SECTOR
-from track import StructuredSector, sectors
-from track import FAST, SLOW, BRAKING_TIME, MAX_SPEED, DEFAULT_SPEED
+from signal import RED, GREEN, BLUE, YELLOW, PURPLE, INTER_SECTOR
+from track import StructuredSector, sectors, xtrack
+from track import FAST, SLOW, DEFAULT_BRAKING_TIME, XTRACK_BRAKING_TIME, MAX_SPEED, DEFAULT_SPEED
 from gui import tk_color
 
 
-TIME_THRESHOLD = 1.4  # seconds
+TIME_THRESHOLD = 0.5  # seconds
 
 
 sign = lambda x: x and (1, -1)[x<0]
@@ -87,6 +87,10 @@ class EventProcessor:
         if self.train.signal_blind:
             return
 
+        # PURPLE events are associated with the cross-track.
+        if event in [PURPLE]:
+            self._process_xtrack_event()
+
         # YELLOW events cause a temporary drop in speed. In the current track
         # layout, they are caused by a signal positioned at the highest point
         # in a bridge; its purpose is to reduce the power setting so the train
@@ -99,7 +103,6 @@ class EventProcessor:
         # train stop (station). As such, they require a specialized logic
         # that differs from the logic applied to regular track sectors.
         elif event in [RED]:
-
             self._process_station_event(event)
 
         # signal events coming from sector-defininf tiles are handled here
@@ -125,7 +128,7 @@ class EventProcessor:
                     # place, immediately start a slowdown to minimum speed. Note that
                     # this logic depends in part of the specific track layout.
                     # TODO generalize handling for regular sectors anywhere in the track.
-                    self._accelerate(1)
+                    self.accelerate(1)
                     self._exit_sector(event)
 
             elif self.train.sector is None:
@@ -180,15 +183,15 @@ class EventProcessor:
         self.train.speedup_timer.start()
 
         # enter sector at max speed setting
-        self._accelerate(self.train.sector.max_speed)
+        self.accelerate(self.train.sector.max_speed)
 
     def _return_to_sector_speed(self):
-        if self.train.sector is not None:
-            speed = self.train.sector.exit_speed
-        else:
-            speed = DEFAULT_SPEED
+        # if self.train.sector is not None:
+        #     speed = self.train.sector.exit_speed
+        # else:
+        #     speed = DEFAULT_SPEED
 
-        self._accelerate(speed, time=0.5)
+        self.accelerate(DEFAULT_SPEED, time=0.5)
 
     def _handle_structured_sector(self, event):
         '''
@@ -240,7 +243,7 @@ class EventProcessor:
         if next_sector.occupier is not None and next_sector.occupier != self.train.name:
             # next sector is occupied: slow down to minimum speed and wait for
             # end-of-sector signal.
-            self._accelerate(1, time=0.2)
+            self.accelerate(1, time=0.2)
 
         else:
             # next sector is free. Grab it.
@@ -249,7 +252,7 @@ class EventProcessor:
             # drop speed to a reasonable value to cross over the inter-sector zone,
             # but avoid using train.down_speed(), since it kills any underlying threads.
             speed = min(DEFAULT_SPEED - 1, self.train.power_index)
-            self._accelerate(speed, time=0.2)
+            self.accelerate(speed, time=0.2)
 
     def _process_station_event(self, event):
         '''
@@ -303,10 +306,10 @@ class EventProcessor:
 
     def _process_braking_event(self):
         # fast braking
-        self._accelerate(1, time=0.1)
+        self.accelerate(1, time=0.1)
 
         # keep brake applied
-        time.sleep(BRAKING_TIME)
+        time.sleep(DEFAULT_BRAKING_TIME)
 
         # accelerate back to sector speed
         if self.train.sector is not None:
@@ -314,25 +317,55 @@ class EventProcessor:
         else:
             pi = MAX_SPEED
 
-        self._accelerate(pi)
+        self.accelerate(pi)
 
-    def _accelerate(self, new_power_index, time=1.0):
+    def _process_xtrack_event(self):
+
+        if (self.train.sector.color, self.train.direction) in xtrack.valid_signals and \
+                not xtrack.is_free(self.train):
+
+            self.train.cancel_acceleration_thread()
+            self.train.cancel_speedup_timer()
+            self.train.cancel_station_timer()
+
+            # brake
+            speed = self.train.power_index
+            self.accelerate(0, time=XTRACK_BRAKING_TIME)
+
+            # wait until full stop
+            time.sleep(XTRACK_BRAKING_TIME + 0.1)
+
+            # wait until crossing opens
+            while not xtrack.is_free(self.train):
+                time.sleep(0.5)
+
+            # recover speed
+            self.accelerate(speed, time=2)
+
+    def accelerate(self, new_power_index, time=1.0):
         '''
         Accelerates the train from current power setting to the new power
         setting, taking by default about 1 sec to do that.
 
         This seems to be generic enough to even handle the compound train
         '''
-        # new power index must have same sign as current power index
-        current_power_index_sign = sign(self.train.power_index)
+        self._accelerate(self.train.power_index, new_power_index, time=time)
+
+    def _accelerate(self, initial_power_index, new_power_index, time=1.0):
+        '''
+        Accelerates the train from initial power setting to the new power
+        setting, taking by default about 1 sec to do that.
+        '''
+        # new power index must have same sign as initial power index
+        initial_power_index_sign = sign(initial_power_index)
         new_power_index_sign = sign(new_power_index)
 
         # only check if non-zero
-        if self.train.power_index != 0 and new_power_index != 0 and \
-            new_power_index_sign != current_power_index_sign:
+        if initial_power_index != 0 and new_power_index != 0 and \
+            new_power_index_sign != initial_power_index_sign:
             raise RuntimeError("error in power index signs")
 
-        current_power_index_abs_value = abs(self.train.power_index)
+        current_power_index_abs_value = abs(initial_power_index)
         new_power_index_abs_value = abs(new_power_index)
 
         # find sense of required sequence
@@ -346,7 +379,7 @@ class EventProcessor:
         # zero, and thus has no sign
         power_index_sign = new_power_index_sign
         if power_index_sign == 0:
-            power_index_sign = current_power_index_sign
+            power_index_sign = initial_power_index_sign
 
         # generate sequence of power index values. We add the step value
         # to account for the way the range function works.

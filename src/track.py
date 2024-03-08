@@ -1,3 +1,8 @@
+import time
+from threading import RLock
+
+from pylgbst.peripherals import COLOR_RED
+
 from signal import RED, GREEN, BLUE
 
 DIRECTION_A = "clockwise"
@@ -6,13 +11,14 @@ DIRECTION_B = "counter_clockwise"
 FAST = 0
 SLOW = 1
 
-DEFAULT_SECTOR_TIME = 1.0 #s
-TIME_BLIND = 1.0
-BRAKING_TIME = 2.0
+DEFAULT_SECTOR_TIME = 0.8 #s
+TIME_BLIND = 0.7
+DEFAULT_BRAKING_TIME = 2.0
+XTRACK_BRAKING_TIME = 0.3
 MINIMUM_TIME_STATION = 2.
-MAXIMUM_TIME_STATION = 60.
+MAXIMUM_TIME_STATION = 4.
 
-MAX_SPEED = 6
+MAX_SPEED = 5
 MAX_SPEED_TIME = 8.0 # s
 DEFAULT_SPEED = 4
 SECTOR_EXIT_SPEED = 3
@@ -102,6 +108,55 @@ class StructuredSector(Sector):
         self.sub_sector_type = FAST
 
 
+class XTrack():
+    '''
+    XTrack encapsulates the information needed for a train to move across a
+    cross track crossing.
+
+    Once a cross-track signal is detected, the appropriate check is performed to
+    see if the cross-track is free. If free, the train books the cross-track and
+    keeps moving. If not free, the train should stop and wait until the cross-track
+    opens. Or, if the cross-track was booked by the same train that is querying it,
+    it means that the cross-track exit signal was detected; it that case, just open
+    the cross-track.
+    '''
+    # signals may not be required at the 4 sides of a cross-track. The list
+    # of valid signals should be queried by the user in order to accept track
+    # signals that make sense for the specific track layout. The list contains
+    # valid pairs of (sector, direction).
+    # For the specific track layout we have now, this is redundant. But we keep
+    # it in place just in case. New layouts are coming out soon...
+    valid_signals = [
+        (BLUE, DIRECTION_A),
+        (BLUE, DIRECTION_B),
+        (GREEN, DIRECTION_A),
+        (GREEN, DIRECTION_B),
+    ]
+    def __init__(self, name):
+        # keeps identification of train that booked, or None if free
+        self.book = None
+
+        self.lock = RLock()
+
+    def is_free(self, train):
+        self.lock.acquire()
+
+        if self.book is not None:
+            # check if cross-track was booked by this train. If so, just free it.
+            if self.book == train.name:
+                self.book = None
+                self.lock.release()
+                return True
+            else:
+                self.lock.release()
+                return False
+        else:
+            # book it
+            self.book = train.name
+            self.lock.release()
+            return True
+
+
 def clear_track():
     for sector in sectors.items():
         sector[1].occupier = None
@@ -111,13 +166,16 @@ def clear_track():
 
 # sectors
 sectors = {"RED_1": Sector(RED),
-           GREEN: Sector(GREEN, max_speed=4, max_speed_time=1.0),
+           GREEN: Sector(GREEN, max_speed_time=4.0),
            "RED_2": Sector(RED),
-           BLUE: StructuredSector(BLUE, max_speed_time=6.5)
+           BLUE: StructuredSector(BLUE, max_speed_time=5)
            }
 
 station_sector_names = {DIRECTION_B: "RED_1",
                         DIRECTION_A: "RED_2"}
+
+# this track layout has one instance of cross-track
+xtrack = XTrack("Crossing 1")
 
 # The track layout is defined by how the sectors connect to each
 # other. There are actually two tracks, one for each direction of

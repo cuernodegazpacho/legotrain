@@ -11,11 +11,11 @@ from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN, COLOR_RED
 
 import uuid_definitions
 from track import DIRECTION_A, TIME_BLIND, MINIMUM_TIME_STATION, MAXIMUM_TIME_STATION
-from track import sectors, station_sector_names, clear_track, DEFAULT_SPEED
+from track import sectors, station_sector_names, clear_track, xtrack
 from signal import INTER_SECTOR
 from event import EventProcessor, DummyEventProcessor, SensorEventFilter
 from signal import HUE, SATURATION, RGB_MINIMUM, V_MINIMUM
-from signal import RED, GREEN, BLUE, YELLOW
+from signal import RED, GREEN, BLUE, YELLOW, PURPLE
 from gui import tkinter_output_queue, tk_color, ASTATION, SECTOR
 
 sign = lambda x: x and (1, -1)[x<0]
@@ -525,8 +525,8 @@ class SmartTrain(Train):
         # start timer to hold up the signal-blind flag. While this flag
         # is up, the vision sensor logic won't respond to signals. This
         # is used to prevent a false signal to be sensed when the train is
-        # stopped right over a signal on the track. In that situation, as
-        # soon as the movement starts, a false signal can be issued.
+        # stopped right over a signal tile on the track. In that situation,
+        # as soon as the movement starts, a false signal can be issued.
         self.signal_blind = True
         self.signal_blind_timer = Timer(TIME_BLIND, self.activate_signals)
         self.signal_blind_timer.start()
@@ -553,16 +553,8 @@ class SmartTrain(Train):
         # ignore events with low signal-to-noise ratio
         if min(r, g, b) >= RGB_MINIMUM and v >= V_MINIMUM:
 
-            # find matching color. Here we call the color detection criteria
-            # in order of priority. That is, YELLOW is checked first, RED, last.
-            # This is because the YELLOW signal needs faster response (train is
-            # moving faster), and RED can wait a bit (train is moving slower). This
-            # is related to one particular track layout tough. For other layouts,
-            # maybe a different sequence would be better. We don't know if this is
-            # relevant tough. It might have no importance whatsoever since the computer
-            # should be much faster than the speed that events happen in the physical
-            # train set.
-            for color in [YELLOW, BLUE, GREEN, RED]:
+            # find matching color.
+            for color in [PURPLE, BLUE, GREEN, RED, YELLOW, ]:
 
                 if (h >= HUE[color][0] and h <= HUE[color][1]) and \
                    (s >= SATURATION[color][0] and s <= SATURATION[color][1]):
@@ -585,14 +577,20 @@ class SmartTrain(Train):
         # It should be called by a handset right button when in 1-train
         # configuration. That way, pressing the button causes the sector
         # to open and close.
-        if sectors[GREEN].occupier is None:
-            sectors[GREEN].occupier = "AAAA"
-            print("GREEN sector OCCUPIED")
+
+        # if sectors[GREEN].occupier is None:
+        #     sectors[GREEN].occupier = "AAAA"
+        #     print("GREEN sector OCCUPIED")
+        # else:
+        #     sectors[GREEN].occupier = None
+        #     print("GREEN sector OPEN")
+
+        if xtrack.is_free(self):
+            xtrack.book = "dummy train"
         else:
-            sectors[GREEN].occupier = None
-            print("GREEN sector OPEN")
+            xtrack.book = None
 
-
+        print("xtrack.book: ", xtrack.book)
 
 class CompoundTrain():
     '''

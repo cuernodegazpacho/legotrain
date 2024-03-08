@@ -67,6 +67,7 @@ class Controller:
             {
                 RemoteButton.PLUS: self.train2.up_speed,
                 RemoteButton.MINUS: self.train2.down_speed
+                #TODO
                 # RemoteButton.PLUS: self.train1.switch_semaphore,
                 # RemoteButton.RED: self.train1.switch_semaphore,
                 # RemoteButton.MINUS: self.train1.switch_semaphore

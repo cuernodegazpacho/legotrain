@@ -18,11 +18,11 @@ V_MINIMUM = 100.
 HUE = {}
 SATURATION = {}
 
-HUE[RED]    = (0.98, 1.01)  # min and max hue
-HUE[GREEN]  = (0.35, 0.40)
-HUE[BLUE]   = (0.55, 0.60)
-HUE[YELLOW] = (0.09, 0.13)
-HUE[PURPLE] = (0.95, 0.98)
+HUE[RED]    = (0.981, 1.01)  # min and max hue
+HUE[GREEN]  = (0.35,  0.40)
+HUE[BLUE]   = (0.55,  0.60)
+HUE[YELLOW] = (0.09,  0.13)
+HUE[PURPLE] = (0.95,  0.975)
 
 SATURATION[RED]    = (0.78, 0.88)  # min and max saturation
 SATURATION[GREEN]  = (0.66, 0.81)
