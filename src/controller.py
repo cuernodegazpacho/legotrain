@@ -110,8 +110,14 @@ class Controller:
             self.train1.auto = False
             self.train2.auto = False
 
+            self.train1.cancel_all_threads()
+            self.train2.cancel_all_threads()
+
             self.train1.initialize_sectors()
             self.train2.initialize_sectors()
+
+            track.xtrack.initialize(self.train1)
+            track.xtrack.initialize(self.train2)
 
     def _restart(self):
         # this method assumes the trains are stopped at they designated stations,

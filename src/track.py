@@ -1,9 +1,8 @@
 import time
 from threading import RLock
 
-from pylgbst.peripherals import COLOR_RED
-
-from signal import RED, GREEN, BLUE
+from signal import RED, GREEN, BLUE, PURPLE
+from gui import tk_color, INTER_SECTOR
 
 DIRECTION_A = "clockwise"
 DIRECTION_B = "counter_clockwise"
@@ -12,15 +11,15 @@ FAST = 0
 SLOW = 1
 
 DEFAULT_SECTOR_TIME = 0.8 #s
-TIME_BLIND = 0.7
+TIME_BLIND = 1.0
 DEFAULT_BRAKING_TIME = 2.0
-XTRACK_BRAKING_TIME = 0.3
+XTRACK_BRAKING_TIME = 0.1
 MINIMUM_TIME_STATION = 2.
 MAXIMUM_TIME_STATION = 4.
 
-MAX_SPEED = 5
-MAX_SPEED_TIME = 8.0 # s
-DEFAULT_SPEED = 4
+MAX_SPEED = 4
+MAX_SPEED_TIME = 5.0 # s
+DEFAULT_SPEED = 3
 SECTOR_EXIT_SPEED = 3
 
 class Sector():
@@ -34,7 +33,7 @@ class Sector():
 
         As trains move in and out of sectors, they mark the sector
         they are currently in as occupied, so that other trains can
-        avoid entering that same sector. A train can book a given
+        avoid entering that same sector. A train can booked a given
         sector in advance when necessary, to prevent other trains
         from taking it. Trains free sectors when they leave them,
         or, in some cases, only when they enter the next sector.
@@ -133,28 +132,67 @@ class XTrack():
         (GREEN, DIRECTION_B),
     ]
     def __init__(self, name):
-        # keeps identification of train that booked, or None if free
-        self.book = None
+
+        # keep identifications of trains that booked, and last stopped
+        self.booked = None
+        self.last_stopped = None
 
         self.lock = RLock()
 
     def is_free(self, train):
         self.lock.acquire()
+        result = not (self.booked is not None and self.booked != train.name)
+        self.lock.release()
+        return result
 
-        if self.book is not None:
-            # check if cross-track was booked by this train. If so, just free it.
-            if self.book == train.name:
-                self.book = None
-                self.lock.release()
-                return True
-            else:
-                self.lock.release()
-                return False
+    def book(self, train):
+        self.lock.acquire()
+
+        if self.booked is None:
+            self.booked = train.name
+            train.report_xtrack(tk_color[RED])
+
+        elif self.booked == train.name:
+            self.booked = None
+            train.report_xtrack(tk_color[INTER_SECTOR])
+
         else:
-            # book it
-            self.book = train.name
-            self.lock.release()
-            return True
+            print("Error booking xtrack")
+            #TODO maybe should generate an emergency stop?
+
+        self.lock.release()
+
+    def initialize(self, train):
+        self.booked = None
+        if train is not None and train.gui is not None:
+            train.report_xtrack(tk_color[INTER_SECTOR])
+
+    def is_valid_event(self, current_event, previous_event):
+        # checks for unexpected events. This may need to be made more
+        # generic/capable, but for now we just add each case as an
+        # explicit check.
+        result = True
+
+        # case 1: a PURPLE event may be triggered by a RED tile (and the
+        # other way around), since their HSV values are kinda close to
+        # each other. In the current track layout, these are invalid
+        # combinations. That is, there are no situations where a RED tile
+        # immediately precedes, or is followed, by a PURPLE tile.
+        if (current_event in [PURPLE] and previous_event in [RED]) or \
+                (current_event in [RED] and previous_event in [PURPLE]):
+            result = False
+
+        # case 2: multiple RED events are not allowed, since stations are
+        # never positioned that close to each other. This may happen when
+        # a train stops at a station, with its sensor right above the red
+        # tile. The sensor may keep triggering events randomly. Class
+        # SensorEventFilter won't be able to detect such multiple events
+        # coming from a stopped train, since this filter checks for event
+        # multiplicity only within a short time interval.
+        if (current_event in [RED] and previous_event in [RED]):
+            result = False
+
+        return result
 
 
 def clear_track():

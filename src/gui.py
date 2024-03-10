@@ -2,35 +2,39 @@ import queue
 import tkinter as T
 from tkinter import StringVar, LEFT, TOP
 
-from signal import RED, GREEN, BLUE, YELLOW, INTER_SECTOR
+from signal import RED, GREEN, BLUE, YELLOW, PURPLE, INTER_SECTOR
 
 tkinter_output_queue = queue.Queue()
 QUEUE_POLLING = 50 # ms
 
 # tkinter color names
-TK_GRAY = "gray52"
+TK_GRAY = "light gray"
 TK_RED = "red"
 TK_GREEN = "green"
 TK_BLUE = "lightblue"
 TK_YELLOW = "yellow"
+TK_PURPLE = "purple"
 
 # translation between signal colors and tkinter colors
 tk_color = {RED: TK_RED,
             GREEN: TK_GREEN,
             BLUE: TK_BLUE,
             YELLOW: TK_YELLOW,
+            PURPLE: TK_PURPLE,
             INTER_SECTOR: TK_GRAY}
 
 # message types
 BASIC = "BASIC"
 ASTATION = "@STATION"
 SECTOR = "SECTOR"
+SIGNAL = "SIGNAL"
+XTRACK = "XTRACK"
 
 
 class GUI():
     def __init__(self):
         self.root = T.Tk()
-        self.root.geometry("600x430")
+        self.root.geometry("600x480")
         font = ('Helvetica', 36)
 
         self.root.title("Lego train control")
@@ -45,8 +49,10 @@ class GUI():
         T.Label(left_frame, text="Current",   font=font, justify=LEFT).pack(side=TOP)
         T.Label(left_frame, text="Speed",     font=font, justify=LEFT).pack(side=TOP)
         T.Label(left_frame, text="Power",     font=font, justify=LEFT).pack(side=TOP)
+        T.Label(left_frame, text="Signal",    font=font, justify=LEFT).pack(side=TOP)
         T.Label(left_frame, text="@ station", font=font, justify=LEFT).pack(side=TOP)
         T.Label(left_frame, text="Sector",    font=font, justify=LEFT).pack(side=TOP)
+        T.Label(left_frame, text="Xtrack",    font=font, justify=LEFT).pack(side=TOP)
 
         # text variables
         self.name_1_text     = StringVar(center_frame, '')
@@ -72,17 +78,21 @@ class GUI():
         self.current_1_label  = T.Label(center_frame, textvariable=self.current_1_text, font=font, width=width)
         self.speed_1_label    = T.Label(center_frame, textvariable=self.speed_1_text, font=font, width=width)
         self.power_1_label    = T.Label(center_frame, textvariable=self.power_1_text, font=font, width=width)
+        self.signal_1_label   = T.Label(center_frame, font=font, width=5, anchor="e")
         self.astation_1_label = T.Label(center_frame, textvariable=self.astation_1_text, font=font, width=width)
         # self.sector_1_label   = T.Label(center_frame, textvariable=self.sector_1_text, font=font, width=width, anchor="e")
         self.sector_1_label   = T.Label(center_frame, font=font, width=5, anchor="e")
+        self.xtrack_1_label   = T.Label(center_frame, font=font, width=5, anchor="e")
 
         self.name_1_label.pack(side=TOP)
         self.voltage_1_label.pack(side=TOP)
         self.current_1_label.pack(side=TOP)
         self.speed_1_label.pack(side=TOP)
         self.power_1_label.pack(side=TOP)
+        self.signal_1_label.pack(side=TOP)
         self.astation_1_label.pack(side=TOP)
         self.sector_1_label.pack(side=TOP)
+        self.xtrack_1_label.pack(side=TOP)
 
         # right frame: fields associated with id 2
         self.name_2_label     = T.Label(right_frame, textvariable=self.name_2_text, font=font)
@@ -90,17 +100,21 @@ class GUI():
         self.current_2_label  = T.Label(right_frame, textvariable=self.current_2_text, font=font, width=width)
         self.speed_2_label    = T.Label(right_frame, textvariable=self.speed_2_text, font=font, width=width)
         self.power_2_label    = T.Label(right_frame, textvariable=self.power_2_text, font=font, width=width)
+        self.signal_2_label   = T.Label(right_frame, font=font, width=5, anchor="e")
         self.astation_2_label = T.Label(right_frame, textvariable=self.astation_2_text, font=font, width=width)
         # self.sector_2_label   = T.Label(right_frame, textvariable=self.sector_2_text, font=font, width=width, anchor="e")
         self.sector_2_label   = T.Label(right_frame, font=font, width=5, anchor="e")
+        self.xtrack_2_label   = T.Label(right_frame, font=font, width=5, anchor="e")
 
         self.name_2_label.pack(side=TOP)
         self.voltage_2_label.pack(side=TOP)
         self.current_2_label.pack(side=TOP)
         self.speed_2_label.pack(side=TOP)
         self.power_2_label.pack(side=TOP)
+        self.signal_2_label.pack(side=TOP)
         self.astation_2_label.pack(side=TOP)
         self.sector_2_label.pack(side=TOP)
+        self.xtrack_2_label.pack(side=TOP)
 
         left_frame.pack(side=LEFT)
         center_frame.pack(side=LEFT)
@@ -170,6 +184,20 @@ class GUI():
             vname = f"sector_{id}_label".format(id=id)
             self.__dict__[vname].configure(text=subtext, bg=color)
 
+        elif tokens[0] == SIGNAL:
+            id = tokens[2].strip()
+
+            color = tokens[3].strip()
+            vname = f"signal_{id}_label".format(id=id)
+            self.__dict__[vname].configure(bg=color)
+
+        elif tokens[0] == XTRACK:
+            id = tokens[2].strip()
+
+            color = tokens[3].strip()
+            vname = f"xtrack_{id}_label".format(id=id)
+            self.__dict__[vname].configure(bg=color)
+
 
 if __name__ == '__main__':
     g = GUI()
@@ -182,5 +210,11 @@ if __name__ == '__main__':
 
     g.sector_1_label.configure(text="", bg='lightblue')
     g.sector_2_label.configure(text="S", bg='yellow')
+
+    g.signal_1_label.configure(text="", bg='light gray')
+    g.signal_2_label.configure(text="", bg='purple')
+
+    g.xtrack_1_label.configure(text="", bg='light gray')
+    g.xtrack_2_label.configure(text="", bg='purple')
 
     g.root.mainloop()

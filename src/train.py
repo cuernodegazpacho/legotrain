@@ -16,7 +16,7 @@ from signal import INTER_SECTOR
 from event import EventProcessor, DummyEventProcessor, SensorEventFilter
 from signal import HUE, SATURATION, RGB_MINIMUM, V_MINIMUM
 from signal import RED, GREEN, BLUE, YELLOW, PURPLE
-from gui import tkinter_output_queue, tk_color, ASTATION, SECTOR
+from gui import tkinter_output_queue, tk_color, ASTATION, SECTOR, SIGNAL, XTRACK
 
 sign = lambda x: x and (1, -1)[x<0]
 
@@ -123,6 +123,10 @@ class Train:
 
         # GUI access
         self.gui = gui
+        self.report_signal_timer = None
+        if self.gui is not None:
+            xtrack.initialize(self)
+
         if report:
             fp = None
             if record:
@@ -171,6 +175,26 @@ class Train:
                                                          tkcolor, subtext=subtext)
             tkinter_output_queue.put(output_buffer)
 
+    def report_xtrack(self, tkcolor):
+        if self.gui is not None:
+            output_buffer = self.gui.encode_str_variable(XTRACK, self.name, self.gui_id, tkcolor)
+            tkinter_output_queue.put(output_buffer)
+
+    def report_signal(self, tkcolor):
+        if self.gui is not None:
+            output_buffer = self.gui.encode_str_variable(SIGNAL, self.name, self.gui_id, tkcolor)
+            tkinter_output_queue.put(output_buffer)
+
+            # stop reporting after a while
+            if self.report_signal_timer is not None:
+                self.report_signal_timer.cancel()
+            self.report_signal_timer = Timer(0.5, self._shut_off_signal_color)
+            self.report_signal_timer.start()
+
+    def _shut_off_signal_color(self):
+        output_buffer = self.gui.encode_str_variable(SIGNAL, self.name, self.gui_id, tk_color[INTER_SECTOR])
+        tkinter_output_queue.put(output_buffer)
+
     # up_speed and down_speed are used only by handset actions. They should
     # kill both the station wait and the accelerate threads; that way, the
     # state the train is after the user input is defined solely by that input.
@@ -218,6 +242,11 @@ class Train:
         if self.speedup_timer is not None:
             self.speedup_timer.cancel()
             self.speedup_timer = None
+
+    def cancel_all_threads(self):
+        self.cancel_speedup_timer()
+        self.cancel_acceleration_thread()
+        self.cancel_station_timer()
 
     # The `accelerate` method has to be run in a thread, and stopped whenever a
     # set_power call takes place coming, typically, from the up_speed, dow_speed,
@@ -533,7 +562,7 @@ class SmartTrain(Train):
 
         # accelerate just to move train out of station area into inter-sector
         # zone. Train will regain full speed when crossing sector signal.
-        self.accelerate(list(range(1, 4)), power_index_signal, sleep_time=0.5)
+        self.accelerate(list(range(1, 4)), power_index_signal, sleep_time=0.2)
 
     def _vision_sensor_callback(self, *args, **kwargs):
         # use HSV as criterion for mapping colors
@@ -586,11 +615,11 @@ class SmartTrain(Train):
         #     print("GREEN sector OPEN")
 
         if xtrack.is_free(self):
-            xtrack.book = "dummy train"
+            xtrack.booked = "dummy train"
         else:
-            xtrack.book = None
+            xtrack.booked = None
 
-        print("xtrack.book: ", xtrack.book)
+        print("xtrack.booked: ", xtrack.booked)
 
 class CompoundTrain():
     '''

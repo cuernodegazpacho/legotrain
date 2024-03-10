@@ -4,7 +4,7 @@ from threading import Timer
 
 from signal import RED, GREEN, BLUE, YELLOW, PURPLE, INTER_SECTOR
 from track import StructuredSector, sectors, xtrack
-from track import FAST, SLOW, DEFAULT_BRAKING_TIME, XTRACK_BRAKING_TIME, MAX_SPEED, DEFAULT_SPEED
+from track import FAST, SLOW, DEFAULT_BRAKING_TIME, XTRACK_BRAKING_TIME, MAX_SPEED, DEFAULT_SPEED, SECTOR_EXIT_SPEED
 from gui import tk_color
 
 
@@ -67,6 +67,9 @@ class EventProcessor:
         '''
         self.train = train
 
+        # this helps to detected unexpected, thus invalid, events.
+        self.last_processed_event = None
+
     def process_event(self, event):
         '''
         Processes events pre-filtered by SensorEventFilter.
@@ -79,6 +82,10 @@ class EventProcessor:
         TODO this badly needs refactoring. A conditional-plagued
         code is not conducive to a modular, scalable design.
         '''
+
+        # report signal color
+        self.train.report_signal(tk_color[event])
+
         # events should be processed only when train is in auto mode
         if not self.train.auto:
             return
@@ -86,6 +93,12 @@ class EventProcessor:
         # train may be blinded against signals
         if self.train.signal_blind:
             return
+
+        # check event validity against event history
+        is_valid = xtrack.is_valid_event(event, self.last_processed_event)
+        if not is_valid:
+            return
+        self.last_processed_event = event
 
         # PURPLE events are associated with the cross-track.
         if event in [PURPLE]:
@@ -105,7 +118,7 @@ class EventProcessor:
         elif event in [RED]:
             self._process_station_event(event)
 
-        # signal events coming from sector-defininf tiles are handled here
+        # signal events coming from sector-defining signal tiles are handled here
         elif event in [GREEN, BLUE]:
 
             # if the most recent signal event has a color identical to the
@@ -186,12 +199,7 @@ class EventProcessor:
         self.accelerate(self.train.sector.max_speed)
 
     def _return_to_sector_speed(self):
-        # if self.train.sector is not None:
-        #     speed = self.train.sector.exit_speed
-        # else:
-        #     speed = DEFAULT_SPEED
-
-        self.accelerate(DEFAULT_SPEED, time=0.5)
+        self.accelerate(DEFAULT_SPEED, time=0.8)
 
     def _handle_structured_sector(self, event):
         '''
@@ -298,11 +306,18 @@ class EventProcessor:
         self.train.initialize_sectors()
 
     def _exit_sector(self, event):
-        self.train.previous_sector = self.train.sector
+
+        # define speed to be used in inter-sector zone
+        exit_speed = SECTOR_EXIT_SPEED
+        if self.train.sector is not None and self.train.sector.exit_speed is not None:
+            exit_speed = self.train.sector.exit_speed
 
         # entering inter-sector zone
+        self.train.previous_sector = self.train.sector
         self.train.sector = None
         self.train.report_sector(tk_color[INTER_SECTOR])
+
+        self.accelerate(exit_speed, time=0.5)
 
     def _process_braking_event(self):
         # fast braking
@@ -321,26 +336,44 @@ class EventProcessor:
 
     def _process_xtrack_event(self):
 
-        if (self.train.sector.color, self.train.direction) in xtrack.valid_signals and \
-                not xtrack.is_free(self.train):
+        # catch false detection
+        if self.train.sector is None:
+            return
 
-            self.train.cancel_acceleration_thread()
-            self.train.cancel_speedup_timer()
-            self.train.cancel_station_timer()
+        # only handle signal if sector and direction are self-consistent.
+        # This is redundant for now, but we keep the code in here in the
+        # hopes it might be needed when implementing other track layouts.
+        if (self.train.sector.color, self.train.direction) in xtrack.valid_signals:
 
-            # brake
-            speed = self.train.power_index
-            self.accelerate(0, time=XTRACK_BRAKING_TIME)
+            # stop train if xtrack is booked
+            if not xtrack.is_free(self.train):
 
-            # wait until full stop
-            time.sleep(XTRACK_BRAKING_TIME + 0.1)
+                self.train.cancel_acceleration_thread()
+                self.train.cancel_speedup_timer()
+                self.train.cancel_station_timer()
 
-            # wait until crossing opens
-            while not xtrack.is_free(self.train):
-                time.sleep(0.5)
+                # brake and wait until full stop
+                speed = self.train.power_index
+                self.accelerate(0, time=XTRACK_BRAKING_TIME)
+                time.sleep(XTRACK_BRAKING_TIME + 0.5) # leeway to account for inertia
 
-            # recover speed
-            self.accelerate(speed, time=2)
+                # wait until crossing opens
+                while not xtrack.is_free(self.train):
+                    time.sleep(0.5)
+
+                # this is the train that last stopped at the xtrack
+                xtrack.last_stopped = self.train.name
+
+                # recover speed
+                self.accelerate(speed, time=2)
+
+            # if not booked, book it
+            else:
+                if xtrack.last_stopped is None or \
+                   (xtrack.last_stopped is not None and xtrack.last_stopped != self.train.name):
+                    xtrack.book(self.train)
+                else:
+                    xtrack.last_stopped = None
 
     def accelerate(self, new_power_index, time=1.0):
         '''
@@ -420,7 +453,8 @@ class EventProcessor:
         # GREEN end-of-sector signal, because a station reset will happen anyway (provided
         # the RED signal be detected).
         print("ERROR: spurious signal inside sector. Train sector: ", self.train.sector.color,
-              "  event: ", event, "  just entered: ", self.train.just_entered_sector)
+              "  event: ", event, "  just entered: ", self.train.just_entered_sector, "  ",
+              self.train.name)
 
         # # event color matches train's next sector color. This means that the end-of-sector
         # # signal was missed and the train already entered the next sector.
