@@ -47,7 +47,7 @@ class Controller:
 
         # define sensible handset actions for a dummy train2 object
         if self.train2 is None:
-            self.train2 = _DummyTrain()
+            self.train2 = _DummyTrain("Dummy")
 
         # enable system-wide communications
         self.dispatcher = Dispatcher(self)
@@ -231,6 +231,9 @@ class Dispatcher:
 
 # class that provides dummy methods to be used in case train2 is None
 class _DummyTrain():
+    def __init__(self, name):
+        self.name = name
+        self.gui = None
     def up_speed(self):
         return
     def stop(self):
@@ -240,5 +243,7 @@ class _DummyTrain():
     def initialize_sectors(self):
         return
     def timed_stop_at_station(self):
+        return
+    def cancel_all_threads(self):
         return
 

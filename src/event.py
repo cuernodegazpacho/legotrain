@@ -3,7 +3,7 @@ from time import sleep
 from threading import Timer
 
 from signal import RED, GREEN, BLUE, YELLOW, PURPLE, INTER_SECTOR
-from track import StructuredSector, sectors, xtrack
+from track import StructuredSector, sectors, xtrack, XTrack
 from track import FAST, SLOW, DEFAULT_BRAKING_TIME, XTRACK_BRAKING_TIME, MAX_SPEED, DEFAULT_SPEED, SECTOR_EXIT_SPEED
 from gui import tk_color
 
@@ -101,6 +101,8 @@ class EventProcessor:
         self.last_processed_event = event
 
         # PURPLE events are associated with the cross-track.
+        #TODO PURPLE tiles are not being detected reliably enough.
+        # Using YELLOW for now (no braking needed in current setup).
         if event in [PURPLE]:
             self._process_xtrack_event()
 
@@ -110,7 +112,8 @@ class EventProcessor:
         # doesn't speed up too much while going over the descending part of the
         # track.
         if event in [YELLOW]:
-            self._process_braking_event()
+            # self._process_braking_event()
+            self._process_xtrack_event()
 
         # RED events are reserved for handling sectors that contain a
         # train stop (station). As such, they require a specialized logic
@@ -141,7 +144,6 @@ class EventProcessor:
                     # place, immediately start a slowdown to minimum speed. Note that
                     # this logic depends in part of the specific track layout.
                     # TODO generalize handling for regular sectors anywhere in the track.
-                    self.accelerate(1)
                     self._exit_sector(event)
 
             elif self.train.sector is None:
@@ -251,7 +253,7 @@ class EventProcessor:
         if next_sector.occupier is not None and next_sector.occupier != self.train.name:
             # next sector is occupied: slow down to minimum speed and wait for
             # end-of-sector signal.
-            self.accelerate(1, time=0.2)
+            self.accelerate(SECTOR_EXIT_SPEED, time=0.2)
 
         else:
             # next sector is free. Grab it.
@@ -259,7 +261,7 @@ class EventProcessor:
 
             # drop speed to a reasonable value to cross over the inter-sector zone,
             # but avoid using train.down_speed(), since it kills any underlying threads.
-            speed = min(DEFAULT_SPEED - 1, self.train.power_index)
+            speed = min(SECTOR_EXIT_SPEED, self.train.power_index)
             self.accelerate(speed, time=0.2)
 
     def _process_station_event(self, event):
@@ -336,9 +338,23 @@ class EventProcessor:
 
     def _process_xtrack_event(self):
 
-        # catch false detection
+        # catch false detections and special situations
+        # In the curremt layout, a special situation arises with a
+        # xtrack object immediately after a station exit.
         if self.train.sector is None:
-            return
+            if self.train.previous_sector is not None:
+                # this can be a xtrack in an inter-sector stretch of track
+                previous_sector = self.train.previous_sector
+                if previous_sector is not None:
+                    xt1 = previous_sector.look_ahead
+                    if xt1 is not None and isinstance(xt1, XTrack):
+                        # check out from xtrack
+                        xt1.book(self.train)
+                        return
+                else:
+                    return
+            else:
+                return
 
         # only handle signal if sector and direction are self-consistent.
         # This is redundant for now, but we keep the code in here in the

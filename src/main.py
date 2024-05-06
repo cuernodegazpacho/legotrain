@@ -36,7 +36,7 @@ if __name__ == '__main__':
     #                           gui=gui, address=uuid_definitions.HUB_ORIG)
     # controller = Controller(train)
 
-    # ---------------------- Smart train setup ----------------------------
+    # ---------------------- Smart train setup for testing ----------------------------
 
     # train = SmartTrain("Train 1", "1", lock=lock, report=True, record=True,
     #                         gui=gui, direction=DIRECTION_B, address=uuid_definitions.HUB_ORIG)

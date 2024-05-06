@@ -11,7 +11,7 @@ from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN, COLOR_RED
 
 import uuid_definitions
 from track import DIRECTION_A, TIME_BLIND, MINIMUM_TIME_STATION, MAXIMUM_TIME_STATION
-from track import sectors, station_sector_names, clear_track, xtrack
+from track import sectors, station_sector_names, clear_track, xtrack, XTrack
 from signal import INTER_SECTOR
 from event import EventProcessor, DummyEventProcessor, SensorEventFilter
 from signal import HUE, SATURATION, RGB_MINIMUM, V_MINIMUM
@@ -526,10 +526,23 @@ class SmartTrain(Train):
         # train.previous_sector was set to the sector the train is departing
         # from.
         self.led_handler.set_solid(COLOR_RED)
-        next_sector = self.previous_sector.next[self.direction]
+        previous_sector = self.previous_sector
+        next_sector = previous_sector.next[self.direction]
         while next_sector.occupier is not None and \
               next_sector.occupier != self.name:
             time.sleep(0.5)
+
+        # when restaring movement, check for the existence of a xtrack object
+        # ahead. In case there is one, check its status, and either book it
+        # and proceed moving, or wait until the xtrack is freed.
+        xt1 = previous_sector.look_ahead
+        if xt1 is not None and isinstance(xt1, XTrack):
+            # occupied; wait for opening
+            while not xt1.is_free(self):
+                time.sleep(0.5)
+
+            # book it when starting to leave
+            xtrack.book(self)
 
         # immediately occupy next sector
         next_sector.occupier = self.name
@@ -554,7 +567,7 @@ class SmartTrain(Train):
         # start timer to hold up the signal-blind flag. While this flag
         # is up, the vision sensor logic won't respond to signals. This
         # is used to prevent a false signal to be sensed when the train is
-        # stopped right over a signal tile on the track. In that situation,
+        # stopped rigth over a signal tile on the track. In that situation,
         # as soon as the movement starts, a false signal can be issued.
         self.signal_blind = True
         self.signal_blind_timer = Timer(TIME_BLIND, self.activate_signals)

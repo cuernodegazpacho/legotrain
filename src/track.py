@@ -4,6 +4,8 @@ from threading import RLock
 from signal import RED, GREEN, BLUE, PURPLE
 from gui import tk_color, INTER_SECTOR
 
+# these names are actually descriptive on a topologically circular track,
+# but are just labels on a figure-8 track, or more complex topologies.
 DIRECTION_A = "clockwise"
 DIRECTION_B = "counter_clockwise"
 
@@ -13,19 +15,19 @@ SLOW = 1
 DEFAULT_SECTOR_TIME = 0.8 #s
 TIME_BLIND = 1.0
 DEFAULT_BRAKING_TIME = 2.0
-XTRACK_BRAKING_TIME = 0.1
-MINIMUM_TIME_STATION = 2.
-MAXIMUM_TIME_STATION = 4.
+XTRACK_BRAKING_TIME = 0.5
+MINIMUM_TIME_STATION = 4.
+MAXIMUM_TIME_STATION = 25.
 
-MAX_SPEED = 4
+MAX_SPEED = 5
 MAX_SPEED_TIME = 5.0 # s
-DEFAULT_SPEED = 3
+DEFAULT_SPEED = 4
 SECTOR_EXIT_SPEED = 3
 
 class Sector():
     def __init__(self, color, sector_time=DEFAULT_SECTOR_TIME,
                  max_speed=MAX_SPEED, max_speed_time=MAX_SPEED_TIME,
-                 exit_speed=SECTOR_EXIT_SPEED):
+                 exit_speed=SECTOR_EXIT_SPEED, look_ahead=None):
         '''
         Encapsulates properties of a track sector. Sectors are used
         to isolate sections of a continuous track, such that only one
@@ -33,10 +35,15 @@ class Sector():
 
         As trains move in and out of sectors, they mark the sector
         they are currently in as occupied, so that other trains can
-        avoid entering that same sector. A train can booked a given
+        avoid entering that same sector. A train can book a given
         sector in advance when necessary, to prevent other trains
         from taking it. Trains free sectors when they leave them,
         or, in some cases, only when they enter the next sector.
+
+        A "look ahead" Xtrack object can be provided. In case it is not
+        None, the sector will check its status before attempting to
+        move out of the sector, in case it stopped there. This should
+        be used whenever a xtrack object sits close to a sector exit.
 
         Sectors support variable speed. For now, we define a high speed
         setting that should be maintained for a given time, after which
@@ -54,12 +61,15 @@ class Sector():
         :param max_speed_time: the time to sustain max speed (in sec.)
         :param exit_speed: the speed setting to which the train must
             accelerate when exiting the sector
+        :param look_ahead: a XTrack object that has to be checked
+            in advance
         '''
         self.color = color
         self.sector_time = sector_time
         self.max_speed = max_speed
         self.max_speed_time = max_speed_time
         self.exit_speed = exit_speed
+        self.look_ahead = look_ahead
 
         # Describes sector position in track. For now, this is a 2-element dict
         # with pointers to the two neighboring sectors, keyed by the train's
@@ -130,6 +140,8 @@ class XTrack():
         (BLUE, DIRECTION_B),
         (GREEN, DIRECTION_A),
         (GREEN, DIRECTION_B),
+        (RED, DIRECTION_A),
+        (RED, DIRECTION_B),
     ]
     def __init__(self, name):
 
@@ -178,6 +190,7 @@ class XTrack():
         # each other. In the current track layout, these are invalid
         # combinations. That is, there are no situations where a RED tile
         # immediately precedes, or is followed, by a PURPLE tile.
+        # TODO: this might not be the casee when 2 xtracks are present
         if (current_event in [PURPLE] and previous_event in [RED]) or \
                 (current_event in [RED] and previous_event in [PURPLE]):
             result = False
@@ -202,18 +215,21 @@ def clear_track():
 
 #------------------ TRACK DEFINITION ----------------------------
 
-# sectors
-sectors = {"RED_1": Sector(RED),
-           GREEN: Sector(GREEN, max_speed_time=4.0),
-           "RED_2": Sector(RED),
-           BLUE: StructuredSector(BLUE, max_speed_time=5)
+# this track layout has one instance of cross-track
+xtrack = XTrack("Crossing 1")
+
+# sectors. Note that the xtrack sits right after the exit from RED_2
+#TODO max_speed doesn't work on the red sectors, since they lack a sector
+# entry signal tile. Use special handling when exiting the previous segment
+sectors = {"RED_1": Sector(RED, max_speed=2),
+           GREEN: Sector(GREEN, max_speed_time=3.),
+           "RED_2": Sector(RED, max_speed=2, look_ahead=xtrack),
+           BLUE: StructuredSector(BLUE, max_speed_time=4.)
            }
 
 station_sector_names = {DIRECTION_B: "RED_1",
                         DIRECTION_A: "RED_2"}
 
-# this track layout has one instance of cross-track
-xtrack = XTrack("Crossing 1")
 
 # The track layout is defined by how the sectors connect to each
 # other. There are actually two tracks, one for each direction of
