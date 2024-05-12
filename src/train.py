@@ -496,6 +496,9 @@ class SmartTrain(Train):
         self.sector = None
         self.previous_sector = sectors[station_sector_names[self.direction]]
 
+        # event processor must be initialized to properly handle station sectors
+        self.event_processor.last_station_event = None
+
         # train is initialized as if it were in the inter-sector zone right after
         # the station. To prevent confusion, we report sector as based instead on
         # the previous sector color.

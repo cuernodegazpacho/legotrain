@@ -67,8 +67,11 @@ class EventProcessor:
         '''
         self.train = train
 
+        # handling of station events
+        self.last_station_event = None
+
         # this helps to detected unexpected, thus invalid, events.
-        self.last_processed_event = None
+        self.last_processed_xtrack_event = None
 
     def process_event(self, event):
         '''
@@ -95,10 +98,13 @@ class EventProcessor:
             return
 
         # check event validity against event history
-        is_valid = xtrack.is_valid_event(event, self.last_processed_event)
-        if not is_valid:
-            return
-        self.last_processed_event = event
+        #TODO this is checking against PURPLE and RED combinations. These are
+        # no longer valid because we got rid of PURPLE, and handle multiple
+        # RED events on stations now.
+        # is_valid = xtrack.is_valid_event(event, self.last_processed_xtrack_event)
+        # if not is_valid:
+        #     return
+        # self.last_processed_xtrack_event = event
 
         # PURPLE events are associated with the cross-track.
         #TODO PURPLE tiles are not being detected reliably enough.
@@ -268,44 +274,53 @@ class EventProcessor:
         '''
         Processes events associated with train stations
         '''
-        # upon detection of the station stop signal (RED), train
-        # must stop. To prevent subsequent startups, make sure any
-        # thread associated with train movement is cancelled.
-        self.train.cancel_acceleration_thread()
-        self.train.cancel_speedup_timer()
-        sleep(0.01)
-        self.train.stop(from_handset=False)
+        # Check if this is the first, or second signal in a station segment.
+        if self.last_station_event is None:
+            # first event: mark it is the first event, and take action
+            self.last_station_event = "station entry event"
+            self._handle_station_entry(event)
+        else:
+            # second event: it's the actual stop
+            # self.last_station_event = None
 
-        # gui displays station color
-        self.train.report_sector(tk_color[event])
+            # upon detection of the station stop signal (RED), train
+            # must stop. To prevent subsequent startups, make sure any
+            # thread associated with train movement is cancelled.
+            self.train.cancel_acceleration_thread()
+            self.train.cancel_speedup_timer()
+            sleep(0.01)
+            self.train.stop(from_handset=False)
 
-        # make sure previous sector is released.
-        self.train.previous_sector.occupier = None
+            # gui displays station color
+            self.train.report_sector(tk_color[event])
 
-        # mark current sector as occupied. Note that this is not
-        # strictly required in the current implementation, but we
-        # do it anyway for debugging and logging purposes.
-        self.train.previous_sector.next[self.train.direction].occupier = self.train.name
+            # make sure previous sector is released.
+            self.train.previous_sector.occupier = None
 
-        # after stopping at station, execute a Timer delay followed by a re-start
-        self.train.timed_stop_at_station()
+            # mark current sector as occupied. Note that this is not
+            # strictly required in the current implementation, but we
+            # do it anyway for debugging and logging purposes.
+            self.train.previous_sector.next[self.train.direction].occupier = self.train.name
 
-        # if a secondary train instance is registered, call its stop
-        # method. But *do not* call its timed delay routine, since this
-        # functionality must be commanded by the current train only.
-        if self.train.secondary_train is not None:
-            self.train.secondary_train.stop(from_handset=False)
+            # after stopping at station, execute a Timer delay followed by a re-start
+            self.train.timed_stop_at_station()
 
-        # when departing from station, re-initialize train sector tracking.
-        # This means:
-        # 1 - set current sector in train to None (train will be in inter-sector zone)
-        # 2 - set previous sector in train to the corresponding station
-        #     sector from which it will depart.
-        # Note that the train will be put immediately in the state represented
-        # by method initialize_sectors, even though it is still stopped at the
-        # station, under control of the timing thread set by method timed_stop_at_station
-        # above.
-        self.train.initialize_sectors()
+            # if a secondary train instance is registered, call its stop
+            # method. But *do not* call its timed delay routine, since this
+            # functionality must be commanded by the current train only.
+            if self.train.secondary_train is not None:
+                self.train.secondary_train.stop(from_handset=False)
+
+            # when departing from station, re-initialize train sector tracking.
+            # This means:
+            # 1 - set current sector in train to None (train will be in inter-sector zone)
+            # 2 - set previous sector in train to the corresponding station
+            #     sector from which it will depart.
+            # Note that the train will be put immediately in the state represented
+            # by method initialize_sectors, even though it is still stopped at the
+            # station, under control of the timing thread set by method timed_stop_at_station
+            # above.
+            self.train.initialize_sectors()
 
     def _exit_sector(self, event):
 
@@ -390,6 +405,10 @@ class EventProcessor:
                     xtrack.book(self.train)
                 else:
                     xtrack.last_stopped = None
+
+    def _handle_station_entry(self, event):
+        # on station entry, decelerate to minimum speed
+        self.accelerate(1, time=0.3)
 
     def accelerate(self, new_power_index, time=1.0):
         '''
