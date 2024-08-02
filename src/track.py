@@ -16,8 +16,8 @@ DEFAULT_SECTOR_TIME = 0.8 #s
 TIME_BLIND = 0.7
 DEFAULT_BRAKING_TIME = 2.0
 XTRACK_BRAKING_TIME = 0.5
-MINIMUM_TIME_STATION = 4.
-MAXIMUM_TIME_STATION = 25.
+MINIMUM_TIME_STATION = 2.
+MAXIMUM_TIME_STATION = 15.
 
 MAX_SPEED = 6
 MAX_SPEED_TIME = 4.5 # s
@@ -221,7 +221,7 @@ xtrack = XTrack("Crossing 1")
 # sectors. Note that the xtrack sits right after the exit from RED_2
 #TODO max_speed doesn't work on the red sectors, since they lack a sector
 # entry signal tile. Use special handling when exiting the previous segment
-sectors = {"RED_1": Sector(RED, max_speed=2),
+sectors = {"RED_1": Sector(RED, max_speed=1, max_speed_time=15.),
            GREEN: Sector(GREEN, max_speed_time=3.),
            "RED_2": Sector(RED, max_speed=2, look_ahead=xtrack),
            BLUE: StructuredSector(BLUE, max_speed_time=4.)

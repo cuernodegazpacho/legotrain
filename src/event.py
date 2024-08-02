@@ -109,8 +109,8 @@ class EventProcessor:
         # PURPLE events are associated with the cross-track.
         #TODO PURPLE tiles are not being detected reliably enough.
         # Using YELLOW for now (no braking needed in current setup).
-        if event in [PURPLE]:
-            self._process_xtrack_event()
+        # if event in [PURPLE]:
+        #     self._process_xtrack_event()
 
         # YELLOW events cause a temporary drop in speed. In the current track
         # layout, they are caused by a signal positioned at the highest point
@@ -407,8 +407,13 @@ class EventProcessor:
                     xtrack.last_stopped = None
 
     def _handle_station_entry(self, event):
-        # on station entry, decelerate to minimum speed
-        self.accelerate(1, time=0.3)
+        # on station entry, decelerate to entry speed. A station sector
+        # must use its max_speed parameter to define the entry speed.
+        if self.train.sector is not None:
+            speed = self.train.sector.max_speed
+        else:
+            speed = 1
+        self.accelerate(speed, time=0.3)
 
     def accelerate(self, new_power_index, time=1.0):
         '''
