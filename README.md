@@ -6,6 +6,8 @@ Python scripts to automate LEGO® City trains.
 
 ***still to come: two-train mode***
 
+*** movies: 10 an 14 ***
+
 Composite train mode described below:
 
 <img src="docs/pics/CTrain.jpg" width="600"></img>
@@ -32,11 +34,15 @@ experience (and fun) with the software.
 
 The basic dependence is with package  https://github.com/undera/pylgbst 
 It in turn will require installation of a Python Bluetooth library that
-supports the BLE (Bluetooth Low Energy) standard. I used *bleak*, but others
-are available as well. See the documentation at the  *pylgbst* repo for
+ are available as well. See the documentation at the  *pylgbst* repo for
 further details.
 
 My installation runs under Python 3.10 on a MacBook M1 Pro with Sonoma 14.2. 
+
+A very basic real-time screen output based on Tkinter displays status information.
+Mostly useful for development and diagnosing "train accidents".
+
+<img src="docs/pics/GUI.jpeg" width="600"></img>
 
 
 ## Design
