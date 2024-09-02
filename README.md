@@ -4,11 +4,13 @@ Python scripts to automate LEGO® City trains.
 
 ## Functional examples
 
-***still to come: two-train mode***
+Two trains sharing one track with crossings:
 
-*** movies: 10 an 14 ***
+<img src="docs/pics/Dtrain.jpeg" width="600"></img>
 
-Composite train mode described below:
+***still to come: movies: 10 an 14 ***
+
+Composite train with two engines:
 
 <img src="docs/pics/CTrain.jpg" width="600"></img>
 
