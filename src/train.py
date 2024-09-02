@@ -289,9 +289,10 @@ class MotorHandler:
     A correction factor related to the battery voltage drop that happens during
     use is also handled by this class.
     '''
-    NOMINAL_VOLTAGE = 8.3  # Volts (6 AAA Ni-MH batteries in hub)
+    # NOMINAL_VOLTAGE = 8.3  # Volts (6 AAA Ni-MH batteries in hub - NEW)
+    NOMINAL_VOLTAGE = 8.0  # Volts (6 AAA Ni-MH batteries in hub - after tens of recharges)
     MINIMUM_VOLTAGE = 6.0
-    MAXIMUM_FACTOR = 1.40  # minimum factor is 1., corresponding to fresh batteries
+    MAXIMUM_FACTOR = 1.60  # minimum factor is 1., corresponding to fresh batteries
 
     # non-linear duty cycle, appropriate for a heavy train
     duty = {

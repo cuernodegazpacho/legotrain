@@ -4,7 +4,8 @@ from threading import Timer
 
 from signal import RED, GREEN, BLUE, YELLOW, PURPLE, INTER_SECTOR
 from track import StructuredSector, sectors, xtrack, XTrack
-from track import FAST, SLOW, DEFAULT_BRAKING_TIME, XTRACK_BRAKING_TIME, MAX_SPEED, DEFAULT_SPEED, SECTOR_EXIT_SPEED
+from track import FAST, SLOW, DEFAULT_BRAKING_TIME, XTRACK_BRAKING_TIME, \
+    MAX_SPEED, DEFAULT_SPEED, SECTOR_EXIT_SPEED, STATION_SPEED
 from gui import tk_color
 
 
@@ -412,7 +413,7 @@ class EventProcessor:
         if self.train.sector is not None:
             speed = self.train.sector.max_speed
         else:
-            speed = 1
+            speed = STATION_SPEED
         self.accelerate(speed, time=0.3)
 
     def accelerate(self, new_power_index, time=1.0):
