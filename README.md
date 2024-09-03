@@ -61,6 +61,30 @@ Mostly useful for development and diagnosing "train accidents".
 
 Video: https://youtu.be/pJlqUa_otJE
 
+## Usage
+
+With the software properly installed, it should be run with command
+
+```python
+python src/main.py 
+```
+Then one should turn the Powered Up hub on the train, and wait until it
+connects (the hub LED turns solid white for a while and then assumes the
+color specified in the _Train_ subclass constructor; see below). If a second 
+train is present, then turn its hub on. 
+
+When the hub(s) get connected, then turn on the hub (green) button in the handset.
+Once the handset connects, the GUI pops up on screen and the system is ready to run.
+
+From that point on, no commands can be passed via keyboard or mouse (the GUI is
+strictly for status output). All manual commands should be input via the handset
+(see below)
+
+The software as distributed, supports the two-train configuration showed in the
+video above. That configuration is specified in the _src/main.py_ module. Other,
+inactive, configurartions exist in that file. The statements that implement
+them are commented-out. You can comment and un-comment lines of code in that file
+in order to run other configurations. 
 
 ## Design
 
