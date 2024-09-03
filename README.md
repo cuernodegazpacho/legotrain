@@ -92,6 +92,14 @@ inactive, configurartions exist in that file. The statements that implement
 them are commented-out. You can comment and un-comment lines of code in that file
 in order to run other configurations. 
 
+If running the distributed configuration, move each train (by hand or with handset
+commands) to its own station (with the vision sensor just past the station red signal).
+Then, press simultaneously both, left and right, red buttons in the handset. That 
+should start the two trains in auto mode. 
+
+Other train and track configurations will probably require different actions.
+
+
 ## Design
 
 In the configuration currently implemented, two trains equipped with
