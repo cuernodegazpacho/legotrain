@@ -61,6 +61,12 @@ Mostly useful for development and diagnosing "train accidents".
 
 Video: https://youtu.be/pJlqUa_otJE
 
+This README description does not go too deep into details on how the functionality 
+is actually implemented in the code. There are myriad of minutiae that can only
+be understood by studying the code itself. To facilitate that approach, I tried
+to err on the side of having more comments in the code, than less. Many details
+of algorithms and data structures are explained in the comments.
+
 ## Usage
 
 With the software properly installed, it should be run with command
