@@ -59,6 +59,8 @@ Mostly useful for development and diagnosing "train accidents".
 
 <img src="docs/pics/GUI.jpeg" width="600"></img>
 
+Video: https://youtu.be/pJlqUa_otJE
+
 
 ## Design
 
