@@ -168,7 +168,13 @@ The track layout is defined by a static data structure made of nested dictionari
 track layouts are actually necessary, since the layout may look different for trains 
 running in different directions.
 
-This picture shows one among many possible physical realizations of the current track 
+Track crossings are handled by class _XTrack_. It provides a lock for trains approaching
+a segment which contains a crossing, to: (i) verify the status of the crossing, and (ii) in
+case the crossing is free, to book it. A booked instance of _Xtrack_ can only be released
+by the same instance of _Train_ that booked it. Signal tiles are used in all branches that
+approach or leave a crossing.
+
+The picture below shows one among many possible physical realizations of the current track 
 layout. Note the blue tiles marking a structured sector. The actual positioning of the 
 color tiles must account at least in part for train inertia when stopping or changing 
 speed. This kind of effect is already partially handled by the control software. Since 
