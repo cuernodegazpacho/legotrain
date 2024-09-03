@@ -2,29 +2,15 @@ import time
 from time import sleep
 from threading import Timer
 
-from signal import RED, GREEN, BLUE, YELLOW
-from track import StructuredSector, FAST, SLOW, sectors
+from signal import RED, GREEN, BLUE, YELLOW, PURPLE, INTER_SECTOR
+from track import StructuredSector, sectors, xtrack, XTrack
+from track import FAST, SLOW, DEFAULT_BRAKING_TIME, XTRACK_BRAKING_TIME, \
+    MAX_SPEED, DEFAULT_SPEED, SECTOR_EXIT_SPEED, STATION_SPEED
+from gui import tk_color
 
 
-TIME_THRESHOLD = 0.4 # seconds
+TIME_THRESHOLD = 0.5  # seconds
 
-# Vision sensor colorimetry parameters.
-# TODO preliminary values taken from colorimetry analysis
-HUE = {}
-SATURATION = {}
-
-RGB_LIMIT = 10.0
-V_LIMIT = 23.0
-
-HUE[RED]    = (0.90, 1.00)  # min and max hue for red
-HUE[GREEN]  = (0.37, 0.54)
-HUE[BLUE]   = (0.58, 0.63)
-HUE[YELLOW] = (0.66, 0.72)
-
-SATURATION[RED]    = (0.52, 0.82)  # min and max saturation for red
-SATURATION[GREEN]  = (0.20, 0.59)
-SATURATION[BLUE]   = (0.56, 0.76)
-SATURATION[YELLOW] = (0.40, 0.51)
 
 sign = lambda x: x and (1, -1)[x<0]
 
@@ -35,10 +21,10 @@ class SensorEventFilter():
     by the vision sensor in a SmartTrain.
 
     It works by ignoring all detections of the given color that take place
-    within a pre-defined time interval. The first event will be passed back
-    to the caller, an instance of SmartTrain, via its process_event method.
+    within a pre-defined time interval (TIME_THRESHOLD). The first event
+    will be passed back to the caller, an instance of SmartTrain, via its
+    process_event method.
     '''
-
     events = {}
 
     def __init__(self, train):
@@ -82,33 +68,232 @@ class EventProcessor:
         '''
         self.train = train
 
+        # handling of station events
+        self.last_station_event = None
+
+        # this helps to detected unexpected, thus invalid, events.
+        self.last_processed_xtrack_event = None
+
     def process_event(self, event):
         '''
         Processes events pre-filtered by SensorEventFilter.
 
-        This method contains the logic for stopping/starting the
-        train at sector end points based on the occupied/free
-        status of a sector.
+        This method contains the main logic for handling the train behavior
+        at sector end points, as well as train speed variations, based, among
+        other factors, on the occupied/free status of the sector ahead of the
+        current sector.
 
         TODO this badly needs refactoring. A conditional-plagued
         code is not conducive to a modular, scalable design.
         '''
 
-        # events should be processed only when in auto mode
+        # report signal color
+        self.train.report_signal(tk_color[event])
+
+        # events should be processed only when train is in auto mode
         if not self.train.auto:
             return
 
-        # red signal means stop at station
+        # train may be blinded against signals
+        if self.train.signal_blind:
+            return
+
+        # check event validity against event history
+        #TODO this is checking against PURPLE and RED combinations. These are
+        # no longer valid because we got rid of PURPLE, and handle multiple
+        # RED events on stations now.
+        # is_valid = xtrack.is_valid_event(event, self.last_processed_xtrack_event)
+        # if not is_valid:
+        #     return
+        # self.last_processed_xtrack_event = event
+
+        # PURPLE events are associated with the cross-track.
+        #TODO PURPLE tiles are not being detected reliably enough.
+        # Using YELLOW for now (no braking needed in current setup).
+        # if event in [PURPLE]:
+        #     self._process_xtrack_event()
+
+        # YELLOW events cause a temporary drop in speed. In the current track
+        # layout, they are caused by a signal positioned at the highest point
+        # in a bridge; its purpose is to reduce the power setting so the train
+        # doesn't speed up too much while going over the descending part of the
+        # track.
+        if event in [YELLOW]:
+            # self._process_braking_event()
+            self._process_xtrack_event()
 
         # RED events are reserved for handling sectors that contain a
         # train stop (station). As such, they require a specialized logic
         # that differs from the logic applied to regular track sectors.
-        if event in [RED]:
+        elif event in [RED]:
+            self._process_station_event(event)
 
-            self.train.check_acceleration_thread()
+        # signal events coming from sector-defining signal tiles are handled here
+        elif event in [GREEN, BLUE]:
 
+            # if the most recent signal event has a color identical to the
+            # sector color where the train is right now, this means the train
+            # detected either the sector's end signal, or the FAST-SLOW transition
+            # point in the current (structured) sector.
+            if self.train.sector is not None and \
+                    self.train.sector.color is not None and \
+                    self.train.sector.color == event and \
+                    not self.train.just_entered_sector:
+
+                if isinstance(self.train.sector, StructuredSector):
+
+                    self._handle_structured_sector(event)
+
+                else:
+                    # for a regular, non-structured sector, this event signals the
+                    # end-of-sector situation. Because in our track layout a regular
+                    # sector precedes a station sector where a mandatory stop takes
+                    # place, immediately start a slowdown to minimum speed. Note that
+                    # this logic depends in part of the specific track layout.
+                    # TODO generalize handling for regular sectors anywhere in the track.
+                    self._exit_sector(event)
+
+            elif self.train.sector is None:
+                # train is in inter-sector zone, thus this event signals the entry
+                # in a new sector
+                self._enter_sector(event)
+
+            else:
+                # handle unusual situations
+                self.recover(event)
+
+    def _enter_sector(self, event):
+        '''
+        This method handles the situation of a train moving from the
+        inter-sector zone into the sector ahead
+        '''
+        # update current sector in Train instance
+        self.train.sector = self.train.previous_sector.next[self.train.direction]
+
+        self.train.report_sector(tk_color[event])
+
+        # structured segments start with a FAST sub-sector
+        if isinstance(self.train.sector, StructuredSector):
+            self.train.sector.sub_sector_type = FAST
+            self.train.report_sector(tk_color[event], subtext="F")
+
+        # lock sector. This was probably handled somewhere else, before
+        # the train had taken the decision to enter the sector. But we do
+        # it again here just in case.
+        self.train.sector.occupier = self.train.name
+
+        # make sure previous sector is released.
+        self.train.previous_sector.occupier = None
+
+        # set up timer for sanity check to prevent false detections
+        # of a spurious end-of-sector signal. The sector_time parameter
+        # defines a time interval, counted from the instant of sector
+        # entry, during which the train is blind from sector signals.
+        # This thread acts just on the ability of a signal event to be
+        # detected; it doesn't affect train movement.
+        sector_time = self.train.sector.sector_time
+        self.train.time_in_sector = Timer(sector_time, self.train.mark_exit_valid)
+        self.train.just_entered_sector = True
+        self.train.time_in_sector.start()
+
+        # when entering sector, set timed speedup. Make sure the speedup
+        # time duration ends before reaching any signal on the track.
+        if self.train.speedup_timer is not None:
+            self.train.speedup_timer.cancel()
+        self.train.speedup_timer = Timer(self.train.sector.max_speed_time,
+                                         self._return_to_sector_speed)
+        self.train.speedup_timer.start()
+
+        # enter sector at max speed setting
+        self.accelerate(self.train.sector.max_speed)
+
+    def _return_to_sector_speed(self):
+        self.accelerate(DEFAULT_SPEED, time=0.8)
+
+    def _handle_structured_sector(self, event):
+        '''
+        Structured sectors are divided in two sub-sectors, named FAST and SLOW.
+        The signal that marks the transition between sub-sectors is of the same
+        color as the sector color. The train always enters the sector by the FAST
+        side. The purpose of this is to provide the train an opportunity to gradually
+        slow down and check the status of the next sector, before hitting the
+        end-of-sector signal.
+
+        This method handles the two situations that may happen within a structured
+        sector:
+        1 - transition between the FAST and SLOW sub-sectors
+        2 - exit of the entire structured sector into a inter-sector zone
+        '''
+        next_sector = self.train.sector.next[self.train.direction]
+
+        if self.train.sector.sub_sector_type == FAST:
+
+            self._handle_subsector_transition(next_sector, event)
+
+        else:
+            # leaving SLOW sub-sector, thus leaving the entire structured
+            # sector as well. Either do a full stop-and-wait, or keep going,
+            # based on occupancy status of next sector
+            if next_sector.occupier is not None and \
+                    next_sector.occupier != self.train.name:
+                # occupied: stop and keep interrogating next sector
+                self._stop_and_wait(next_sector)
+            else:
+                # next sector is free: exit current sector
+                # and keep moving
+                self._exit_sector(event)
+
+    def _handle_subsector_transition(self, next_sector, event):
+        '''
+        Logic for handling the sub-sector transition signal within structured sectors.
+        '''
+        # this method is called when the first signal of the same color as
+        # the current sector's is detected. This means that it is a sub-sector
+        # transition signal, and thus the train is leaving the FAST sub-sector
+        # and entering SLOW
+        self.train.sector.sub_sector_type = SLOW
+        self.train.report_sector(tk_color[event], subtext="S")
+
+        # Decision on how to behave from now on depends on the occupancy status
+        # of the next sector ahead of train. Train should slow down and eventually
+        # stop only if next sector is occupied. Otherwise, grab next sector.
+        if next_sector.occupier is not None and next_sector.occupier != self.train.name:
+            # next sector is occupied: slow down to minimum speed and wait for
+            # end-of-sector signal.
+            self.accelerate(SECTOR_EXIT_SPEED, time=0.2)
+
+        else:
+            # next sector is free. Grab it.
+            next_sector.occupier = self.train.name
+
+            # drop speed to a reasonable value to cross over the inter-sector zone,
+            # but avoid using train.down_speed(), since it kills any underlying threads.
+            speed = min(SECTOR_EXIT_SPEED, self.train.power_index)
+            self.accelerate(speed, time=0.2)
+
+    def _process_station_event(self, event):
+        '''
+        Processes events associated with train stations
+        '''
+        # Check if this is the first, or second signal in a station segment.
+        if self.last_station_event is None:
+            # first event: mark it is the first event, and take action
+            self.last_station_event = "station entry event"
+            self._handle_station_entry(event)
+        else:
+            # second event: it's the actual stop
+            # self.last_station_event = None
+
+            # upon detection of the station stop signal (RED), train
+            # must stop. To prevent subsequent startups, make sure any
+            # thread associated with train movement is cancelled.
+            self.train.cancel_acceleration_thread()
+            self.train.cancel_speedup_timer()
             sleep(0.01)
-            self.train.stop()
+            self.train.stop(from_handset=False)
+
+            # gui displays station color
+            self.train.report_sector(tk_color[event])
 
             # make sure previous sector is released.
             self.train.previous_sector.occupier = None
@@ -125,7 +310,7 @@ class EventProcessor:
             # method. But *do not* call its timed delay routine, since this
             # functionality must be commanded by the current train only.
             if self.train.secondary_train is not None:
-                self.train.secondary_train.stop()
+                self.train.secondary_train.stop(from_handset=False)
 
             # when departing from station, re-initialize train sector tracking.
             # This means:
@@ -138,145 +323,199 @@ class EventProcessor:
             # above.
             self.train.initialize_sectors()
 
-        elif event in [YELLOW, BLUE]:
-            # if the most recent signal event has a color identical to the
-            # sector color where the train is right now, this means the train
-            # detected either the sector end signal, or the FAST-SLOW transition
-            # point in the current (structured) sector.
-
-            # print("")
-            # print("-----------------DBG block ---------------------------------")
-            # print("self.train.name: ", self.train.name)
-            # print("event: ", event)
-            # print("self.train.sector: ", self.train.sector)
-            # if self.train.sector is not None:
-            #     print("self.train.sector.color: ", self.train.sector.color)
-            # print("self.train.just_entered_sector: ", self.train.just_entered_sector)
-            # print("---------------END DBG block ---------------------------------")
-            # print("")
-
-            if self.train.sector is not None and \
-                    self.train.sector.color is not None and \
-                    self.train.sector.color == event and \
-                    not self.train.just_entered_sector:
-
-                if isinstance(self.train.sector, StructuredSector):
-
-                    next_sector = self.train.sector.next[self.train.direction]
-
-                    if  self.train.sector.sub_sector_type == FAST:
-
-                        # leaving FAST sub-sector and entering SLOW
-                        self.train.sector.sub_sector_type = SLOW
-
-                        # Decision on how to behave from now on depends on the
-                        # occupancy status of the next sector ahead of train.
-                        # Train should slow down and eventually stop only if
-                        # next sector is occupied. Otherwise, grab next sector.
-                        if next_sector.occupier is not None and \
-                           next_sector.occupier != self.train.name:
-                            # occupied: slow down and wait for end-of-sector signal.
-                            self._slowdown()
-                        else:
-                            # next sector is free. Grab it.
-                            next_sector.occupier = self.train.name
-
-                    else:
-                        # leaving SLOW sub-sector, thus leaving the entire sector as well.
-                        # Either do a full stop-and-wait, or keep going, based on occupancy
-                        # status of next sector
-                        if next_sector.occupier is not None and \
-                           next_sector.occupier != self.train.name:
-                            # occupied: stop and keep interrogating next sector
-                            self._stop_and_wait(next_sector)
-                        else:
-                            # next sector is free: exit current sector
-                            # and keep moving TODO at normal speed
-                            self._exit_sector(event)
-
-                # YELLOW sector precedes a station stop for both clockwise and counter-clockwise
-                # directions. It also signals entry in an inter-sector zone.
-                if event in [YELLOW] and not isinstance(self.train.sector, StructuredSector):
-                    self._slowdown()
-                    self._exit_sector(event)
-
-            elif self.train.sector is None:
-                # train is moving from inter-sector zone into new sector
-                self.train.sector = self.train.previous_sector.next[self.train.direction]
-
-                # structured segments start with a FAST sub-sector
-                if isinstance(self.train.sector, StructuredSector):
-                    self.train.sector.sub_sector_type = FAST
-
-                # lock sector. This was probably handled somewhere else, before
-                # the train had taken the decision to enter the sector. But we do
-                # it again here just in case.
-                self.train.sector.occupier = self.train.name
-
-                # make sure previous sector is released.
-                self.train.previous_sector.occupier = None
-
-                # set up timer for sanity check to prevent false detections
-                # of a spurious end-of-sector signal
-                sector_time =self.train.sector.sector_time
-                self.train.time_in_sector = Timer(sector_time, self.train.mark_exit_valid)
-                self.train.just_entered_sector = True
-                self.train.time_in_sector.start()
-
-                # when entering sector, set timed speedup
-                if self.train.speedup_timer is not None:
-                    self.train.speedup_timer.cancel()
-                self.train.speedup_timer = Timer(self.train.sector.max_speed_time,
-                                                 self.train.return_to_default_speed)
-                self.train.speedup_timer.start()
-                self.train.accelerate(list(range(self.train.power_index, self.train.sector.max_speed + 1)), 1)
-
-            else:
-                pass
-                print("ERROR: detected spurious signal inside sector")
-
     def _exit_sector(self, event):
-        self.train.previous_sector = self.train.sector
+
+        # define speed to be used in inter-sector zone
+        exit_speed = SECTOR_EXIT_SPEED
+        if self.train.sector is not None and self.train.sector.exit_speed is not None:
+            exit_speed = self.train.sector.exit_speed
 
         # entering inter-sector zone
+        self.train.previous_sector = self.train.sector
         self.train.sector = None
+        self.train.report_sector(tk_color[INTER_SECTOR])
 
-    def _slowdown(self):
-        # the train might be moving backwards, so first we generate
-        # a positive representation of the current power index (the
-        # `accelerate` method will handle the actual sense of movement
-        # for the new speed values).
-        current_power_index_value = self.train.power_index * sign(self.train.power_index)
-        # generate downward sequence of power index values. In this case,
-        # we want to go all the way down to speed 1, thus we use zero for
-        # the new index (it's being generated by a `range` call)
-        new_power_index_value = 0
-        power_index_step = -1
-        power_index_range = list(range(current_power_index_value,
-                                       new_power_index_value,
+        self.accelerate(exit_speed, time=0.5)
+
+    def _process_braking_event(self):
+        # fast braking
+        self.accelerate(1, time=0.1)
+
+        # keep brake applied
+        time.sleep(DEFAULT_BRAKING_TIME)
+
+        # accelerate back to sector speed
+        if self.train.sector is not None:
+            pi = self.train.sector.max_speed
+        else:
+            pi = MAX_SPEED
+
+        self.accelerate(pi)
+
+    def _process_xtrack_event(self):
+
+        # catch false detections and special situations
+        # In the curremt layout, a special situation arises with a
+        # xtrack object immediately after a station exit.
+        if self.train.sector is None:
+            if self.train.previous_sector is not None:
+                # this can be a xtrack in an inter-sector stretch of track
+                previous_sector = self.train.previous_sector
+                if previous_sector is not None:
+                    xt1 = previous_sector.look_ahead
+                    if xt1 is not None and isinstance(xt1, XTrack):
+                        # check out from xtrack
+                        xt1.book(self.train)
+                        return
+                else:
+                    return
+            else:
+                return
+
+        # only handle signal if sector and direction are self-consistent.
+        # This is redundant for now, but we keep the code in here in the
+        # hopes it might be needed when implementing other track layouts.
+        if (self.train.sector.color, self.train.direction) in xtrack.valid_signals:
+
+            # stop train if xtrack is booked
+            if not xtrack.is_free(self.train):
+
+                self.train.cancel_acceleration_thread()
+                self.train.cancel_speedup_timer()
+                self.train.cancel_station_timer()
+
+                # brake and wait until full stop
+                speed = self.train.power_index
+                self.accelerate(0, time=XTRACK_BRAKING_TIME)
+                time.sleep(XTRACK_BRAKING_TIME + 0.5) # leeway to account for inertia
+
+                # wait until crossing opens
+                while not xtrack.is_free(self.train):
+                    time.sleep(0.5)
+
+                # this is the train that last stopped at the xtrack
+                xtrack.last_stopped = self.train.name
+
+                # recover speed
+                self.accelerate(speed, time=2)
+
+            # if not booked, book it
+            else:
+                if xtrack.last_stopped is None or \
+                   (xtrack.last_stopped is not None and xtrack.last_stopped != self.train.name):
+                    xtrack.book(self.train)
+                else:
+                    xtrack.last_stopped = None
+
+    def _handle_station_entry(self, event):
+        # on station entry, decelerate to entry speed. A station sector
+        # must use its max_speed parameter to define the entry speed.
+        if self.train.sector is not None:
+            speed = self.train.sector.max_speed
+        else:
+            speed = STATION_SPEED
+        self.accelerate(speed, time=0.3)
+
+    def accelerate(self, new_power_index, time=1.0):
+        '''
+        Accelerates the train from current power setting to the new power
+        setting, taking by default about 1 sec to do that.
+
+        This seems to be generic enough to even handle the compound train
+        '''
+        self._accelerate(self.train.power_index, new_power_index, time=time)
+
+    def _accelerate(self, initial_power_index, new_power_index, time=1.0):
+        '''
+        Accelerates the train from initial power setting to the new power
+        setting, taking by default about 1 sec to do that.
+        '''
+        # new power index must have same sign as initial power index
+        initial_power_index_sign = sign(initial_power_index)
+        new_power_index_sign = sign(new_power_index)
+
+        # only check if non-zero
+        if initial_power_index != 0 and new_power_index != 0 and \
+            new_power_index_sign != initial_power_index_sign:
+            raise RuntimeError("error in power index signs")
+
+        current_power_index_abs_value = abs(initial_power_index)
+        new_power_index_abs_value = abs(new_power_index)
+
+        # find sense of required sequence
+        downward = new_power_index_abs_value < current_power_index_abs_value
+        if downward:
+            power_index_step = -1
+        else:
+            power_index_step = 1
+
+        # find sign of power indices. Mind that power index can be
+        # zero, and thus has no sign
+        power_index_sign = new_power_index_sign
+        if power_index_sign == 0:
+            power_index_sign = initial_power_index_sign
+
+        # generate sequence of power index values. We add the step value
+        # to account for the way the range function works.
+        power_index_range = list(range(current_power_index_abs_value,
+                                       new_power_index_abs_value + power_index_step,
                                        power_index_step))
-        # a sequence of 6 deceleration steps has 5 sleeping intervals. It
-        # is executed in approx. 1 sec. Normalize so it takes about the
-        # same time regardless of current speed.
-        sleep_time = current_power_index_value / len(power_index_range) * 0.15
-        # sleep_time = current_power_index_value / len(power_index_range) * 0.1  # TODO test for fast stop (2-car = 0.1, 1-car = 0.05)
-        # sleep_time *= current_power_index_value / current_power_index_value
-        # sleep_time *= 1.1  # fudge factor
 
-        self.train.accelerate(power_index_range, sign(self.train.power_index), sleep_time=sleep_time)
+        # train.accelerate needs the time between each speed setting in the ramp
+        sleep_time = time / len(power_index_range)
+
+        self.train.accelerate(power_index_range, power_index_sign, sleep_time=sleep_time)
 
     def _stop_and_wait(self, next_sector):
-        self.train.stop()
+        self.train.stop(from_handset=False)
 
         # make sure we wait for the next sector to go free. This
         # may be redundant here, since train.restart_movement should
         # be doing the same check anyway. We do just in case though.
         while next_sector.occupier is not None and \
               next_sector.occupier != self.train.name:
-            time.sleep(0.5)
+            time.sleep(0.3)
 
         self._exit_sector("from stop and wait")
         self.train.restart_movement()
+
+    def recover(self, event):
+        # TODO this situation may happen when moving from BLUE to GREEN (or vice-versa)
+        # and missing the BLUE end-of-sector signal. The next signal to be detected is
+        # GREEN, so it is interpreted as a spurious signal. We may attempt to fix the
+        # situation by forcing the current sector to be this last sensed event, GREEN.
+        # This requires that:
+        # - the train.sector attribute be updated;
+        # - the track sectors be updated
+        # These updates are contingent upon the availability of sectors. Any conflict
+        # should result in an emergency stop. Could we try a recovery sequence after this
+        # stop?
+        # Maybe we don't need to handle the other similar case, that is, missing the
+        # GREEN end-of-sector signal, because a station reset will happen anyway (provided
+        # the RED signal be detected).
+        print("ERROR: spurious signal inside sector. Train sector: ", self.train.sector.color,
+              "  event: ", event, "  just entered: ", self.train.just_entered_sector, "  ",
+              self.train.name)
+
+        # # event color matches train's next sector color. This means that the end-of-sector
+        # # signal was missed and the train already entered the next sector.
+        #
+        # if not self.train.just_entered_sector:
+        #
+        #     if event == self.train.sector.next[self.train.direction].color:
+        #
+        #         # if next sector (where the train is physically in now) is not occupied,
+        #         # grab it
+        #         if self.train.sector.next[self.train.direction].occupier is None:
+        #             self.train.sector.next[self.train.direction].occupier = self.train.name
+        #             self.train.previous_sector = self.train.sector
+        #             self.train.sector = self.train.sector.next
+        #
+        #             print("Fixed!")
+        #
+        #         # if next sector is occupied, emergency abort
+        #         else:
+        #             self.train.dispatcher.emergency_stop()
 
 
     def _debug(self, msg):

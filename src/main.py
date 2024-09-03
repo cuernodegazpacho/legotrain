@@ -6,7 +6,7 @@ import uuid_definitions
 from train import SimpleTrain, SmartTrain, CompoundTrain
 from gui import GUI
 from controller import Controller
-from track import COUNTER_CLOCKWISE
+from track import DIRECTION_B
 
 '''
 Correct startup sequence requires that, with the script already started, the train
@@ -35,24 +35,23 @@ if __name__ == '__main__':
     # train = SimpleTrain("Train", "1", lock=lock, report=True, record=True,
     #                           gui=gui, address=uuid_definitions.HUB_ORIG)
     # controller = Controller(train)
-    # controller.connect()
 
-    # ---------------------- Smart train setup ----------------------------
+    # ---------------------- Smart train setup for testing ----------------------------
 
     # train = SmartTrain("Train 1", "1", lock=lock, report=True, record=True,
-    #                         gui=gui, address=uuid_definitions.HUB_ORIG)
+    #                         gui=gui, direction=DIRECTION_B, address=uuid_definitions.HUB_ORIG)
+    # train = SmartTrain("Train 2", "2", lock=lock, report=True, record=True,
+    #                         gui=gui, address=uuid_definitions.HUB_TEST)
     # controller = Controller(train)
-    # controller.connect()
 
     # ---------------------- Two-train setup (Smart self-driving) ----------------------------
 
-    train1 = SmartTrain("Train 1", "1", lock=lock, report=True, record=True,
-                         gui=gui, direction=COUNTER_CLOCKWISE, address=uuid_definitions.HUB_ORIG)
-    train2 = SmartTrain("Train 2", "2", led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
+    train1 = SmartTrain("Blue", "1", lock=lock, report=True, record=True,
+                        gui=gui, direction=DIRECTION_B, address=uuid_definitions.HUB_ORIG)
+    train2 = SmartTrain("Purple", "2", ncars=1, led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
                             gui=gui, address=uuid_definitions.HUB_TEST)
 
     controller = Controller(train1, train2=train2)
-    controller.connect()
 
     # ---------------------- Compound train setup --------------------------
 
@@ -67,10 +66,10 @@ if __name__ == '__main__':
     # train = CompoundTrain("Massive train", train_front, train_rear)
     #
     # controller = Controller(train)
-    # controller.connect()
 
     # --------------------------------------------------------------------------
 
-    # connect gui and start main loop
+    # connect everything and start main loop
+    # controller.connect_handset()
     gui.root.after(100, gui.after_callback)
     gui.root.mainloop()
