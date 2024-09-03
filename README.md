@@ -16,9 +16,12 @@ available for the user to bypass the control script if she wishes.
 Two trains sharing one track with crossings:
 
 <img src="docs/pics/Dtrain.jpeg" width="600"></img>
+
+Video: https://youtu.be/4O-srwudk8o
+
 <img src="docs/pics/Dtrain_2.jpeg" width="600"></img>
 
-***still to come: movies: 10 an 14 ***
+Video: https://youtu.be/ZrPOPnYgCn0
 
 Composite train with two engines:
 
@@ -250,7 +253,7 @@ Tile placement and size can be somewhat tricky under some circumstances.
 
 Failed detections often result from a fast-moving train passing over a too short tile. This 
 is caused by dead time in the vision sensor readout pattern. This dead time is necessary in order 
-to prevent the sensor output stream to overwhelm the BLE channel bandpass. 
+to prevent the vision sensor output stream to overwhelm the BLE channel bandpass. 
 
 This situation can be remedied by using more than one tile:
 
