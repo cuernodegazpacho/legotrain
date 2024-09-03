@@ -2,12 +2,21 @@
 
 Python scripts to automate LEGO® City trains.
 
+For the Powered Up Bluetooth-based LEGO® remote control system.
+
 ## Functional examples
+
+These trains are running entirely under computer control, without 
+any manual intervention. Once started, the Python control script
+takes care of accelerations and decelerations, stopping at stations,
+and detecting conflicting situations at the track crossings and at
+common stretches of track as well. The handheld control remains 
+available for the user to bypass the control script if she wishes.
 
 Two trains sharing one track with crossings:
 
-<img src="docs/pics/Dtrain.jpeg" width="500"></img>
-<img src="docs/pics/Dtrain_2.jpeg" width="500"></img>
+<img src="docs/pics/Dtrain.jpeg" width="600"></img>
+<img src="docs/pics/Dtrain_2.jpeg" width="600"></img>
 
 ***still to come: movies: 10 an 14 ***
 
@@ -15,7 +24,7 @@ Composite train with two engines:
 
 <img src="docs/pics/CTrain.jpg" width="600"></img>
 
-https://www.youtube.com/watch?v=AUTcSPW_DJ4
+Video: https://www.youtube.com/watch?v=AUTcSPW_DJ4
 
 ## Requirements and installation
 
