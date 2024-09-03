@@ -61,6 +61,46 @@ Mostly useful for development and diagnosing "train accidents".
 
 Video: https://youtu.be/pJlqUa_otJE
 
+This README description does not go too deep into details on how the functionality 
+is actually implemented in the code. There are myriad of minutiae that can only
+be understood by studying the code itself. To facilitate that approach, I tried
+to err on the side of having more comments in the code, than less. Many details
+of algorithms and data structures are explained in the comments.
+
+## Usage
+
+With the software properly installed, it should be run with command
+
+```python
+python src/main.py 
+```
+Then one should turn the Powered Up hub on the train, and wait until it
+connects (the hub LED turns solid white for a while and then assumes the
+color specified in the _Train_ subclass constructor; see below). If a second 
+train is present, then turn its hub on. 
+
+When the hub(s) get connected, then turn on the hub (green) button in the handset.
+Once the handset connects, the GUI pops up on screen and the system is ready to run.
+
+From that point on, no commands can be passed via keyboard or mouse (the GUI is
+strictly for status output). All manual commands should be input via the handset
+(see below)
+
+The software as distributed, supports the two-train configuration showed in the
+video above. That configuration is specified in the _src/main.py_ module. Other,
+inactive, configurartions exist in that file. The statements that implement
+them are commented-out. You can comment and un-comment lines of code in that file
+in order to run other configurations. 
+
+If running the distributed configuration, move each train (by hand or with handset
+commands) to its own station (with the vision sensor just past the station red signal).
+Then, press simultaneously both, left and right, red buttons in the handset. That 
+should start the two trains in auto mode. Remember that the distributed configuration
+assumes that the two trains are moving in opposite senses on the (topologically) 
+circular track.
+
+Other train and track configurations will probably require different actions.
+
 
 ## Design
 
@@ -144,7 +184,13 @@ The track layout is defined by a static data structure made of nested dictionari
 track layouts are actually necessary, since the layout may look different for trains 
 running in different directions.
 
-This picture shows one among many possible physical realizations of the current track 
+Track crossings are handled by class _XTrack_. It provides a lock for trains approaching
+a segment which contains a crossing, to: (i) verify the status of the crossing, and (ii) in
+case the crossing is free, to book it. A booked instance of _Xtrack_ can only be released
+by the same instance of _Train_ that booked it. Signal tiles are used in all branches that
+approach or leave a crossing.
+
+The picture below shows one among many possible physical realizations of the current track 
 layout. Note the blue tiles marking a structured sector. The actual positioning of the 
 color tiles must account at least in part for train inertia when stopping or changing 
 speed. This kind of effect is already partially handled by the control software. Since 
