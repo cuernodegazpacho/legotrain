@@ -6,7 +6,8 @@ Python scripts to automate LEGO® City trains.
 
 Two trains sharing one track with crossings:
 
-<img src="docs/pics/Dtrain.jpeg" width="600"></img>
+<img src="docs/pics/Dtrain.jpeg" width="500"></img>
+<img src="docs/pics/Dtrain_2.jpeg" width="500"></img>
 
 ***still to come: movies: 10 an 14 ***
 
