@@ -95,7 +95,9 @@ in order to run other configurations.
 If running the distributed configuration, move each train (by hand or with handset
 commands) to its own station (with the vision sensor just past the station red signal).
 Then, press simultaneously both, left and right, red buttons in the handset. That 
-should start the two trains in auto mode. 
+should start the two trains in auto mode. Remember that the distributed configuration
+assumes that the two trains are moving in opposite senses on the (topologically) 
+circular track.
 
 Other train and track configurations will probably require different actions.
 
