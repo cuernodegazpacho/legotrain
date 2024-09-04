@@ -1,5 +1,11 @@
 # Colorimetry analysis
 
+This train control system is based on the LEGO® Powered Up 88007 Color & Distance Sensor
+unit. The internal calibration of these units for the task of telling colors apart from each
+other, showed to be not reliable enough for the requirements of this project. Below is a 
+description of the process I ended up using, to calibrate the sensors with the required 
+accuracy and reliability. 
+
 Vision sensor calibration can be optimally achieved using the CIE 1931 _xy_ chromaticity
 diagram. [This article](https://en.wikipedia.org/wiki/CIE_1931_color_space)
 presents an excellent basic discussion on the diagram and its role in color science.
