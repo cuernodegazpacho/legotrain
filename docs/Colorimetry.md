@@ -24,8 +24,8 @@ color response with the human eye.
 
 These points were obtained by scanning the tiles with the script in
 _src/vision_sensor_analysis.py_. The sensor was mounted in the train engine in its 
-working configuration, Tiles were mounted on a piece of track and the train engine was 
-moved back and forth by hand over the piece of track, while the script collected data. This 
+working configuration. Tiles were mounted on a piece of track and the train engine was 
+moved back and forth by hand over that piece of track, while the script collected data. This 
 has the effect of generating multiple readings at different places over the tiles, thus 
 providing noise information. Each data set comprises 600 sensor readings. There are data sets  
 for all colors tested, plus data sets taken from the track sleepers (black data points), as 
