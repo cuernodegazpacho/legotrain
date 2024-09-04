@@ -2,7 +2,7 @@
 
 Python scripts to automate LEGO® City trains.
 
-For the Powered Up Bluetooth-based LEGO® remote control system.
+For the Powered UP Bluetooth-based LEGO® remote control system.
 
 (See colorimetry analysis of LEGO® colors [here](docs/Colorimetry.md))
 
@@ -69,7 +69,7 @@ With the software properly installed, it should be run with command
 ```python
 python src/main.py 
 ```
-Then one should turn the Powered Up hub on the train, and wait until it
+Then one should turn the Powered UP hub on the train, and wait until it
 connects (the hub LED turns solid white for a while and then assumes the
 color specified in the _Train_ subclass constructor; see below). If a second 
 train is present, then turn its hub on. 
@@ -109,7 +109,7 @@ Video: https://youtu.be/pJlqUa_otJE
 ## Design
 
 In the configuration currently implemented, two trains equipped with
-vision sensors (LEGO® Powered Up 88007 Color & Distance Sensor) 
+vision sensors (LEGO® Powered UP 88007 Color & Distance Sensor) 
 run on a simple (topologically) circular track equipped with two passing 
 loops that act as train stations, each one dedicated to its own 
 train. The trains run against each other, and the software takes care 
@@ -249,11 +249,11 @@ structural main plate. The sensors are used to detect color tiles on the tracks 
 moves over them. 
 
 Make sure you mount the sensors in the same way as in the pictures below. They should protrude 
-below the main plate so the sensor heads stays close to the color tiles on the track. Mounting 
+below the main plate so the sensor head stays close to the color tiles on the track. Mounting 
 them fully recessed inside the train decreases their sensitivity and signal-to-noise ratio by a 
 significant amount, rendering color signal detection very unreliable.
 
-Vision sensors should be connected to Port B on the Powered Up hub.
+Vision sensors should be connected to Port B on the Powered UP hub.
 
 #### Vision sensor mounted on 60197 train engine
 

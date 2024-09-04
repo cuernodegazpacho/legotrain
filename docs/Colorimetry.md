@@ -1,6 +1,6 @@
 # Colorimetry analysis
 
-This train control system is based on the LEGO® Powered Up 88007 Color & Distance Sensor
+This train control system is based on the LEGO® Powered UP 88007 Color & Distance Sensor
 unit. The internal calibration of these units for the task of telling colors apart from each
 other, showed to be not reliable enough for the requirements of this project. Below is a 
 description of the process I ended up using, to calibrate the sensors with the required 
