@@ -1,11 +1,17 @@
 # Colorimetry analysis
 
+This train control system is based on the LEGO® Powered Up 88007 Color & Distance Sensor
+unit. The internal calibration of these units for the task of telling colors apart from each
+other, showed to be not reliable enough for the requirements of this project. Below is a 
+description of the process I ended up using, to calibrate the sensors with the required 
+accuracy and reliability. 
+
 Vision sensor calibration can be optimally achieved using the CIE 1931 _xy_ chromaticity
 diagram. [This article](https://en.wikipedia.org/wiki/CIE_1931_color_space)
 presents an excellent basic discussion on the diagram and its role in color science.
 
 In the chromaticity diagram, and for this particular application, we strive for 
-colors that lie the furthest away from each other (in the _xy_ space) as possible. 
+colors that lie the furthest apart from each other (in the _xy_ space) as possible. 
 
 The top diagram shows the entire CIE _xy_ color space. The colored region represents the
 entire gamut of colors perceived by a "standard human observer" (see note **1**) The data 
@@ -14,12 +20,16 @@ central part, with each LEGO® color name next to the cloud of points that corre
 given tile color. Data sets for each tile color are in directory _test/data_.
 
 By plotting the data points on this diagram, we are in a way comparing the sensor's "eye" 
-color response with the human eye's. 
+color response with the human eye. 
 
 These points were obtained by scanning the tiles with the script in
-_src/vision_sensor_analysis.py_. Each data set comprises 600 sensor readings.
-The data sets also include readings taken from the track sleepers (black data
-points), as well as from the carpet that underlies the track (white data points). 
+_src/vision_sensor_analysis.py_. The sensor was mounted in the train engine in its 
+working configuration. Tiles were mounted on a piece of track and the train engine was 
+moved back and forth by hand over that piece of track, while the script collected data. This 
+has the effect of generating multiple readings at different places over the tiles, thus 
+providing noise information. Each data set comprises 600 sensor readings. There are data sets  
+for all colors tested, plus data sets taken from the track sleepers (black data points), as 
+well as from the carpet that underlies the track (white data points). 
 
 The _src/vision_sensor_analysis.py_ script also computes basic statistics for each sample 
 taken; these stats were used as the basis for populating the HUE and SATURATION 

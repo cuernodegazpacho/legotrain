@@ -4,6 +4,8 @@ Python scripts to automate LEGO® City trains.
 
 For the Powered Up Bluetooth-based LEGO® remote control system.
 
+(See colorimetry analysis of LEGO® colors [here](docs/Colorimetry.md))
+
 ## Functional examples
 
 These trains are running entirely under computer control, without 
@@ -54,13 +56,6 @@ further details.
 
 My installation runs under Python 3.10 on a MacBook M1 Pro with Sonoma 14.2. 
 
-A very basic real-time screen output based on Tkinter displays status information.
-Mostly useful for development and diagnosing "train accidents".
-
-<img src="docs/pics/GUI.jpeg" width="600"></img>
-
-Video: https://youtu.be/pJlqUa_otJE
-
 This README description does not go too deep into details on how the functionality 
 is actually implemented in the code. There are myriad of minutiae that can only
 be understood by studying the code itself. To facilitate that approach, I tried
@@ -101,6 +96,15 @@ circular track.
 
 Other train and track configurations will probably require different actions.
 
+## GUI 
+
+A very basic real-time screen output based on Tkinter displays status information.
+Mostly useful for development and diagnosing "train accidents". This is strictly a
+status output function. No user access via GUI is supported yet.
+
+<img src="docs/pics/GUI.jpeg" width="600"></img>
+
+Video: https://youtu.be/pJlqUa_otJE
 
 ## Design
 
