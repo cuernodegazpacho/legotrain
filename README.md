@@ -129,17 +129,17 @@ train's motors, their LED headlights (when so equipped), their hub's LED color
 light (see below), report battery status, and handle events from vision sensors.
 
 Other classes exist to handle a simple train with no vision sensor, but which
-can optionally have LED headlights (_SimpleTrain_), and a composite train made
-by linking back-to-back two engines, with all cars in between (_CompoundTrain_). 
-In this composite train, the front engine is represented by an instance of 
-_SimpleTrain_ equipped with LED headlights, and the rear engine is represented
-by an instance of _SmartTrain_. The control software handles the details of
-acceleration and braking with two engines working in reverse and with uneven 
-battery voltages as well (see video with example).
+can optionally have a LEGO® Powered UP 88005 Light (_SimpleTrain_), and a 
+composite train made by linking back-to-back two engines, with all cars in 
+between (_CompoundTrain_). In this composite train, the front engine is represented 
+by an instance of _SimpleTrain_ equipped with LED headlights, and the rear engine 
+is represented by an instance of _SmartTrain_. The control software handles the 
+details of acceleration and braking with two engines working in reverse and with 
+uneven battery voltages as well (see video with example).
 
 Currentlly these special configurations may not work properly because most of the 
 recent development work focused on the two-train configuration. I tested only that 
-the basic compound train (without track signals) works correctly, that is, it starts, 
+the basic composite train (without track signals) works correctly, that is, it starts, 
 stops, accelerates, deccelerates, and reverses correctly, and its headlights also 
 work as expected. 
 
