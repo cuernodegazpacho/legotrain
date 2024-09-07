@@ -46,26 +46,26 @@ if __name__ == '__main__':
 
     # ---------------------- Two-train setup (Smart self-driving) ----------------------------
 
-    train1 = SmartTrain("Blue", "1", lock=lock, report=True, record=True,
-                        gui=gui, direction=DIRECTION_B, address=uuid_definitions.HUB_ORIG)
-    train2 = SmartTrain("Purple", "2", ncars=1, led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
-                            gui=gui, address=uuid_definitions.HUB_TEST)
-
-    controller = Controller(train1, train2=train2)
+    # train1 = SmartTrain("Blue", "1", lock=lock, report=True, record=True,
+    #                     gui=gui, direction=DIRECTION_B, address=uuid_definitions.HUB_ORIG)
+    # train2 = SmartTrain("Purple", "2", ncars=1, led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
+    #                         gui=gui, address=uuid_definitions.HUB_TEST)
+    #
+    # controller = Controller(train1, train2=train2)
 
     # ---------------------- Compound train setup --------------------------
 
-    # # front train hub allows control over the LED headlight.
-    # train_front = SimpleTrain("Front", "1", lock=lock, report=True, record=True,
-    #                           gui=gui, address=uuid_definitions.HUB_ORIG)
-    #
-    # # rear train hub has a vision sensor
-    # train_rear = SmartTrain("Rear", "2", lock=lock, report=True, record=True,
-    #                         gui=gui, address=uuid_definitions.HUB_TEST)
-    #
-    # train = CompoundTrain("Massive train", train_front, train_rear)
-    #
-    # controller = Controller(train)
+    # front train hub allows control over the LED headlight.
+    train_front = SimpleTrain("Front", "1", lock=lock, report=True, record=True,
+                              gui=gui, address=uuid_definitions.HUB_ORIG)
+
+    # rear train hub has a vision sensor
+    train_rear = SmartTrain("Rear", "2", lock=lock, report=True, record=True,
+                            gui=gui, address=uuid_definitions.HUB_TEST)
+
+    train = CompoundTrain("Massive train", train_front, train_rear)
+
+    controller = Controller(train)
 
     # --------------------------------------------------------------------------
 
