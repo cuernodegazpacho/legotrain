@@ -138,7 +138,10 @@ acceleration and braking with two engines working in reverse and with uneven
 battery voltages as well (see video with example).
 
 Currentlly these special configurations may not work properly because most of the 
-recent development work focused on the two-train configuration. 
+recent development work focused on the two-train configuration. I tested only that 
+the basic compound train (without track signals) works correctly, that is, it starts, 
+stops, accelerates, deccelerates, and reverses correctly, and its headlights also 
+work as expected. 
 
 #### Color LED signals
 
