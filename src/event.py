@@ -126,7 +126,7 @@ class EventProcessor:
         # train stop (station). As such, they require a specialized logic
         # that differs from the logic applied to regular track sectors.
         elif event in [RED]:
-            self._process_station_event(event)
+            self.process_station_event(event)
 
         # signal events coming from sector-defining signal tiles are handled here
         elif event in [GREEN, BLUE]:
@@ -271,7 +271,7 @@ class EventProcessor:
             speed = min(SECTOR_EXIT_SPEED, self.train.power_index)
             self.accelerate(speed, time=0.2)
 
-    def _process_station_event(self, event):
+    def process_station_event(self, event):
         '''
         Processes events associated with train stations
         '''
@@ -525,6 +525,16 @@ class EventProcessor:
             print("Sector: ", sectors[key].color, "   occupier: ", sectors[key].occupier)
         print("----------------- END SECTORS STATUS ---------------------------------")
         print("")
+
+
+class CompoundTrainEventProcessor(EventProcessor):
+    '''
+    A CompoundTrain handles some events in a different way than a SmartTrain.
+    This class should override any method where special handling is required.
+    '''
+    def process_station_event(self, event):
+        # for now, just do the same as the super class
+        super(CompoundTrainEventProcessor, self).process_station_event(event)
 
 
 class DummyEventProcessor(EventProcessor):
