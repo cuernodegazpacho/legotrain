@@ -126,41 +126,44 @@ class EventProcessor:
         # train stop (station). As such, they require a specialized logic
         # that differs from the logic applied to regular track sectors.
         elif event in [RED]:
-            self._process_station_event(event)
+            self.process_station_event(event)
 
         # signal events coming from sector-defining signal tiles are handled here
         elif event in [GREEN, BLUE]:
 
-            # if the most recent signal event has a color identical to the
-            # sector color where the train is right now, this means the train
-            # detected either the sector's end signal, or the FAST-SLOW transition
-            # point in the current (structured) sector.
-            if self.train.sector is not None and \
-                    self.train.sector.color is not None and \
-                    self.train.sector.color == event and \
-                    not self.train.just_entered_sector:
+            self.process_sector_event(event)
 
-                if isinstance(self.train.sector, StructuredSector):
+    def process_sector_event(self, event):
+        # if the most recent signal event has a color identical to the
+        # sector color where the train is right now, this means the train
+        # detected either the sector's end signal, or the FAST-SLOW transition
+        # point in the current (structured) sector.
+        if self.train.sector is not None and \
+                self.train.sector.color is not None and \
+                self.train.sector.color == event and \
+                not self.train.just_entered_sector:
 
-                    self._handle_structured_sector(event)
+            if isinstance(self.train.sector, StructuredSector):
 
-                else:
-                    # for a regular, non-structured sector, this event signals the
-                    # end-of-sector situation. Because in our track layout a regular
-                    # sector precedes a station sector where a mandatory stop takes
-                    # place, immediately start a slowdown to minimum speed. Note that
-                    # this logic depends in part of the specific track layout.
-                    # TODO generalize handling for regular sectors anywhere in the track.
-                    self._exit_sector(event)
-
-            elif self.train.sector is None:
-                # train is in inter-sector zone, thus this event signals the entry
-                # in a new sector
-                self._enter_sector(event)
+                self._handle_structured_sector(event)
 
             else:
-                # handle unusual situations
-                self.recover(event)
+                # for a regular, non-structured sector, this event signals the
+                # end-of-sector situation. Because in our track layout a regular
+                # sector precedes a station sector where a mandatory stop takes
+                # place, immediately start a slowdown to minimum speed. Note that
+                # this logic depends in part of the specific track layout.
+                # TODO generalize handling for regular sectors anywhere in the track.
+                self._exit_sector(event)
+
+        elif self.train.sector is None:
+            # train is in inter-sector zone, thus this event signals the entry
+            # in a new sector
+            self._enter_sector(event)
+
+        else:
+            # handle unusual situations
+            self.recover(event)
 
     def _enter_sector(self, event):
         '''
@@ -271,7 +274,7 @@ class EventProcessor:
             speed = min(SECTOR_EXIT_SPEED, self.train.power_index)
             self.accelerate(speed, time=0.2)
 
-    def _process_station_event(self, event):
+    def process_station_event(self, event):
         '''
         Processes events associated with train stations
         '''
@@ -525,6 +528,81 @@ class EventProcessor:
             print("Sector: ", sectors[key].color, "   occupier: ", sectors[key].occupier)
         print("----------------- END SECTORS STATUS ---------------------------------")
         print("")
+
+
+class CompoundTrainEventProcessor(EventProcessor):
+    '''
+    A CompoundTrain handles some events in a different way than a SmartTrain.
+    This class should override any method where special handling is required.
+
+    In a possible future implementation, color events will be interpreted as
+    signaling speed changes. The compound train will ignore the sector layout
+    of the track. Station handling would be similar to the one in the base
+    class. Other colors will just trigger calls to the acceleration method.
+    (acceleration cannot yet handle a two-engine compound train)
+    '''
+    def __init__(self, train):
+        '''
+
+        :param train: an instance of CompoundTrain
+        '''
+
+        super(CompoundTrainEventProcessor, self).__init__(train)
+
+    def process_event(self, event):
+        '''
+        Overrides base class to process events in the rear train only.
+        '''
+        self.train.train_rear.report_signal(tk_color[event])
+
+        if not self.train.train_rear.auto:
+            return
+
+        if event in [RED]:
+            self.process_station_event(event)
+
+    def process_station_event(self, event):
+        '''
+        Station events here are just stop signals.
+        '''
+        # Check if this is the first, or second signal in a station segment.
+        if self.last_station_event is None:
+            # first event: mark it is the first event, and take action
+            self.last_station_event = "station entry event"
+
+            # To prevent subsequent startups, make sure any
+            # thread associated with train movement is cancelled.
+            self.train.train_rear.cancel_acceleration_thread()
+            self.train.train_rear.cancel_speedup_timer()
+
+            # gui displays station color
+            self.train.train_rear.report_sector(tk_color[event])
+
+            # ot station entry, slowly decelerate to full stop.
+            # Cannot use accelerate method in super class. It correctly
+            # handles forward/backward movement, but not in a synchronous
+            # way as is required by the compound train. We use here a simpler
+            # approach that directly calls the power control methods in
+            # the compound train instance. We hope that train inertia will
+            # soften the deceleration. We leave as an exercise to the curious
+            # programmer to fully implement a threaded accelerate method for
+            # a compound train.
+            self.train.set_power(1)
+            sleep(2.)
+            self.train.stop(False)
+
+            # after stopping at station, execute a Timer delay followed by a re-start
+            self.train.train_rear.timed_stop_at_station()
+
+            # if a secondary train instance is registered, call its stop
+            # method. But *do not* call its timed delay routine, since this
+            # functionality must be commanded by the current train only.
+            self.train.train_front.stop(from_handset=False)
+
+        else:
+            # second event: ignore, and prepare to respond
+            # to next station event
+            self.last_station_event = None
 
 
 class DummyEventProcessor(EventProcessor):

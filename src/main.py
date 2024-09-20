@@ -4,6 +4,7 @@ from pylgbst.peripherals import COLOR_PURPLE
 
 import uuid_definitions
 from train import SimpleTrain, SmartTrain, CompoundTrain
+from event import CompoundTrainEventProcessor
 from gui import GUI
 from controller import Controller
 from track import DIRECTION_B
@@ -64,6 +65,11 @@ if __name__ == '__main__':
                             gui=gui, address=uuid_definitions.HUB_TEST)
 
     train = CompoundTrain("Massive train", train_front, train_rear)
+
+    # here we override the default event processor that goes into the SmartTrain
+    # instance. CompoundTrain events may require special handling, which is
+    # implemented in this subclass.
+    train_rear.event_processor = CompoundTrainEventProcessor(train)
 
     controller = Controller(train)
 

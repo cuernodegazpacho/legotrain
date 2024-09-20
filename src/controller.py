@@ -7,7 +7,7 @@ from pylgbst.peripherals import RemoteButton
 import uuid_definitions
 
 import track
-from train import SmartTrain
+from train import SmartTrain, CompoundTrain
 
 DUAL = "dual"
 LONG = "long"
@@ -104,6 +104,8 @@ class Controller:
         self.train1.stop()
         self.train2.stop()
 
+        #TODO this is begging for a refactor
+
         # both trains should be conducted in manual mode from now on
         if isinstance(self.train1, SmartTrain) and (isinstance(self.train2, SmartTrain) or
                 isinstance(self.train2, _DummyTrain)):
@@ -119,12 +121,25 @@ class Controller:
             track.xtrack.initialize(self.train1)
             track.xtrack.initialize(self.train2)
 
+        # reset mode for configuration with compound train
+        if isinstance(self.train1, CompoundTrain):
+            self.train1.train_rear.auto = False
+            self.train1.train_rear.cancel_all_threads()
+
+            self.train1.train_rear.initialize_sectors()
+
+            track.xtrack.initialize(self.train1.train_rear)
+
     def _restart(self):
-        # this method assumes the trains are stopped at they designated stations,
-        # after manual mode was entered, and they were driven manually to there.
+        # this method assumes the train(s) is(are) stopped at its(their) designated
+        # station(s), after manual mode was entered, and it(they) was(were) driven
+        # manually to there.
 
         track.clear_track()
 
+        #TODO this is begging for a refactor
+
+        # restart mode for configuration with two smart trains
         if isinstance(self.train1, SmartTrain) and (isinstance(self.train2, SmartTrain) or
                 isinstance(self.train2, _DummyTrain)):
             self.train1.auto = True
@@ -137,6 +152,11 @@ class Controller:
             time.sleep(0.5)
             self.train2.timed_stop_at_station()
 
+        # restart mode for configuration with compound train
+        if isinstance(self.train1, CompoundTrain):
+            self.train1.train_rear.auto = True
+            self.train1.train_rear.initialize_sectors()
+            self.train1.train_rear.timed_stop_at_station()
 
 
 class HandsetEvent:

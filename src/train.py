@@ -674,6 +674,17 @@ class CompoundTrain():
         self.train_front.stop(from_handset=from_handset)
         self.train_rear.stop(from_handset=from_handset)
 
+    def set_power(self, power_index, force_led_blink=False):
+        self.train_front.set_power(power_index, force_led_blink=force_led_blink)
+        self.train_rear.set_power(-power_index, force_led_blink=force_led_blink)
+
+        self.train_front.motor_handler.set_motor_power(power_index, self.train_front.voltage)
+        self.train_rear.motor_handler.set_motor_power(-power_index, self.train_rear.voltage)
+
+        self.train_front.led_handler.set_status_led(power_index, force_blink=force_led_blink)
+        self.train_rear.led_handler.set_status_led(-power_index, force_blink=force_led_blink)
+
+
 
 class LEDHandler:
     '''

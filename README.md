@@ -141,7 +141,8 @@ Currentlly these special configurations may not work properly because most of th
 recent development work focused on the two-train configuration. I tested only that 
 the basic composite train (without track signals) works correctly, that is, it starts, 
 stops, accelerates, deccelerates, and reverses correctly, and its headlights also 
-work as expected. 
+work as expected. It should respond to red signals indicating station entry, but
+numerical parameters need to be adjusted by trial and error.
 
 #### Color LED signals
 
