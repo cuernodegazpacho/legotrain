@@ -64,12 +64,12 @@ if __name__ == '__main__':
     train_rear = SmartTrain("Rear", "2", lock=lock, report=True, record=True,
                             gui=gui, address=uuid_definitions.HUB_TEST)
 
+    train = CompoundTrain("Massive train", train_front, train_rear)
+
     # here we override the default event processor that goes into the SmartTrain
     # instance. CompoundTrain events may require special handling, which is
     # implemented in this subclass.
-    train_rear.event_processor = CompoundTrainEventProcessor(train_rear)
-
-    train = CompoundTrain("Massive train", train_front, train_rear)
+    train_rear.event_processor = CompoundTrainEventProcessor(train)
 
     controller = Controller(train)
 
