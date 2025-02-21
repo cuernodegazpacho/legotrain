@@ -1,6 +1,5 @@
 import sys
 import time, datetime
-import random
 from time import sleep
 from threading import Thread, Timer, RLock
 from colorsys import rgb_to_hsv
@@ -10,10 +9,11 @@ from pylgbst.peripherals import Voltage, Current, LEDLight
 from pylgbst.peripherals import COLOR_BLUE, COLOR_ORANGE, COLOR_GREEN, COLOR_RED
 
 import uuid_definitions
-from track import DIRECTION_A, TIME_BLIND, MINIMUM_TIME_STATION, MAXIMUM_TIME_STATION
+from track import DIRECTION_A, TIME_BLIND
+from src.util import get_time_station
 from track import sectors, station_sector_names, clear_track, xtrack, XTrack
 from signal import INTER_SECTOR
-from event import EventProcessor, DummyEventProcessor, SensorEventFilter
+from event import EventProcessor, SensorEventFilter
 from signal import HUE, SATURATION, RGB_MINIMUM, V_MINIMUM
 from signal import RED, GREEN, BLUE, YELLOW, PURPLE
 from gui import tkinter_output_queue, tk_color, ASTATION, SECTOR, SIGNAL, XTRACK
@@ -513,7 +513,7 @@ class SmartTrain(Train):
         self.cancel_station_timer()
 
         # start a timed wait interval at a station
-        time_station = random.uniform(MINIMUM_TIME_STATION, MAXIMUM_TIME_STATION)
+        time_station = get_time_station(self)
         self.timer_station = Timer(time_station, self.restart_movement)
         self.timer_station.start()
 

@@ -1,4 +1,3 @@
-import time
 from threading import RLock
 
 from signal import RED, GREEN, BLUE, PURPLE
@@ -16,8 +15,6 @@ DEFAULT_SECTOR_TIME = 0.8 #s
 TIME_BLIND = 0.7
 DEFAULT_BRAKING_TIME = 2.0
 XTRACK_BRAKING_TIME = 0.5
-MINIMUM_TIME_STATION = 2.
-MAXIMUM_TIME_STATION = 12.
 
 MAX_SPEED = 7
 MAX_SPEED_TIME = 4.5 # s
