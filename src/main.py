@@ -50,7 +50,7 @@ if __name__ == '__main__':
     train1 = SmartTrain("Blue", "1", lock=lock, report=True, record=True,
                         gui=gui, direction=DIRECTION_B, address=uuid_definitions.HUB_ORIG)
     train2 = SmartTrain("Purple", "2", ncars=1, led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
-                            gui=gui, address=uuid_definitions.HUB_TEST)
+                            init_short=False, gui=gui, address=uuid_definitions.HUB_TEST)
 
     controller = Controller(train1, train2=train2)
 

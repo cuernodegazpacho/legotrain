@@ -417,7 +417,7 @@ class EventProcessor:
             speed = self.train.sector.max_speed
         else:
             speed = STATION_SPEED
-        self.accelerate(speed, time=0.3)
+        self.accelerate(speed, time=1.0)
 
     def accelerate(self, new_power_index, time=1.0):
         '''

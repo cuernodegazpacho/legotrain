@@ -6,7 +6,7 @@ import unittest
 MINIMUM_TIME_STATION_SHORT = 1.
 MAXIMUM_TIME_STATION_SHORT = 11.
 MINIMUM_TIME_STATION_LONG = 15.
-MAXIMUM_TIME_STATION_LONG = 45.
+MAXIMUM_TIME_STATION_LONG = 60.
 
 
 class VariableTimerValue:
@@ -20,8 +20,8 @@ class VariableTimerValue:
     the caller; it's initial purpose is to signal the situation in which the train doesn't
     stop at all.
     """
-    def __init__(self):
-        self.short = True
+    def __init__(self, short=True):
+        self.short = short
 
     def get_time_station(self):
         if self.short:
