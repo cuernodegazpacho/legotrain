@@ -1,4 +1,3 @@
-import time
 from threading import RLock
 
 from signal import RED, GREEN, BLUE, PURPLE
@@ -12,18 +11,16 @@ DIRECTION_B = "counter_clockwise"
 FAST = 0
 SLOW = 1
 
-DEFAULT_SECTOR_TIME = 0.8 #s
+DEFAULT_SECTOR_TIME = 1.0 #s
 TIME_BLIND = 0.7
 DEFAULT_BRAKING_TIME = 2.0
 XTRACK_BRAKING_TIME = 0.5
-MINIMUM_TIME_STATION = 2.
-MAXIMUM_TIME_STATION = 12.
 
-MAX_SPEED = 7
+MAX_SPEED = 6
 MAX_SPEED_TIME = 4.5 # s
 DEFAULT_SPEED = 4
-SECTOR_EXIT_SPEED = 3
-STATION_SPEED = 2
+SECTOR_EXIT_SPEED = 2
+STATION_SPEED = 1
 
 class Sector():
     def __init__(self, color, sector_time=DEFAULT_SECTOR_TIME,
@@ -42,7 +39,7 @@ class Sector():
         or, in some cases, only when they enter the next sector.
 
         A "look ahead" Xtrack object can be provided. In case it is not
-        None, the sector will check its status before attempting to
+        None, the train will check the xtrack status before attempting to
         move out of the sector, in case it stopped there. This should
         be used whenever a xtrack object sits close to a sector exit.
 
@@ -222,10 +219,10 @@ xtrack = XTrack("Crossing 1")
 # sectors. Note that the xtrack sits right after the exit from RED_2
 #TODO max_speed doesn't work on the red sectors, since they lack a sector
 # entry signal tile. Use special handling when exiting the previous segment
-sectors = {"RED_1": Sector(RED, max_speed=2, max_speed_time=15.),
-           GREEN: Sector(GREEN, max_speed=5, max_speed_time=3.),
-           "RED_2": Sector(RED, max_speed=3, look_ahead=xtrack),
-           BLUE: StructuredSector(BLUE, max_speed_time=4.)
+sectors = {"RED_1": Sector(RED, max_speed=2, max_speed_time=1.),
+           GREEN: Sector(GREEN, max_speed_time=5.),
+           "RED_2": Sector(RED, max_speed=2, max_speed_time=1, look_ahead=xtrack),
+           BLUE: StructuredSector(BLUE, max_speed_time=3.)
            }
 
 station_sector_names = {DIRECTION_B: "RED_1",

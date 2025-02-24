@@ -19,6 +19,9 @@ def demo_color_sensor(smart_hub):
     h_list = []
     s_list = []
     v_list = []
+    r_list = []
+    g_list = []
+    b_list = []
 
     def callback(*args, **kwargs):
         demo_color_sensor.cnt += 1
@@ -37,6 +40,9 @@ def demo_color_sensor(smart_hub):
             h_list.append(h)
             s_list.append(s)
             v_list.append(v)
+            r_list.append(r)
+            g_list.append(g)
+            b_list.append(b)
 
             print(r, ",", g, ",", b)
 
@@ -50,6 +56,10 @@ def demo_color_sensor(smart_hub):
     print("H stats: ", stat.mean(h_list), stat.stdev(h_list), min(h_list), max(h_list))
     print("S stats: ", stat.mean(s_list), stat.stdev(s_list), min(s_list), max(s_list))
     print("V stats: ", stat.mean(v_list), stat.stdev(v_list), min(v_list), max(v_list))
+    print("R stats: ", stat.mean(r_list), stat.stdev(r_list), min(r_list), max(r_list))
+    print("G stats: ", stat.mean(g_list), stat.stdev(g_list), min(g_list), max(g_list))
+    print("B stats: ", stat.mean(b_list), stat.stdev(b_list), min(b_list), max(b_list))
+
 
 def demo_color_sensor_modes(smart_hub, mode):
     def callback(*args, **kwargs):

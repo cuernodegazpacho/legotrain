@@ -271,8 +271,10 @@ class EventProcessor:
 
             # drop speed to a reasonable value to cross over the inter-sector zone,
             # but avoid using train.down_speed(), since it kills any underlying threads.
-            speed = min(SECTOR_EXIT_SPEED, self.train.power_index)
-            self.accelerate(speed, time=0.2)
+            # speed = min(SECTOR_EXIT_SPEED, self.train.power_index)
+            speed = DEFAULT_SPEED
+
+            self.accelerate(speed, time=0.8)
 
     def process_station_event(self, event):
         '''
@@ -417,7 +419,7 @@ class EventProcessor:
             speed = self.train.sector.max_speed
         else:
             speed = STATION_SPEED
-        self.accelerate(speed, time=0.3)
+        self.accelerate(speed, time=1.0)
 
     def accelerate(self, new_power_index, time=1.0):
         '''

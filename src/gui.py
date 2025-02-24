@@ -1,3 +1,6 @@
+import time
+from threading import Thread
+
 import queue
 import tkinter as T
 from tkinter import StringVar, LEFT, TOP
@@ -198,6 +201,16 @@ class GUI():
             vname = f"xtrack_{id}_label".format(id=id)
             self.__dict__[vname].configure(bg=color)
 
+    def report_astation(self, name, gui_id, value):
+        counting = Thread(target=self._countdown, args=(name, gui_id, value,))
+        counting.start()
+    def _countdown(self, name, gui_id, value):
+        counter = value
+        while counter >= 0:
+            output_buffer = self.encode_int_variable(ASTATION, name, gui_id, counter)
+            tkinter_output_queue.put(output_buffer)
+            time.sleep(1)
+            counter -= 1
 
 if __name__ == '__main__':
     g = GUI()
@@ -217,4 +230,13 @@ if __name__ == '__main__':
     g.xtrack_1_label.configure(text="", bg='light gray')
     g.xtrack_2_label.configure(text="", bg='purple')
 
+    g.report_astation("Blue", 1, 35)
+    g.report_astation("Purple", 2, 23)
+
+    g.root.after(100, g.after_callback)
     g.root.mainloop()
+
+
+
+
+
