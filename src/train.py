@@ -170,8 +170,8 @@ class Train:
     def report_astation(self):
         # update GUI with @station value
         if self.gui is not None:
-            output_buffer = self.gui.encode_int_variable(ASTATION, self.name, self.gui_id, self.astation)
-            tkinter_output_queue.put(output_buffer)
+            # this must be handled by the GUI, in order to provide a visual countdown
+            self.gui.report_astation(self.name, self.gui_id, self.astation)
 
     def report_sector(self, tkcolor, subtext=""):
         if self.gui is not None:
@@ -565,6 +565,9 @@ class SmartTrain(Train):
         self.led_handler.set_solid(COLOR_GREEN)
         if self.secondary_train is not None:
             self.secondary_train.led_handler.set_solid(COLOR_GREEN)
+
+        # must be smaller than MINIMUM_TIME_STATION_SHORT, otherwise
+        # the green signal may not go away.
         sleep(1.0)
 
         # need to find out if this train is running forward or reverse

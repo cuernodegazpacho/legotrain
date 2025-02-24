@@ -3,10 +3,10 @@ import random
 import unittest
 
 # time ranges for short and long stops
-MINIMUM_TIME_STATION_SHORT = 1.
+MINIMUM_TIME_STATION_SHORT = 1.5
 MAXIMUM_TIME_STATION_SHORT = 11.
 MINIMUM_TIME_STATION_LONG = 15.
-MAXIMUM_TIME_STATION_LONG = 60.
+MAXIMUM_TIME_STATION_LONG = 45.
 
 
 class VariableTimerValue:
