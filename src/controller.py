@@ -27,7 +27,7 @@ class Controller:
     not work without some additional work).
 
     '''
-    def __init__(self, train1, train2=None, handset_address=uuid_definitions.HANDSET_TEST):
+    def __init__(self, train1, train2=None, handset_address=uuid_definitions.HANDSET_ORIG):
         self.train1 = train1
         self.train2 = train2
         self.handset_address = handset_address
