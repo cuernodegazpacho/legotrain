@@ -20,21 +20,32 @@ class Controller:
     It accepts initialized instances of subclasses of Train.
 
     This class creates a remote handset instance that allows the operator to
-    control one or two trains with one handset.
+    control one or two trains with one handset. Optionally, it can add a
+    second handset to control a third train.
 
     The class was last used to control two instances of SmartTrain in a
     self-driving setup. Other configurations (such as CompoundTrain) may
     not work without some additional work).
 
     '''
-    def __init__(self, train1, train2=None, handset_address=uuid_definitions.HANDSET_ORIG):
+    def __init__(self, train1, train2=None, train3=None,
+                 handset_address=uuid_definitions.HANDSET_ORIG,
+                 handset2_address=None):
         self.train1 = train1
         self.train2 = train2
-        self.handset_address = handset_address
+        self.train3 = train3
 
         sleep(5)
-        self.handset = RemoteHandset(address=self.handset_address)
-        self.handset_handler = HandsetHandler(self)
+        self.handset = RemoteHandset(address=handset_address)
+        self.handset_handler = HandsetHandler(self, self.handset)
+
+        if handset2_address is not None:
+            sleep(5)
+            self.handset2 = RemoteHandset(address=handset2_address)
+            self.handset2_handler = HandsetHandler(self, self.handset2)
+        else:
+            self.handset2 = None
+            self.handset2_handler = None
 
         # Subscribe callbacks with train actions to handset button gestures.
         # We can either have one single callback and handle the button set choice
@@ -44,6 +55,9 @@ class Controller:
         # approach seems better at preventing code duplication.
         self.handset_handler.handset.port_A.subscribe(self.handset_handler.callback_from_button)
         self.handset_handler.handset.port_B.subscribe(self.handset_handler.callback_from_button)
+        if self.handset2_handler is not None:
+            self.handset2_handler.handset.port_A.subscribe(self.handset2_handler.callback_from_button)
+            self.handset2_handler.handset.port_B.subscribe(self.handset2_handler.callback_from_button)
 
         # define sensible handset actions for a dummy train2 object
         if self.train2 is None:
@@ -54,37 +68,6 @@ class Controller:
         self.train1.dispatcher = self.dispatcher
         self.train2.dispatcher = self.dispatcher
 
-        # actions associated with each handset button. Note that
-        # the red buttons require special handling thus their
-        # events are processed elsewhere.
-        self.handset_actions = {
-            RemoteButton.LEFT:
-            {
-                RemoteButton.PLUS: self.train1.up_speed,
-                RemoteButton.MINUS: self.train1.down_speed
-            },
-            RemoteButton.RIGHT:
-            {
-                RemoteButton.PLUS: self.train2.up_speed,
-                RemoteButton.MINUS: self.train2.down_speed
-                #TODO
-                # RemoteButton.PLUS: self.train1.switch_semaphore,
-                # RemoteButton.RED: self.train1.switch_semaphore,
-                # RemoteButton.MINUS: self.train1.switch_semaphore
-            },
-        }
-
-        # actions associated with a short RED button press
-        self.handset_short_red_actions = {
-            RemoteButton.LEFT: self.train1.stop,
-            RemoteButton.RIGHT: self.train2.stop
-        }
-
-        # actions associated with long and dual red button actions
-        self.red_button_actions = {
-            DUAL: self._restart,
-            LONG: self.reset_all
-        }
 
     # def connect_handset(self):
     #     # Subscribe callbacks with train actions to handset button gestures.
@@ -95,10 +78,6 @@ class Controller:
     #     # approach seems better at preventing code duplication.
     #     self.handset_handler.handset.port_A.subscribe(self.handset_handler.callback_from_button)
     #     self.handset_handler.handset.port_B.subscribe(self.handset_handler.callback_from_button)
-
-    def _handle_red_button(self, mode):
-        # mode can be "dual" or "long"
-        self.red_button_actions[mode]()
 
     def reset_all(self):
         self.train1.stop()
@@ -166,14 +145,50 @@ class HandsetEvent:
 
 
 class HandsetHandler:
-    def __init__(self, controller):
-        self.handset = controller.handset
+    def __init__(self, controller, handset):
+        self.handset = handset
         self.controller = controller
 
         # helper variables for handling more complex gestures
         self.previous_red_event = HandsetEvent(RemoteButton.RED)
         self.previous_event = HandsetEvent(RemoteButton.RELEASE)
         self.events_to_skip = 0
+
+        # actions associated with each handset button. Note that
+        # the red buttons require special handling thus their
+        # events are processed elsewhere.
+        self.handset_actions = {
+            RemoteButton.LEFT:
+                {
+                    RemoteButton.PLUS: self.controller.train1.up_speed,
+                    RemoteButton.MINUS: self.controller.train1.down_speed
+                },
+            RemoteButton.RIGHT:
+                {
+                    RemoteButton.PLUS: self.controller.train2.up_speed,
+                    RemoteButton.MINUS: self.controller.train2.down_speed
+                    # TODO
+                    # RemoteButton.PLUS: self.controller.train1.switch_semaphore,
+                    # RemoteButton.RED: self.controller.train1.switch_semaphore,
+                    # RemoteButton.MINUS: self.controller.train1.switch_semaphore
+                },
+        }
+
+        # actions associated with a short RED button press
+        self.handset_short_red_actions = {
+            RemoteButton.LEFT: self.controller.train1.stop,
+            RemoteButton.RIGHT: self.controller.train2.stop
+        }
+
+        # actions associated with long and dual red button actions
+        self.red_button_actions = {
+            DUAL: self.controller._restart,
+            LONG: self.controller.reset_all
+        }
+
+    def _handle_red_button(self, mode):
+        # mode can be "dual" or "long"
+        self.red_button_actions[mode]()
 
     def callback_from_button(self, button, button_set):
 
@@ -195,7 +210,7 @@ class HandsetHandler:
             self.previous_red_event = event
             return
 
-        # store all non-RELEASE events, so we can know afterwards if a given RELEASE
+        # store all non-RELEASE events, so we can know after wards if a given RELEASE
         # event is associated with a previous RED event, or to another key event.
         if event.button not in [RemoteButton.RELEASE]:
             self.previous_event = event
@@ -206,9 +221,9 @@ class HandsetHandler:
             d_timestamp = event.timestamp - self.previous_red_event.timestamp
 
             if d_timestamp < 1.:
-                self.controller.handset_short_red_actions[button_set]()
+                self.handset_short_red_actions[button_set]()
             else:
-                self.controller._handle_red_button(LONG)
+                self._handle_red_button(LONG)
 
             return
 
@@ -223,7 +238,7 @@ class HandsetHandler:
                 # must be ignored. We force the next two calls to this method
                 # to be skipped.
                 self.events_to_skip = 2
-                self.controller._handle_red_button(DUAL)
+                self._handle_red_button(DUAL)
 
             return
 
@@ -231,7 +246,7 @@ class HandsetHandler:
         # calling the controller method that process it.
         else:
             if button not in [RemoteButton.RELEASE]:
-                self.controller.handset_actions[button_set][button]()
+                self.handset_actions[button_set][button]()
 
 
 class Dispatcher:

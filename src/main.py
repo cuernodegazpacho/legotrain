@@ -1,6 +1,6 @@
 from threading import RLock
 
-from pylgbst.peripherals import COLOR_PURPLE
+from pylgbst.peripherals import COLOR_PURPLE, COLOR_YELLOW
 
 import uuid_definitions
 from train import SimpleTrain, SmartTrain, CompoundTrain
@@ -49,12 +49,25 @@ if __name__ == '__main__':
 
     train1 = SmartTrain("Blue", "1", lock=lock, report=True, record=True,
                         gui=gui, direction=DIRECTION_B, address=uuid_definitions.HUB_ORIG)
-    train2 = SmartTrain("Purple", "2", ncars=1, led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
+    train2 = SmartTrain("Purple", "2", ncars=2, led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
                             init_short=False, gui=gui, address=uuid_definitions.HUB_TEST)
 
-    controller = Controller(train1, train2=train2)
+    controller = Controller(train1, train2=train2, handset_address=uuid_definitions.HANDSET_ORIG)
 
-    # ---------------------- Compound train setup --------------------------
+    # ---------------------- Three-train setup  --------------------------------------------
+
+    # train1 = SmartTrain("Blue", "1", lock=lock, report=True, record=True,
+    #                     gui=gui, direction=DIRECTION_B, address=uuid_definitions.HUB_ORIG)
+    # train2 = SmartTrain("Purple", "2", ncars=2, led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
+    #                         init_short=False, gui=gui, address=uuid_definitions.HUB_TEST)
+    # train3 = SmartTrain("Yellow", "3", ncars=0, led_color=COLOR_YELLOW, lock=lock, report=True, record=True,
+    #                         init_short=False, gui=gui, address=uuid_definitions.HUB_CARGO)
+    #
+    # controller = Controller(train1, train2=train2, train3=train3,
+    #                         handset_address=uuid_definitions.HANDSET_ORIG,
+    #                         handset2_address=uuid_definitions.HANDSET_TEST),
+
+    # ---------------------- Compound train setup -------------------------------------------
 
     # # front train hub allows control over the LED headlight.
     # train_front = SimpleTrain("Front", "1", lock=lock, report=True, record=True,
