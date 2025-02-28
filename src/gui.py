@@ -38,7 +38,7 @@ XTRACK = "XTRACK"
 class GUI():
     def __init__(self):
         self.root = T.Tk()
-        self.root.geometry("600x480")
+        self.root.geometry("800x480")
         font = ('Helvetica', 36)
 
         self.root.title("Lego train control")
@@ -46,6 +46,7 @@ class GUI():
         left_frame = T.Frame(self.root)
         center_frame = T.Frame(self.root)
         right_frame = T.Frame(self.root)
+        rightmost_frame = T.Frame(self.root)
 
         # left frame: field names
         T.Label(left_frame, text="",          font=font, justify=LEFT).pack(side=TOP)
@@ -72,8 +73,16 @@ class GUI():
         self.current_2_text  = StringVar(right_frame, '- - -')
         self.speed_2_text    = StringVar(right_frame, '- - -')
         self.power_2_text    = StringVar(right_frame, '- - -')
-        self.astation_2_text = StringVar(center_frame, '- - -')
-        # self.sector_2_text   = StringVar(center_frame, '- - -')
+        self.astation_2_text = StringVar(right_frame, '- - -')
+        # self.sector_2_text   = StringVar(right_frame, '- - -')
+
+        self.name_3_text     = StringVar(rightmost_frame, '')
+        self.voltage_3_text  = StringVar(rightmost_frame, '- - -')
+        self.current_3_text  = StringVar(rightmost_frame, '- - -')
+        self.speed_3_text    = StringVar(rightmost_frame, '- - -')
+        self.power_3_text    = StringVar(rightmost_frame, '- - -')
+        self.astation_3_text = StringVar(rightmost_frame, '- - -')
+        # self.sector_3_text   = StringVar(rightmost_frame, '- - -')
 
         # center frame: fields associated with id 1
         width = 9
@@ -120,9 +129,32 @@ class GUI():
         self.sector_2_label.pack(side=TOP)
         self.xtrack_2_label.pack(side=TOP)
 
+        # rightmost frame: fields associated with id 3
+        self.name_3_label     = T.Label(rightmost_frame, textvariable=self.name_3_text, font=font)
+        self.voltage_3_label  = T.Label(rightmost_frame, textvariable=self.voltage_3_text, font=font, width=width)
+        self.current_3_label  = T.Label(rightmost_frame, textvariable=self.current_3_text, font=font, width=width)
+        self.speed_3_label    = T.Label(rightmost_frame, textvariable=self.speed_3_text, font=font, width=width)
+        self.power_3_label    = T.Label(rightmost_frame, textvariable=self.power_3_text, font=font, width=width)
+        self.signal_3_label   = T.Label(rightmost_frame, font=font, width=5, anchor="e")
+        self.astation_3_label = T.Label(rightmost_frame, textvariable=self.astation_3_text, font=font, width=width)
+        # self.sector_3_label   = T.Label(rightmost_frame, textvariable=self.sector_3_text, font=font, width=width, anchor="e")
+        self.sector_3_label   = T.Label(rightmost_frame, font=font, width=5, anchor="e")
+        self.xtrack_3_label   = T.Label(rightmost_frame, font=font, width=5, anchor="e")
+
+        self.name_3_label.pack(side=TOP)
+        self.voltage_3_label.pack(side=TOP)
+        self.current_3_label.pack(side=TOP)
+        self.speed_3_label.pack(side=TOP)
+        self.power_3_label.pack(side=TOP)
+        self.signal_3_label.pack(side=TOP)
+        self.astation_3_label.pack(side=TOP)
+        self.sector_3_label.pack(side=TOP)
+        self.xtrack_3_label.pack(side=TOP)
+
         left_frame.pack(side=LEFT)
         center_frame.pack(side=LEFT)
         right_frame.pack(side=LEFT)
+        rightmost_frame.pack(side=LEFT)
 
     def after_callback(self):
         try:
@@ -233,17 +265,24 @@ if __name__ == '__main__':
     g.voltage_2_text.set("7.9")
     g.name_2_text.set("Purple")
 
+    g.voltage_3_text.set("7.1")
+    g.name_3_text.set("Yellow")
+
     g.sector_1_label.configure(text="", bg='lightblue')
     g.sector_2_label.configure(text="S", bg='yellow')
+    g.sector_3_label.configure(text="S", bg='green')
 
     g.signal_1_label.configure(text="", bg='light gray')
     g.signal_2_label.configure(text="", bg='purple')
+    g.signal_3_label.configure(text="", bg='green')
 
     g.xtrack_1_label.configure(text="", bg='light gray')
-    g.xtrack_2_label.configure(text="", bg='purple')
+    g.xtrack_2_label.configure(text="", bg='red')
+    g.xtrack_3_label.configure(text="", bg='light gray')
 
     g.report_astation("Blue", 1, 35)
     g.report_astation("Purple", 2, 23)
+    g.report_astation("Yellow", 3, 18)
 
     g.root.after(100, g.after_callback)
     g.root.mainloop()
