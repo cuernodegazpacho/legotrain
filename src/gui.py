@@ -9,6 +9,7 @@ from signal import RED, GREEN, BLUE, YELLOW, PURPLE, INTER_SECTOR
 
 tkinter_output_queue = queue.Queue()
 QUEUE_POLLING = 50 # ms
+timers = {}
 
 # tkinter color names
 TK_GRAY = "light gray"
@@ -202,15 +203,26 @@ class GUI():
             self.__dict__[vname].configure(bg=color)
 
     def report_astation(self, name, gui_id, value):
-        counting = Thread(target=self._countdown, args=(name, gui_id, value,))
-        counting.start()
-    def _countdown(self, name, gui_id, value):
-        counter = value
-        while counter >= 0:
-            output_buffer = self.encode_int_variable(ASTATION, name, gui_id, counter)
+        if gui_id in timers:
+            timers[gui_id].counter = -1
+        timers[gui_id] = CountdownTimer(self, name, gui_id, value)
+
+class CountdownTimer:
+    def __init__(self, gui, name, gui_id, value):
+        self.gui = gui
+        self.name = name
+        self.gui_id = gui_id
+        self.counter = value
+
+        self.counting = Thread(target=self._countdown) # args=(self.name, self.gui_id, self.value,))
+        self.counting.start()
+
+    def _countdown(self):
+        while self.counter >= 0:
+            output_buffer = self.gui.encode_int_variable(ASTATION, self.name, self.gui_id, self.counter)
             tkinter_output_queue.put(output_buffer)
             time.sleep(1)
-            counter -= 1
+            self.counter -= 1
 
 if __name__ == '__main__':
     g = GUI()
