@@ -237,6 +237,7 @@ class GUI():
     def report_astation(self, name, gui_id, value):
         if gui_id in timers:
             timers[gui_id].counter = -1
+            timers[gui_id] = None
         timers[gui_id] = CountdownTimer(self, name, gui_id, value)
 
 class CountdownTimer:

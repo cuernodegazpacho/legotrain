@@ -19,13 +19,13 @@ XTRACK_BRAKING_TIME = 0.5
 MAX_SPEED = 6
 MAX_SPEED_TIME = 4.5 # s
 DEFAULT_SPEED = 4
-SECTOR_EXIT_SPEED = 2
+SECTOR_EXIT_SPEED = 3
 STATION_SPEED = 1
 
 class Sector():
     def __init__(self, color, sector_time=DEFAULT_SECTOR_TIME,
                  max_speed=MAX_SPEED, max_speed_time=MAX_SPEED_TIME,
-                 exit_speed=SECTOR_EXIT_SPEED, look_ahead=None):
+                 exit_speed=None, look_ahead=None):
         '''
         Encapsulates properties of a track sector. Sectors are used
         to isolate sections of a continuous track, such that only one
@@ -58,7 +58,8 @@ class Sector():
             accelerate when entering the sector
         :param max_speed_time: the time to sustain max speed (in sec.)
         :param exit_speed: the speed setting to which the train must
-            accelerate when exiting the sector
+            accelerate when exiting the sector. Can be a scalar, or
+            a dict with 2 values, keyed by train direction.
         :param look_ahead: a XTrack object that has to be checked
             in advance
         '''
@@ -66,8 +67,14 @@ class Sector():
         self.sector_time = sector_time
         self.max_speed = max_speed
         self.max_speed_time = max_speed_time
-        self.exit_speed = exit_speed
         self.look_ahead = look_ahead
+
+        # can be a dict or an int. Make it always a dict.
+        self.exit_speed = exit_speed
+        if self.exit_speed is None:
+            self.exit_speed = SECTOR_EXIT_SPEED
+        if not isinstance(exit_speed, type({})):
+            self.exit_speed = {DIRECTION_A: self.exit_speed, DIRECTION_B: self.exit_speed}
 
         # Describes sector position in track. For now, this is a 2-element dict
         # with pointers to the two neighboring sectors, keyed by the train's
@@ -97,16 +104,18 @@ class StructuredSector(Sector):
     :param max_speed_time: the time to sustain max speed (in sec.). After that,
         the speed in bumped down twice.
     :param exit_speed: the speed setting to which the train must
-        accelerate when exiting the sector
+        accelerate when exiting the sector. Can be a scalar, or
+            a dict with 2 values, keyed by train direction.
     '''
     def __init__(self, color, sector_time=DEFAULT_SECTOR_TIME,
                  max_speed=MAX_SPEED, max_speed_time=MAX_SPEED_TIME,
-                 exit_speed=SECTOR_EXIT_SPEED):
+                 exit_speed=None):
 
         super(StructuredSector, self).__init__(color, sector_time=sector_time,
                                                max_speed=max_speed,
                                                max_speed_time=max_speed_time,
-                                               exit_speed=exit_speed)
+                                               exit_speed=exit_speed,
+)
 
         # defaults assume the train enters the sector via its FAST side.
         # Note that a physical sector may have two SLOW sub-sectors, one
@@ -217,12 +226,12 @@ def clear_track():
 xtrack = XTrack("Crossing 1")
 
 # sectors. Note that the xtrack sits right after the exit from RED_2
-#TODO max_speed doesn't work on the red sectors, since they lack a sector
-# entry signal tile. Use special handling when exiting the previous segment
 sectors = {"RED_1": Sector(RED, max_speed=2, max_speed_time=1.),
-           GREEN: Sector(GREEN, max_speed_time=5.),
+           GREEN: Sector(GREEN, max_speed_time=5., exit_speed={DIRECTION_A: 2,
+                                                               DIRECTION_B: 1}),
            "RED_2": Sector(RED, max_speed=2, max_speed_time=1, look_ahead=xtrack),
-           BLUE: StructuredSector(BLUE, max_speed_time=3.)
+           BLUE: StructuredSector(BLUE, max_speed_time=3., exit_speed={DIRECTION_A: SECTOR_EXIT_SPEED,
+                                                                       DIRECTION_B: 2}),
            }
 
 station_sector_names = {DIRECTION_B: "RED_1",

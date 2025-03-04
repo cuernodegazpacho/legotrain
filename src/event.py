@@ -263,7 +263,8 @@ class EventProcessor:
         if next_sector.occupier is not None and next_sector.occupier != self.train.name:
             # next sector is occupied: slow down to minimum speed and wait for
             # end-of-sector signal.
-            self.accelerate(SECTOR_EXIT_SPEED, time=0.2)
+            # self.accelerate(SECTOR_EXIT_SPEED, time=0.2) #TODO
+            self.accelerate(self._get_exit_speed(), time=0.2) #TODO
 
         else:
             # next sector is free. Grab it.
@@ -272,9 +273,9 @@ class EventProcessor:
             # drop speed to a reasonable value to cross over the inter-sector zone,
             # but avoid using train.down_speed(), since it kills any underlying threads.
             # speed = min(SECTOR_EXIT_SPEED, self.train.power_index)
-            speed = DEFAULT_SPEED
+            # speed = DEFAULT_SPEED #TODO
 
-            self.accelerate(speed, time=0.8)
+            self.accelerate(self._get_exit_speed(), time=0.5)
 
     def process_station_event(self, event):
         '''
@@ -303,9 +304,7 @@ class EventProcessor:
             # make sure previous sector is released.
             self.train.previous_sector.occupier = None
 
-            # mark current sector as occupied. Note that this is not
-            # strictly required in the current implementation, but we
-            # do it anyway for debugging and logging purposes.
+            # mark current sector as occupied.
             self.train.previous_sector.next[self.train.direction].occupier = self.train.name
 
             # after stopping at station, execute a Timer delay followed by a re-start
@@ -328,19 +327,23 @@ class EventProcessor:
             # above.
             self.train.initialize_sectors()
 
-    def _exit_sector(self, event):
+    def _exit_sector(self, event, accelerate=True):
 
         # define speed to be used in inter-sector zone
         exit_speed = SECTOR_EXIT_SPEED
         if self.train.sector is not None and self.train.sector.exit_speed is not None:
-            exit_speed = self.train.sector.exit_speed
+            exit_speed = self._get_exit_speed()
 
         # entering inter-sector zone
         self.train.previous_sector = self.train.sector
         self.train.sector = None
         self.train.report_sector(tk_color[INTER_SECTOR])
 
-        self.accelerate(exit_speed, time=0.5)
+        if accelerate:
+            self.accelerate(exit_speed, time=0.2)
+
+    def _get_exit_speed(self):
+        return self.train.sector.exit_speed[self.train.direction]
 
     def _process_braking_event(self):
         # fast braking
@@ -474,14 +477,14 @@ class EventProcessor:
     def _stop_and_wait(self, next_sector):
         self.train.stop(from_handset=False)
 
-        # make sure we wait for the next sector to go free. This
-        # may be redundant here, since train.restart_movement should
-        # be doing the same check anyway. We do just in case though.
+        # make sure we wait for the next sector to go free.
         while next_sector.occupier is not None and \
               next_sector.occupier != self.train.name:
             time.sleep(0.3)
 
-        self._exit_sector("from stop and wait")
+        # acceleration is handled by restart_movement
+        self._exit_sector("from stop and wait", accelerate=False)
+
         self.train.restart_movement()
 
     def recover(self, event):

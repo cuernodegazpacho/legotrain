@@ -34,8 +34,13 @@ class Controller:
         self.train1 = train1
         self.train2 = train2
         self.train3 = train3
+        # define sensible handset actions for a dummy train object
+        if self.train2 is None:
+            self.train2 = _DummyTrain("Dummy")
+        if self.train3 is None:
+            self.train3 = _DummyTrain("Dummy")
 
-        sleep(5)
+        # sleep(5)
         self.handset = RemoteHandset(address=handset_address)
         self.handset_handler = HandsetHandler(self, self.handset)
 
@@ -59,14 +64,11 @@ class Controller:
             self.handset2_handler.handset.port_A.subscribe(self.handset2_handler.callback_from_button)
             self.handset2_handler.handset.port_B.subscribe(self.handset2_handler.callback_from_button)
 
-        # define sensible handset actions for a dummy train2 object
-        if self.train2 is None:
-            self.train2 = _DummyTrain("Dummy")
-
         # enable system-wide communications
         self.dispatcher = Dispatcher(self)
         self.train1.dispatcher = self.dispatcher
         self.train2.dispatcher = self.dispatcher
+        self.train3.dispatcher = self.dispatcher
 
 
     # def connect_handset(self):
@@ -82,23 +84,29 @@ class Controller:
     def reset_all(self):
         self.train1.stop()
         self.train2.stop()
+        self.train3.stop()
 
         #TODO this is begging for a refactor
 
         # both trains should be conducted in manual mode from now on
         if isinstance(self.train1, SmartTrain) and (isinstance(self.train2, SmartTrain) or
-                isinstance(self.train2, _DummyTrain)):
+                isinstance(self.train2, _DummyTrain)) and (isinstance(self.train3, SmartTrain) or
+                isinstance(self.train3, _DummyTrain)):
             self.train1.auto = False
             self.train2.auto = False
+            self.train3.auto = False
 
             self.train1.cancel_all_threads()
             self.train2.cancel_all_threads()
+            self.train3.cancel_all_threads()
 
             self.train1.initialize_sectors()
             self.train2.initialize_sectors()
+            self.train3.initialize_sectors()
 
             track.xtrack.initialize(self.train1)
             track.xtrack.initialize(self.train2)
+            track.xtrack.initialize(self.train3)
 
         # reset mode for configuration with compound train
         if isinstance(self.train1, CompoundTrain):
@@ -120,16 +128,21 @@ class Controller:
 
         # restart mode for configuration with two smart trains
         if isinstance(self.train1, SmartTrain) and (isinstance(self.train2, SmartTrain) or
-                isinstance(self.train2, _DummyTrain)):
+                isinstance(self.train2, _DummyTrain)) and (isinstance(self.train3, SmartTrain) or
+                isinstance(self.train3, _DummyTrain)):
             self.train1.auto = True
             self.train2.auto = True
+            self.train3.auto = True
 
             self.train1.initialize_sectors()
             self.train2.initialize_sectors()
+            self.train3.initialize_sectors()
 
             self.train1.timed_stop_at_station()
             time.sleep(0.5)
             self.train2.timed_stop_at_station()
+            time.sleep(0.5)
+            self.train3.timed_stop_at_station()
 
         # restart mode for configuration with compound train
         if isinstance(self.train1, CompoundTrain):

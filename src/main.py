@@ -34,7 +34,7 @@ if __name__ == '__main__':
     # ---------------------- Simple train setup --------------------------
 
     # train = SimpleTrain("Train", "1", lock=lock, report=True, record=True,
-    #                           gui=gui, address=uuid_definitions.HUB_ORIG)
+    #                           gui=gui, address=uuid_definitions.HUB_NEW)
     # controller = Controller(train)
 
     # ---------------------- Smart train setup for testing ----------------------------
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     # train = SmartTrain("Train 1", "1", lock=lock, report=True, record=True,
     #                         gui=gui, direction=DIRECTION_B, address=uuid_definitions.HUB_ORIG)
     # train = SmartTrain("Train 2", "2", lock=lock, report=True, record=True,
-    #                         gui=gui, address=uuid_definitions.HUB_TEST)
+    #                         gui=gui, address=uuid_definitions.HUB_NEW)
     # controller = Controller(train)
 
     # ---------------------- Two-train setup (Smart self-driving) ----------------------------
@@ -50,18 +50,18 @@ if __name__ == '__main__':
     train1 = SmartTrain("Blue", "1", lock=lock, report=True, record=True,
                         gui=gui, direction=DIRECTION_B, address=uuid_definitions.HUB_ORIG)
     train2 = SmartTrain("Purple", "2", ncars=2, led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
-                            init_short=False, gui=gui, address=uuid_definitions.HUB_TEST)
+                            init_short=False, gui=gui, address=uuid_definitions.HUB_NEW)
 
-    controller = Controller(train1, train2=train2, handset_address=uuid_definitions.HANDSET_ORIG)
+    controller = Controller(train1, train2=train2)
 
     # ---------------------- Three-train setup  --------------------------------------------
 
     # train1 = SmartTrain("Blue", "1", lock=lock, report=True, record=True,
     #                     gui=gui, direction=DIRECTION_B, address=uuid_definitions.HUB_ORIG)
     # train2 = SmartTrain("Purple", "2", ncars=2, led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
-    #                         init_short=False, gui=gui, address=uuid_definitions.HUB_TEST)
+    #                         init_short=False, gui=gui, address=uuid_definitions.HUB_NEW)
     # train3 = SmartTrain("Yellow", "3", ncars=0, led_color=COLOR_YELLOW, lock=lock, report=True, record=True,
-    #                         init_short=False, gui=gui, address=uuid_definitions.HUB_CARGO)
+    #                         init_short=False, gui=gui, address=uuid_definitions.HUB_TEST)
     #
     # controller = Controller(train1, train2=train2, train3=train3,
     #                         handset_address=uuid_definitions.HANDSET_ORIG,
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     #
     # # rear train hub has a vision sensor
     # train_rear = SmartTrain("Rear", "2", lock=lock, report=True, record=True,
-    #                         gui=gui, address=uuid_definitions.HUB_TEST)
+    #                         gui=gui, address=uuid_definitions.HUB_NEW)
     #
     # train = CompoundTrain("Massive train", train_front, train_rear)
     #

@@ -516,9 +516,8 @@ class SmartTrain(Train):
         if not self.auto:
             return
 
-        self.cancel_station_timer()
-
         # start a timed wait interval at a station
+        self.cancel_station_timer()
         time_station = self.variable_timer.get_time_station()
         self.timer_station = Timer(time_station, self.restart_movement)
         self.timer_station.start()
@@ -526,9 +525,10 @@ class SmartTrain(Train):
         self.astation = time_station
         self.report_astation()
 
-        #TODO thread to update astation at every second, and propagate to gui
-
     def restart_movement(self):
+
+        self.cancel_acceleration_thread()
+
         self.astation = 0
         self.report_astation()
 
@@ -544,7 +544,7 @@ class SmartTrain(Train):
               next_sector.occupier != self.name:
             time.sleep(0.5)
 
-        # when restaring movement, check for the existence of a xtrack object
+        # when restarting movement, check for the existence of a xtrack object
         # ahead. In case there is one, check its status, and either book it
         # and proceed moving, or wait until the xtrack is freed.
         xt1 = previous_sector.look_ahead
@@ -559,7 +559,8 @@ class SmartTrain(Train):
         # immediately occupy next sector
         next_sector.occupier = self.name
 
-        # train is departing from station, so gui displays inter-sector color
+        # train is departing either from station, or from a sector end signal,
+        # so gui displays inter-sector color
         self.report_sector(tk_color[INTER_SECTOR])
 
         self.led_handler.set_solid(COLOR_GREEN)
@@ -582,15 +583,17 @@ class SmartTrain(Train):
         # start timer to hold up the signal-blind flag. While this flag
         # is up, the vision sensor logic won't respond to signals. This
         # is used to prevent a false signal to be sensed when the train is
-        # stopped rigth over a signal tile on the track. In that situation,
+        # stopped over a signal tile on the track. In that situation,
         # as soon as the movement starts, a false signal can be issued.
         self.signal_blind = True
         self.signal_blind_timer = Timer(TIME_BLIND, self.activate_signals)
         self.signal_blind_timer.start()
 
-        # accelerate just to move train out of station area into inter-sector
-        # zone. Train will regain full speed when crossing sector signal.
-        self.accelerate(list(range(1, 4)), power_index_signal, sleep_time=0.2)
+        # accelerate into inter-sector zone. Train will regain correct
+        # speed when crossing next sector entry signal.
+        exit_speed = previous_sector.exit_speed[self.direction]
+
+        self.accelerate(list(range(1, exit_speed+1)), power_index_signal, sleep_time=0.1)
 
     def _vision_sensor_callback(self, *args, **kwargs):
         # use HSV as criterion for mapping colors
