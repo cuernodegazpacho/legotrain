@@ -54,10 +54,13 @@ class Train:
     :param init_short: if True, initialize time@station at short range
     :param address: UUID of the train's internal hub
     :param direction: direction of movement on the track
+    :param start_sector: sector where train starts from, or None for station start.
+                         Train should be physically placed in the inter-sector zone
+                         that immediately succeeds this sector.
     '''
     def __init__(self, name, gui_id="0", ncars=2, lock=None, report=False, record=False, linear=False,
                  init_short=True, gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
-                 direction=DIRECTION_A, address=uuid_definitions.HUB_TEST):
+                 direction=DIRECTION_A, address=uuid_definitions.HUB_TEST, start_sector=None):
 
         self.name = name
         self.gui_id = gui_id
@@ -68,6 +71,7 @@ class Train:
         self.led_color = led_color
         self.led_secondary_color = led_secondary_color
         self.astation = 0
+        self.start_sector = start_sector
 
         # dispatcher allows system-wide communications
         self.dispatcher = None
@@ -394,18 +398,21 @@ class SimpleTrain(Train):
     :param init_short: if True, initialize time@station at short range
     :param address: UUID of the train's internal hub
     :param direction: direction of movement on the track
+    :param start_sector: not used
     '''
     def __init__(self, name, gui_id="0", ncars=2, lock=None, report=False, record=False, linear=False,
                  init_short=True, gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
                  direction=DIRECTION_A,
-                 address=uuid_definitions.HUB_TEST): # test hub
+                 address=uuid_definitions.HUB_TEST,
+                 start_sector=None): # test hub
 
         super(SimpleTrain, self).__init__(name, gui_id, ncars=ncars, lock=lock,
                                           report=report, record=record, linear=linear,
                                           init_short=init_short, gui=gui, led_color=led_color,
                                           led_secondary_color=led_secondary_color,
                                           direction=direction,
-                                          address=address)
+                                          address=address,
+                                          start_sector=start_sector)
 
         self.headlight_handler = None
 
@@ -462,17 +469,22 @@ class SmartTrain(Train):
     :param init_short: if True, initialize time@station at short range
     :param address: UUID of the train's internal hub
     :param direction: direction of movement on the track
+    :param start_sector: sector where train starts from, or None for station start.
+                         Train should be physically placed in the inter-sector zone
+                         that immediately succeeds this sector.
     '''
     def __init__(self, name, gui_id="0", ncars=2, lock=None, report=False, record=False, linear=False,
                  init_short=True, gui=None, led_color=COLOR_BLUE, led_secondary_color=COLOR_ORANGE,
-                 direction=DIRECTION_A, address=uuid_definitions.HUB_TEST): # test hub
+                 direction=DIRECTION_A, address=uuid_definitions.HUB_TEST,
+                 start_sector=None):
 
         super(SmartTrain, self).__init__(name, gui_id, ncars=ncars, lock=lock,
                                          report=report, record=record, linear=linear,
-                                          init_short=init_short, gui=gui, led_color=led_color,
-                                          led_secondary_color=led_secondary_color,
-                                          direction=direction,
-                                          address=address)
+                                         init_short=init_short, gui=gui, led_color=led_color,
+                                         led_secondary_color=led_secondary_color,
+                                         direction=direction,
+                                         address=address,
+                                         start_sector=start_sector)
 
         self.hub.vision_sensor.subscribe(self._vision_sensor_callback, granularity=4, mode=6)
 
@@ -486,9 +498,14 @@ class SmartTrain(Train):
         clear_track()
 
     def initialize_sectors(self):
+        if self.start_sector is None:
+            self._initialize_sectors_station()
+        else:
+            self._initialize_sectors_line()
+
+    def _initialize_sectors_station(self):
         '''
-        When departing from a station, or when any situation requires a full
-        reset, re-initialize train sector tracking. This means:
+        When departing from a station, re-initialize train sector tracking. This means:
         1 - set current sector in train to None (train will formally be in the
             inter-sector zone)
         2 - set previous sector in train to the corresponding station
@@ -502,6 +519,34 @@ class SmartTrain(Train):
         # to the inter-sector zone.
         self.sector = None
         self.previous_sector = sectors[station_sector_names[self.direction]]
+
+        # event processor must be initialized to properly handle station sectors
+        self.event_processor.last_station_event = None
+
+        # train is initialized as if it were in the inter-sector zone right after
+        # the station. To prevent confusion, we report sector as based instead on
+        # the previous sector color.
+        self.report_sector(tk_color[self.previous_sector.color])
+
+    def _initialize_sectors_line(self):
+        '''
+        When departing from a place inside an inter-sector zone, re-initialize
+        train sector tracking. This means:
+        1 - set current sector in train to None
+        2 - set previous sector in train to the corresponding sector from which
+            it is departing.
+        Note that the train will be put immediately in the state represented
+        by this method, even though it is still stopped under control of the
+        timing thread set by method timed_stop_at_station.
+        '''
+        # assume train is departing from the previous sector before the inter-sector
+        # zone where it is located now; initialize its sector reference to the
+        # inter-sector zone.
+        self.sector = None
+        self.previous_sector = self.start_sector
+
+        # occupy sector right in front of this inter-sector zone
+        self.previous_sector.next[self.direction].occupier = self.name
 
         # event processor must be initialized to properly handle station sectors
         self.event_processor.last_station_event = None
@@ -558,6 +603,9 @@ class SmartTrain(Train):
 
         # immediately occupy next sector
         next_sector.occupier = self.name
+
+        # make sure previous sector is released.
+        self.previous_sector.occupier = None
 
         # train is departing either from station, or from a sector end signal,
         # so gui displays inter-sector color

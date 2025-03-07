@@ -6,12 +6,12 @@ from pylgbst.hub import RemoteHandset, RemoteButton, MsgHubAttachedIO
 # logging.basicConfig(level=logging.DEBUG)
 
 
-remote1 = RemoteHandset(address='CA1ADD7D-6619-B0DF-5D02-99B731959396')  # test handset
+# remote1 = RemoteHandset(address='CA1ADD7D-6619-B0DF-5D02-99B731959396')  # test handset
 # time.sleep(4)
-# remote2 = RemoteHandset(address='C8DEE900-B1ED-F26B-7992-6DC06438ADB5')  # train handset
+remote2 = RemoteHandset(address='C8DEE900-B1ED-F26B-7992-6DC06438ADB5')  # train handset
 
-print(remote1)
-# print(remote2)
+# print(remote1)
+print(remote2)
 
 class HandsetEvent:
     def __init__(self, button, button_set):
@@ -152,18 +152,18 @@ class HandsetHandler:
         #         # self.controller.handset_actions[button_set][button]()
 
 
-remote_handler_1 = HandsetHandler(remote1)
-# remote_handler_2 = HandsetHandler(remote2)
+# remote_handler_1 = HandsetHandler(remote1)
+remote_handler_2 = HandsetHandler(remote2)
 
-remote_handler_1.handset.port_A.subscribe(remote_handler_1.callback_from_button, mode=2)
-remote_handler_1.handset.port_B.subscribe(remote_handler_1.callback_from_button)
-# remote_handler_2.handset.port_A.subscribe(remote_handler_2.callback_from_button, mode=2)
-# remote_handler_2.handset.port_B.subscribe(remote_handler_2.callback_from_button)
+# remote_handler_1.handset.port_A.subscribe(remote_handler_1.callback_from_button, mode=2)
+# remote_handler_1.handset.port_B.subscribe(remote_handler_1.callback_from_button)
+remote_handler_2.handset.port_A.subscribe(remote_handler_2.callback_from_button, mode=2)
+remote_handler_2.handset.port_B.subscribe(remote_handler_2.callback_from_button)
 
 time.sleep(120)
 
-remote_handler_1.handset.port_A.unsubscribe(remote_handler_1.callback_from_button)
-remote_handler_1.handset.port_B.unsubscribe(remote_handler_1.callback_from_button)
-# remote_handler_2.handset.port_A.unsubscribe(remote_handler_2.callback_from_button)
-# remote_handler_2.handset.port_B.unsubscribe(remote_handler_2.callback_from_button)
+# remote_handler_1.handset.port_A.unsubscribe(remote_handler_1.callback_from_button)
+# remote_handler_1.handset.port_B.unsubscribe(remote_handler_1.callback_from_button)
+remote_handler_2.handset.port_A.unsubscribe(remote_handler_2.callback_from_button)
+remote_handler_2.handset.port_B.unsubscribe(remote_handler_2.callback_from_button)
 

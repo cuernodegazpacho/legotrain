@@ -7,7 +7,8 @@ from train import SimpleTrain, SmartTrain, CompoundTrain
 from event import CompoundTrainEventProcessor
 from gui import GUI
 from controller import Controller
-from track import DIRECTION_B
+from track import DIRECTION_B, sectors
+from signal import GREEN
 
 '''
 Correct startup sequence requires that, with the script already started, the train
@@ -55,13 +56,17 @@ if __name__ == '__main__':
     controller = Controller(train1, train2=train2)
 
     # ---------------------- Three-train setup  --------------------------------------------
+    #
+    # The 3rd train starts from the inter-sector zone right after the BLUE sector, in
+    # the clockwise direction (DIRECTION_A)
 
-    # train1 = SmartTrain("Blue", "1", lock=lock, report=True, record=True,
+    # train1 = SmartTrain("Blue", "1", ncars=2, lock=lock, report=True, record=True,
     #                     gui=gui, direction=DIRECTION_B, address=uuid_definitions.HUB_ORIG)
     # train2 = SmartTrain("Purple", "2", ncars=2, led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
     #                         init_short=False, gui=gui, address=uuid_definitions.HUB_NEW)
     # train3 = SmartTrain("Yellow", "3", ncars=0, led_color=COLOR_YELLOW, lock=lock, report=True, record=True,
-    #                         init_short=False, gui=gui, address=uuid_definitions.HUB_TEST)
+    #                         init_short=True, gui=gui, address=uuid_definitions.HUB_TEST,
+    #                         start_sector=sectors[BLUE])
     #
     # controller = Controller(train1, train2=train2, train3=train3,
     #                         handset_address=uuid_definitions.HANDSET_ORIG,
