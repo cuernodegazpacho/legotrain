@@ -248,26 +248,13 @@ in auto mode.
 
 ### Vision sensors
 
-The vision sensors are mounted in the train engines, sticking throughout an opening in the 
-structural main plate. The sensors are used to detect color tiles on the tracks as the train 
-moves over them. 
+The vision sensors are mounted in the train engines, pointing down and sticking throughout 
+an opening in the structural main plate. The sensors are used to detect color tiles on the 
+tracks as the train moves over them. 
 
-Make sure you mount the sensors in the same way as in the pictures below. They should protrude 
-below the main plate so the sensor head stays close to the color tiles on the track. Mounting 
-them fully recessed inside the train decreases their sensitivity and signal-to-noise ratio by a 
-significant amount, rendering color signal detection very unreliable.
+See [here](docs/Sensors.md) how to properly mount the sensors.
 
-Vision sensors should be connected to Port B on the Powered UP hub.
-
-#### Vision sensor mounted on 60197 train engine
-
-| <img src="docs/pics/DSC00921.jpeg" width="350"></img> |
-  <img src="docs/pics/DSC00923a.jpeg" width="350"></img> |
-  <img src="docs/pics/DSC00928a.jpeg" width="350"></img> |
-
-This video by [BrickGuy](https://www.youtube.com/@brickguy) shows how to do it: 
-
-https://www.youtube.com/watch?v=S83go28JEiU
+### Color discrimination
 
 I conducted experiments with a variety of tile colors in order to select particular combinations 
 that would work best for this project. Software used for these experiments can be found in 
