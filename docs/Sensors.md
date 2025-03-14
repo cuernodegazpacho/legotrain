@@ -9,9 +9,9 @@ I used LEGO® part #6254807 (Plate 2X2 Angle) as a mounting bracket:
 
 #### Vision sensor mounted on a 60197 train engine
 
-| <img src="docs/pics/DSC00921.jpeg" width="250"></img> |
-  <img src="docs/pics/DSC00923a.jpeg" width="250"></img> |
-  <img src="docs/pics/DSC00928a.jpeg" width="250"></img> |
+| <img src="pics/DSC00921.jpeg" width="250"></img> |
+  <img src="pics/DSC00923a.jpeg" width="250"></img> |
+  <img src="pics/DSC00928a.jpeg" width="250"></img> |
 
 #### Vision sensor mounted on a 60336 cargo train engine
 
@@ -23,9 +23,9 @@ wheels carriage, being longer than in train 60197, can bump on the sensor when o
 a curved track. The standard LEGO® curved track works OK, but non-standard third-party
 tracks may cause a problem. 
 
-| <img src="docs/pics/IMG_0026.jpg" width="250"></img> |
-| <img src="docs/pics/IMG_0027.jpg" width="250"></img> |
-  <img src="docs/pics/IMG_0029.jpeg" width="250"></img> |
+| <img src="pics/IMG_0026.jpg" width="250"></img> |
+| <img src="pics/IMG_0027.jpg" width="250"></img> |
+  <img src="pics/IMG_0029.jpeg" width="250"></img> |
 
 All numerical parameters used in the color sensing software were derived with the sensors
 mounted that way. Because of the high sensitivity to distance, these values won't work
