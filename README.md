@@ -137,8 +137,8 @@ composite train made by linking back-to-back two engines, with all cars in
 between (_CompoundTrain_). In this composite train, the front engine is represented 
 by an instance of _SimpleTrain_ equipped with LED headlights, and the rear engine 
 is represented by an instance of _SmartTrain_. The control software handles the 
-details of acceleration and braking with two engines working in reverse and with 
-uneven battery voltages as well (see video with example).
+details of acceleration and braking with two engines working in opposite senses 
+and with uneven battery voltages as well (see video with example).
 
 Currentlly these special configurations may not work properly because most of the 
 recent development work focused on the two-train configuration. I tested only that 
@@ -173,7 +173,7 @@ train, at any given time.
 The simple track configuration described above can be divided into four sectors;
 two are associated with each one of the stations, and two sectors laid out in between 
 the stations and connecting them. Sectors are marked by color tiles laid out on
-the track at each sectors end points, in such a way that a train, when moving over a color 
+the track at each sector end points, in such a way that a train, when moving over a color 
 tile, will send a signal to the controlling script. That way, the script can know where 
 the train is at that moment, and take actions accordingly. The station sectors differ 
 slightly from the above configuration, by having a red tile marking the point 

@@ -15,7 +15,7 @@ I used LEGO® part #6254807 (Plate 2X2 Angle) as a mounting bracket:
 
 #### Vision sensor mounted on a 60336 cargo train engine
 
-This particular engine requires some modifications since the hub box sits at the'
+This particular engine requires some modifications since the hub box sits at the
 very center of the engine, and thus blocks both access holes on the main structural
 plate. The hub must be mounted offseted to the back, leaving the front hole uncovered.
 The protruding sensor below the plate also needs special finish, to minimize stray light. 
