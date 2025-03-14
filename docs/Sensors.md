@@ -5,7 +5,7 @@ sensor sits from the colored tiles. Ambient ligth can also affect their performa
 
 I used LEGO® part #6254807 (Plate 2X2 Angle) as a mounting bracket:
 
-| <img src="docs/pics/Angle.jpg" width="250"></img> |
+| <img src="pics/Angle.jpg" width="250"></img> |
 
 #### Vision sensor mounted on a 60197 train engine
 
@@ -25,7 +25,7 @@ tracks may cause a problem.
 
 | <img src="pics/IMG_0026.jpg" width="250"></img> |
 | <img src="pics/IMG_0027.jpg" width="250"></img> |
-  <img src="pics/IMG_0029.jpeg" width="250"></img> |
+  <img src="pics/IMG_0029.jpg" width="250"></img> |
 
 All numerical parameters used in the color sensing software were derived with the sensors
 mounted that way. Because of the high sensitivity to distance, these values won't work
