@@ -18,9 +18,9 @@ I used LEGO® part #6254807 (Plate 2X2 Angle) as a mounting bracket:
 This particular engine requires some modifications since the hub box sits at the'
 very center of the engine, and thus blocks both access holes on the main structural
 plate. The hub must be mounted offseted to the back, leaving the front hole uncovered.
-The protruding sensor below the plate also needs special finish. The front
-wheels carriage, being longer than in train 60197, can bump on the sensor when on
-a curved track. The standard LEGO® curved track works OK, but non-standard third-party
+The protruding sensor below the plate also needs special finish, to minimize stray light. 
+The front wheels carriage, being longer than in train 60197, can bump on the sensor when 
+on a curved track. The standard LEGO® curved track works OK, but non-standard third-party
 tracks may cause a problem. 
 
 | <img src="pics/IMG_0026.jpg" width="250"></img> |
@@ -28,7 +28,7 @@ tracks may cause a problem.
   <img src="pics/IMG_0029.jpg" width="250"></img> |
 
 All numerical parameters used in the color sensing software were derived with the sensors
-mounted that way. Because of the high sensitivity to distance, these values won't work
+mounted as above. Because of the high sensitivity to distance, these values won't work
 well when sensors are mounted using other parts to hold them, even with slight different 
 distances.
 

@@ -4,7 +4,10 @@ Python scripts to automate LEGO® City trains.
 
 For the Powered UP Bluetooth-based LEGO® remote control system.
 
+(See how to mount sensors [here](docs/Sensors.md))
+
 (See colorimetry analysis of LEGO® colors [here](docs/Colorimetry.md))
+
 
 ## Functional examples
 
