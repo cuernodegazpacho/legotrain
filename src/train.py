@@ -501,65 +501,42 @@ class SmartTrain(Train):
         clear_track()
 
     def initialize_sectors(self):
-        if self.start_sector is None:
-            self._initialize_sectors_station()
-        else:
-            self._initialize_sectors_line()
-
-    def _initialize_sectors_station(self):
         '''
+        Re-initialize train sector tracking. This should be used only when trains
+        depart in auto mode.
+
         When departing from a station, re-initialize train sector tracking. This means:
         1 - set current sector in train to None (train will formally be in the
-            inter-sector zone)
-        2 - set previous sector in train to the corresponding station
-            sector from which it will depart.
+            inter-sector zone ahead of station)
+        2 - set previous sector in train to the corresponding station sector from
+            which it is departing.
         3 - mark station sector as occupied.
 
-        Note that the train will be put immediately in the state represented
-        by this method, even though it is still stopped at the station, under
-        control of the timing thread set by method timed_stop_at_station
-        '''
-
-        # assume train is departing from station; initialize its sector reference
-        # to the inter-sector zone.
-        self.sector = None
-        self.previous_sector = sectors[station_sector_names[self.direction]]
-
-        # mark station sector as occupied
-        self.previous_sector.occupy(self.name)
-
-        ct = datetime.datetime.now()
-        print(ct, " Train.py _initialize_sectors_station 532:   Train ", self.name, " occupying sector ",
-              self.previous_sector.color, self.previous_sector.occupier)
-
-
-        # event processor must be initialized to properly handle station sectors
-        self.event_processor.last_station_event = None
-
-        # train is initialized as if it were in the inter-sector zone right after
-        # the station. To prevent confusion, we report sector as based instead on
-        # the previous sector color, which should be the station color.
-        self.report_sector(tk_color[self.previous_sector.color])
-
-    def _initialize_sectors_line(self):
-        '''
-        When departing from a place inside an inter-sector zone, re-initialize
-        train sector tracking. This means:
+        When departing from an inter-sector zone:
         1 - set current sector in train to None
         2 - set previous sector in train to the corresponding sector from which
-            it is departing.
+            it is departing, that is, the sector right *before* the inter-sector zone.
+        3 - mark sector ahead of train as occupied.
+
         Note that the train will be put immediately in the state represented
         by this method, even though it is still stopped under control of the
         timing thread set by method timed_stop_at_station.
         '''
-        # assume train is departing from the previous sector before the inter-sector
-        # zone where it is located now; initialize its sector reference to the
-        # inter-sector zone.
         self.sector = None
-        self.previous_sector = self.start_sector
 
-        # occupy sector right in front of this inter-sector zone
-        self.previous_sector.next[self.direction].occupy(self.name)
+        # departing from station
+        if self.start_sector is None:
+            self.previous_sector = sectors[station_sector_names[self.direction]]
+
+            # mark station sector as occupied
+            self.previous_sector.occupy(self.name)
+
+        # departing from inter-sector zone
+        else:
+            self.previous_sector = self.start_sector
+
+            # occupy sector right in front of this inter-sector zone
+            self.previous_sector.next[self.direction].occupy(self.name)
 
         ct = datetime.datetime.now()
         print(ct, " Train.py _initialize_sectors_line 565:   Train ", self.name, " occupying sector ",
