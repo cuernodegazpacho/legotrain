@@ -1,6 +1,8 @@
-import time
+import time, datetime
 from time import sleep
 from threading import Timer
+
+from pylgbst.peripherals import COLOR_RED, COLOR_GREEN
 
 from signal import RED, GREEN, BLUE, YELLOW, PURPLE, INTER_SECTOR
 from track import StructuredSector, sectors, xtrack, XTrack
@@ -154,7 +156,10 @@ class EventProcessor:
                 # place, immediately start a slowdown to minimum speed. Note that
                 # this logic depends in part of the specific track layout.
                 # TODO generalize handling for regular sectors anywhere in the track.
-                self._exit_sector(event)
+                # self._exit_sector(event)
+                next_sector = self.train.sector.next[self.train.direction]
+
+                self._handle_sector_exit(event, next_sector)
 
         elif self.train.sector is None:
             # train is in inter-sector zone, thus this event signals the entry
@@ -183,10 +188,23 @@ class EventProcessor:
         # lock sector. This was probably handled somewhere else, before
         # the train had taken the decision to enter the sector. But we do
         # it again here just in case.
-        self.train.sector.occupier = self.train.name
+        self.train.sector.occupy(self.train.name)
+
+        ct = datetime.datetime.now()
+        print(ct, " Event.py _enter_sector 194:   Train ", self.train.name, " occupying sector ", self.train.sector.color)
 
         # make sure previous sector is released.
-        self.train.previous_sector.occupier = None
+        self.train.previous_sector.release(self.train.name)
+
+        ct = datetime.datetime.now()
+        print(ct, " Event.py _enter_sector 200:   Train ", self.train.name, " releasing sector ",
+              self.train.previous_sector.color)
+
+
+        # in case train departed from an inter-sector zone, we must force that
+        # from now on it should behave as a normal train. We reset the start_sector
+        # variable to its default value for a normal train.
+        self.train.start_sector = None
 
         # set up timer for sanity check to prevent false detections
         # of a spurious end-of-sector signal. The sector_time parameter
@@ -234,17 +252,20 @@ class EventProcessor:
             self._handle_subsector_transition(next_sector, event)
 
         else:
-            # leaving SLOW sub-sector, thus leaving the entire structured
-            # sector as well. Either do a full stop-and-wait, or keep going,
-            # based on occupancy status of next sector
-            if next_sector.occupier is not None and \
-                    next_sector.occupier != self.train.name:
-                # occupied: stop and keep interrogating next sector
-                self._stop_and_wait(next_sector)
-            else:
-                # next sector is free: exit current sector
-                # and keep moving
-                self._exit_sector(event)
+            self._handle_sector_exit(event, next_sector)
+
+    def _handle_sector_exit(self, event, next_sector):
+        # Either leaving a SLOW sub-sector, or a non-structured sector.
+        # Either do a full stop-and-wait, or keep going, based on occupancy
+        # status of next sector
+        if next_sector.occupier is not None and \
+                next_sector.occupier != self.train.name:
+            # occupied: stop and keep interrogating next sector
+            self._stop_and_wait(next_sector)
+        else:
+            # next sector is free: exit current sector
+            # and keep moving
+            self._exit_sector(event)
 
     def _handle_subsector_transition(self, next_sector, event):
         '''
@@ -268,7 +289,12 @@ class EventProcessor:
 
         else:
             # next sector is free. Grab it.
-            next_sector.occupier = self.train.name
+            next_sector.occupy(self.train.name)
+
+            ct = datetime.datetime.now()
+            print(ct, " Event.py _enter_sector 294:   Train ", self.train.name, " occupying sector ",
+                  next_sector.color)
+
 
             # drop speed to a reasonable value to cross over the inter-sector zone,
             # but avoid using train.down_speed(), since it kills any underlying threads.
@@ -302,15 +328,26 @@ class EventProcessor:
             self.train.report_sector(tk_color[event])
 
             # make sure previous sector is released.
-            self.train.previous_sector.occupier = None
+            self.train.previous_sector.release(self.train.name)
+
+            ct = datetime.datetime.now()
+            print(ct, " Event.py 333 process_station_event:   Train ", self.train.name,
+                  " releasing sector ", self.train.previous_sector.color)
 
             # mark current sector as occupied.
-            self.train.previous_sector.next[self.train.direction].occupier = self.train.name
+            self.train.previous_sector.next[self.train.direction].occupy(self.train.name)
+
+
+            ct = datetime.datetime.now()
+            print(ct, " Event.py 341 process_station_event:   occupying sector: ",
+                  self.train.previous_sector.next[self.train.direction].color, " occupier: ",
+                  self.train.previous_sector.next[self.train.direction].occupier)
+
 
             # after stopping at station, execute a Timer delay followed by a re-start
             self.train.timed_stop_at_station()
 
-            # if a secondary train instance is registered, call its stop
+            # if a second train instance is registered, call its stop
             # method. But *do not* call its timed delay routine, since this
             # functionality must be commanded by the current train only.
             if self.train.secondary_train is not None:
@@ -328,6 +365,8 @@ class EventProcessor:
             self.train.initialize_sectors()
 
     def _exit_sector(self, event, accelerate=True):
+
+        #TODO should be used for sectors, and station sectors
 
         # define speed to be used in inter-sector zone
         exit_speed = SECTOR_EXIT_SPEED
@@ -383,45 +422,49 @@ class EventProcessor:
         # only handle signal if sector and direction are self-consistent.
         # This is redundant for now, but we keep the code in here in the
         # hopes it might be needed when implementing other track layouts.
-        if (self.train.sector.color, self.train.direction) in xtrack.valid_signals:
-
-            # stop train if xtrack is booked
-            if not xtrack.is_free(self.train):
-
-                self.train.cancel_acceleration_thread()
-                self.train.cancel_speedup_timer()
-                self.train.cancel_station_timer()
-
-                # brake and wait until full stop
-                speed = self.train.power_index
-                self.accelerate(0, time=XTRACK_BRAKING_TIME)
-                time.sleep(XTRACK_BRAKING_TIME + 0.5) # leeway to account for inertia
-
-                # wait until crossing opens
-                while not xtrack.is_free(self.train):
-                    time.sleep(0.5)
-
-                # this is the train that last stopped at the xtrack
-                xtrack.last_stopped = self.train.name
-
-                # recover speed
-                self.accelerate(speed, time=2)
-
-            # if not booked, book it
-            else:
-                if xtrack.last_stopped is None or \
-                   (xtrack.last_stopped is not None and xtrack.last_stopped != self.train.name):
-                    xtrack.book(self.train)
-                else:
-                    xtrack.last_stopped = None
+        # if (self.train.sector.color, self.train.direction) in xtrack.valid_signals:
+        #
+        #     # stop train if xtrack is booked
+        #     if not xtrack.is_free(self.train):
+        #
+        #         self.train.cancel_acceleration_thread()
+        #         self.train.cancel_speedup_timer()
+        #         self.train.cancel_station_timer()
+        #
+        #         # brake and wait until full stop
+        #         speed = self.train.power_index
+        #         self.accelerate(0, time=XTRACK_BRAKING_TIME)
+        #         time.sleep(XTRACK_BRAKING_TIME + 0.5) # leeway to account for inertia
+        #
+        #         # wait until crossing opens
+        #         while not xtrack.is_free(self.train):
+        #             time.sleep(0.5)
+        #
+        #         # this is the train that last stopped at the xtrack
+        #         xtrack.last_stopped = self.train.name
+        #
+        #         # recover speed
+        #         self.accelerate(speed, time=2)
+        #
+        #     # if not booked, book it
+        #     else:
+        #         if xtrack.last_stopped is None or \
+        #            (xtrack.last_stopped is not None and xtrack.last_stopped != self.train.name):
+        #             xtrack.book(self.train)
+        #         else:
+        #             xtrack.last_stopped = None
 
     def _handle_station_entry(self, event):
+
+        #TODO move closer to other station-related methods
+
         # on station entry, decelerate to entry speed. A station sector
         # must use its max_speed parameter to define the entry speed.
         if self.train.sector is not None:
             speed = self.train.sector.max_speed
         else:
             speed = STATION_SPEED
+
         self.accelerate(speed, time=1.0)
 
     def accelerate(self, new_power_index, time=1.0):
@@ -475,12 +518,28 @@ class EventProcessor:
         self.train.accelerate(power_index_range, power_index_sign, sleep_time=sleep_time)
 
     def _stop_and_wait(self, next_sector):
+
+        #TODO should handle both station, and mid-line stops
+
         self.train.stop(from_handset=False)
+        self.train.led_handler.set_solid(COLOR_RED)
+
+        ct = datetime.datetime.now()
+        print(ct, " Event.py 528  _stop_and_wait:   Train ", self.train.name, " stopped. Next sector is ",
+              next_sector.color, " and is occupied by ", next_sector.occupier)
 
         # make sure we wait for the next sector to go free.
         while next_sector.occupier is not None and \
               next_sector.occupier != self.train.name:
-            time.sleep(0.3)
+
+            # ct = datetime.datetime.now()
+            # print(ct, " Event.py 536  _stop_and_wait:   Train ", self.train.name, " stopped. Next sector is ",
+            #       next_sector.color, next_sector, " and is occupied by ", next_sector.occupier)
+
+            time.sleep(2.)
+
+        self.train.led_handler.set_solid(COLOR_GREEN)
+        sleep(1.0)
 
         # acceleration is handled by restart_movement
         self._exit_sector("from stop and wait", accelerate=False)
@@ -515,7 +574,7 @@ class EventProcessor:
         #         # if next sector (where the train is physically in now) is not occupied,
         #         # grab it
         #         if self.train.sector.next[self.train.direction].occupier is None:
-        #             self.train.sector.next[self.train.direction].occupier = self.train.name
+        #             self.train.sector.next[self.train.direction].occupy(self.train.name)
         #             self.train.previous_sector = self.train.sector
         #             self.train.sector = self.train.sector.next
         #
@@ -599,7 +658,7 @@ class CompoundTrainEventProcessor(EventProcessor):
             # after stopping at station, execute a Timer delay followed by a re-start
             self.train.train_rear.timed_stop_at_station()
 
-            # if a secondary train instance is registered, call its stop
+            # if a second train instance is registered, call its stop
             # method. But *do not* call its timed delay routine, since this
             # functionality must be commanded by the current train only.
             self.train.train_front.stop(from_handset=False)

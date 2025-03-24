@@ -29,7 +29,7 @@ class Train:
     The hub LED can be set to any supported color. A different color can be used on
     each train initialization. This is useful for visually keeping track of multiple trains
     simultaneously moving on the track (the handset LED will remain white throughout). The
-    LED will blink between the chosen color and a secondary color, whenever the motor power
+    LED will blink between the chosen color and a second color, whenever the motor power
     is set to zero (train is stopped). The original blinking with red color signaling low
     battery remains unchanged.
 
@@ -47,7 +47,7 @@ class Train:
     :param lock: global lock used for threading access
     :param gui: instance of GUI, used to report status info
     :param led_color: primary LED color used in this train instance
-    :param led_secondary_color: secondary LED color used to signal a stopped train
+    :param led_secondary_color: second LED color used to signal a stopped train
     :param report: if True, report voltage and current
     :param record: if True, record voltage and current in file (only if report=True)
     :param linear: if True, use motor's linear duty cycle curve
@@ -169,7 +169,7 @@ class Train:
             _print_values()
 
         self.hub.voltage.subscribe(_report_voltage, mode=Voltage.VOLTAGE_L, granularity=5)
-        self.hub.current.subscribe(_report_current, mode=Current.CURRENT_L, granularity=7)
+        self.hub.current.subscribe(_report_current, mode=Current.CURRENT_L, granularity=15)
 
     def report_astation(self):
         # update GUI with @station value
@@ -231,6 +231,9 @@ class Train:
 
         self.set_power(0, force_led_blink=True)
 
+    def is_stuck(self):
+        return self.led_handler.stopped_at_red
+
     def set_power(self, power_index, force_led_blink=False):
         self.power_index = power_index
         self.motor_handler.set_motor_power(self.power_index, self.voltage)
@@ -277,7 +280,7 @@ class Train:
                 break
             self.set_power(k * power_index_signal)
             if self.secondary_train is not None:
-                # secondary train runs in opposite direction as this train
+                # second train runs in opposite direction as this train
                 self.secondary_train.set_power(- k * power_index_signal)
             sleep(sleep_time)
         self.stop_acceleration_thread = False
@@ -335,7 +338,7 @@ class MotorHandler:
     # experimental correction for number of cars. The correction should
     # be unity for default number of cars (2), and decrease voltage with one
     # or zero cars.
-    ncars_correction = [0.85, 0.92, 1.]
+    ncars_correction = [0.80, 0.90, 1.]
 
     def __init__(self, motor, ncars, lock, linear=False):
         self.motor = motor
@@ -391,7 +394,7 @@ class SimpleTrain(Train):
     :param lock: lock used for threading access
     :param gui: instance of GUI, used to report status info
     :param led_color: primary LED color used in this train instance
-    :param led_secondary_color: secondary LED color used to signal a stopped train
+    :param led_secondary_color: second LED color used to signal a stopped train
     :param report: if True, report voltage and current
     :param record: if True, record voltage and current in file (only if report=True)
     :param linear: if True, use motor's linear duty cycle curve
@@ -462,7 +465,7 @@ class SmartTrain(Train):
     :param lock: lock used for threading access
     :param gui: instance of GUI, used to report status info
     :param led_color: primary LED color used in this train instance
-    :param led_secondary_color: secondary LED color used to signal a stopped train
+    :param led_secondary_color: second LED color used to signal a stopped train
     :param report: if True, report voltage and current
     :param record: if True, record voltage and current in file (only if report=True)
     :param linear: if True, use motor's linear duty cycle curve
@@ -510,6 +513,8 @@ class SmartTrain(Train):
             inter-sector zone)
         2 - set previous sector in train to the corresponding station
             sector from which it will depart.
+        3 - mark station sector as occupied.
+
         Note that the train will be put immediately in the state represented
         by this method, even though it is still stopped at the station, under
         control of the timing thread set by method timed_stop_at_station
@@ -520,12 +525,20 @@ class SmartTrain(Train):
         self.sector = None
         self.previous_sector = sectors[station_sector_names[self.direction]]
 
+        # mark station sector as occupied
+        self.previous_sector.occupy(self.name)
+
+        ct = datetime.datetime.now()
+        print(ct, " Train.py _initialize_sectors_station 532:   Train ", self.name, " occupying sector ",
+              self.previous_sector.color, self.previous_sector.occupier)
+
+
         # event processor must be initialized to properly handle station sectors
         self.event_processor.last_station_event = None
 
         # train is initialized as if it were in the inter-sector zone right after
         # the station. To prevent confusion, we report sector as based instead on
-        # the previous sector color.
+        # the previous sector color, which should be the station color.
         self.report_sector(tk_color[self.previous_sector.color])
 
     def _initialize_sectors_line(self):
@@ -546,7 +559,12 @@ class SmartTrain(Train):
         self.previous_sector = self.start_sector
 
         # occupy sector right in front of this inter-sector zone
-        self.previous_sector.next[self.direction].occupier = self.name
+        self.previous_sector.next[self.direction].occupy(self.name)
+
+        ct = datetime.datetime.now()
+        print(ct, " Train.py _initialize_sectors_line 565:   Train ", self.name, " occupying sector ",
+              self.previous_sector.next[self.direction].color)
+
 
         # event processor must be initialized to properly handle station sectors
         self.event_processor.last_station_event = None
@@ -556,21 +574,28 @@ class SmartTrain(Train):
         # the previous sector color.
         self.report_sector(tk_color[self.previous_sector.color])
 
-    def timed_stop_at_station(self):
+    def timed_stop_at_station(self, time_to_wait=None):
         # this only happens in auto mode
         if not self.auto:
             return
 
         # start a timed wait interval at a station
         self.cancel_station_timer()
-        time_station = self.variable_timer.get_time_station()
-        self.timer_station = Timer(time_station, self.restart_movement)
+        if time_to_wait is None:
+            time_station = self.variable_timer.get_time_station()
+        else:
+            time_station = time_to_wait
+
+        self.timer_station = Timer(time_station, self.restart_movement, kwargs={"release": True})
         self.timer_station.start()
 
         self.astation = time_station
         self.report_astation()
 
-    def restart_movement(self):
+    def restart_movement(self, release=False):
+
+        #TODO should handle just train stuff. Leave sector stuff to event handler
+        # probably has to be broken in two separate methods
 
         self.cancel_acceleration_thread()
 
@@ -585,6 +610,14 @@ class SmartTrain(Train):
         self.led_handler.set_solid(COLOR_RED)
         previous_sector = self.previous_sector
         next_sector = previous_sector.next[self.direction]
+
+
+        ct = datetime.datetime.now()
+        print(ct, " Train.py 616  restart_movement  Train ", self.name, " checking sector: ",
+              next_sector.color, " occupied by ",
+              next_sector.occupier)
+
+
         while next_sector.occupier is not None and \
               next_sector.occupier != self.name:
             time.sleep(0.5)
@@ -602,10 +635,19 @@ class SmartTrain(Train):
             xtrack.book(self)
 
         # immediately occupy next sector
-        next_sector.occupier = self.name
+        next_sector.occupy(self.name)
 
-        # make sure previous sector is released.
-        self.previous_sector.occupier = None
+        ct = datetime.datetime.now()
+        print(ct, " Train.py restart_movement 642:   Train ", self.name, " occupying sector ",
+              next_sector.color)
+
+        # if asked, release previous sector. This normally
+        # has to be done only when departing a station.
+        if False:
+            self.previous_sector.release(self.name)
+
+            ct = datetime.datetime.now()
+            print(ct, " Train.py 622  restart_movement:   Train ", self.name, " releasing sector ", self.previous_sector.color)
 
         # train is departing either from station, or from a sector end signal,
         # so gui displays inter-sector color
@@ -621,7 +663,7 @@ class SmartTrain(Train):
 
         # need to find out if this train is running forward or reverse
         # Cannot use self.power_index since it is set to zero when train is
-        # stopped. We use the existence of a secondary train to figure
+        # stopped. We use the existence of a second train to figure
         # out the sense of movement.
         if self.secondary_train is None:
             power_index_signal = 1
@@ -783,6 +825,10 @@ class LEDHandler:
 
         self.set_status_led(1)
 
+        # flag that tells if the LED is representing a situation
+        # where the train is stopped at a red signal light.
+        self.stopped_at_red = False
+
     def set_solid(self, color):
         self._cancel_led_thread()
         self._cancel_delay_timer()
@@ -790,6 +836,9 @@ class LEDHandler:
         self.lock.acquire()
         self.led.set_color(color)
         self.lock.release()
+
+        # set stopped flag when train sees a red light (occupied sector)
+        self.stopped_at_red = color == COLOR_RED
 
     def set_status_led(self, new_power_index, force_blink=False):
         # here is the logic that prevents redundant BLE messages to be sent to the train hub

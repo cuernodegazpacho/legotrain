@@ -1,3 +1,4 @@
+import datetime
 from threading import RLock
 
 from signal import RED, GREEN, BLUE, PURPLE
@@ -16,7 +17,7 @@ TIME_BLIND = 0.7
 DEFAULT_BRAKING_TIME = 2.0
 XTRACK_BRAKING_TIME = 0.5
 
-MAX_SPEED = 6
+MAX_SPEED = 5
 MAX_SPEED_TIME = 4.5 # s
 DEFAULT_SPEED = 4
 SECTOR_EXIT_SPEED = 3
@@ -83,6 +84,43 @@ class Sector():
 
         # This attribute tells what train owns the sector.
         self.occupier = None
+
+    def occupy(self, train_id):
+        '''
+        Occupy the sector.
+
+        The sector's occupy property is checked to prevent a train to occuoy
+        a sector that is already occupied.
+
+        :param train_id: the ID string of the train that occupies the sector
+        '''
+        if self.occupier is None or self.occupier == train_id:
+
+
+            # ct = datetime.datetime.now()
+            # print(ct, " Track.py occupy 101:   Train ", train_id, " occupying sector ", self.color)
+
+
+            self.occupier = train_id
+        else:
+            raise Exception("Attempted to occupy an already occupied sector: ", self.color)
+
+    def release(self, train_id):
+        '''
+        Release the sector. The train id has to match the id passed
+        from the caller. This prevents that a sector be occupied
+        by one train and released by another.
+
+        :param train_id: the ID string of the train that is occupying the sector
+        '''
+        if self.occupier is not None and self.occupier == train_id:
+
+
+            # ct = datetime.datetime.now()
+            # print(ct, " Track.py release 120:   Train ", train_id, " releasing sector ", self.color)
+
+
+            self.occupier = None
 
 
 class StructuredSector(Sector):

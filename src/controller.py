@@ -1,5 +1,6 @@
-import time
+import time, datetime
 from time import sleep
+from threading import Thread
 
 from pylgbst.hub import RemoteHandset
 from pylgbst.peripherals import RemoteButton
@@ -7,6 +8,7 @@ from pylgbst.peripherals import RemoteButton
 import uuid_definitions
 
 import track
+import signal
 from train import SmartTrain, CompoundTrain
 
 DUAL = "dual"
@@ -40,14 +42,20 @@ class Controller:
         if self.train3 is None:
             self.train3 = _DummyTrain("Dummy")
 
+        # when using a second handset, we need yet another dummy train to
+        # receive dummy commands from the right button set on the second
+        # handset. This might be the place to add additional controls such
+        # as for motorized switches.
+        self.train4 = _DummyTrain("place holder")
+
         # sleep(5)
         self.handset = RemoteHandset(address=handset_address)
         self.handset_handler = HandsetHandler(self, self.handset)
 
         if handset2_address is not None:
-            sleep(5)
+            # sleep(5)
             self.handset2 = RemoteHandset(address=handset2_address)
-            self.handset2_handler = HandsetHandler(self, self.handset2)
+            self.handset2_handler = HandsetHandler(self, self.handset2, second=True)
         else:
             self.handset2 = None
             self.handset2_handler = None
@@ -85,6 +93,10 @@ class Controller:
         self.train1.stop()
         self.train2.stop()
         self.train3.stop()
+
+        self.dispatcher.stop()
+
+        track.clear_track()
 
         #TODO this is begging for a refactor
 
@@ -138,11 +150,16 @@ class Controller:
             self.train2.initialize_sectors()
             self.train3.initialize_sectors()
 
-            self.train1.timed_stop_at_station()
+            # override random time generator to force trains to start in a pre-defined
+            # sequence. This is necessary because train3 is departing not from a station
+            # (on a 2-station track layout), but from an inter-sector region. It has to
+            # start first in order to immediately occupy the sector ahead. We used this as
+            # well to help in debugging the 3-train configuration.
+            self.train1.timed_stop_at_station(time_to_wait=10)
             time.sleep(0.5)
-            self.train2.timed_stop_at_station()
+            self.train2.timed_stop_at_station(time_to_wait=20)
             time.sleep(0.5)
-            self.train3.timed_stop_at_station()
+            self.train3.timed_stop_at_station(time_to_wait=1)
 
         # restart mode for configuration with compound train
         if isinstance(self.train1, CompoundTrain):
@@ -150,6 +167,8 @@ class Controller:
             self.train1.train_rear.initialize_sectors()
             self.train1.train_rear.timed_stop_at_station()
 
+        # dispatcher will detect and solve stuck train situations
+        self.dispatcher.start_stuck_thread()
 
 class HandsetEvent:
     def __init__(self, button):
@@ -158,28 +177,37 @@ class HandsetEvent:
 
 
 class HandsetHandler:
-    def __init__(self, controller, handset):
+    def __init__(self, controller, handset, second=False):
         self.handset = handset
         self.controller = controller
+        self.second = second
 
         # helper variables for handling more complex gestures
         self.previous_red_event = HandsetEvent(RemoteButton.RED)
         self.previous_event = HandsetEvent(RemoteButton.RELEASE)
         self.events_to_skip = 0
 
-        # actions associated with each handset button. Note that
-        # the red buttons require special handling thus their
-        # events are processed elsewhere.
+        # actions associated with each handset button.
+        # Note that the red buttons require special handling,
+        # thus their associated events are processed elsewhere.
+        # 'second' tells that the handler is associated with the
+        # second handset in a 3-train setup.
+        train1 = self.controller.train1
+        train2 = self.controller.train2
+        if self.second:
+            train1 = self.controller.train3
+            train2 = self.controller.train4
+
         self.handset_actions = {
             RemoteButton.LEFT:
                 {
-                    RemoteButton.PLUS: self.controller.train1.up_speed,
-                    RemoteButton.MINUS: self.controller.train1.down_speed
+                    RemoteButton.PLUS: train1.up_speed,
+                    RemoteButton.MINUS: train1.down_speed
                 },
             RemoteButton.RIGHT:
                 {
-                    RemoteButton.PLUS: self.controller.train2.up_speed,
-                    RemoteButton.MINUS: self.controller.train2.down_speed
+                    RemoteButton.PLUS: train2.up_speed,
+                    RemoteButton.MINUS: train2.down_speed
                     # TODO
                     # RemoteButton.PLUS: self.controller.train1.switch_semaphore,
                     # RemoteButton.RED: self.controller.train1.switch_semaphore,
@@ -189,8 +217,8 @@ class HandsetHandler:
 
         # actions associated with a short RED button press
         self.handset_short_red_actions = {
-            RemoteButton.LEFT: self.controller.train1.stop,
-            RemoteButton.RIGHT: self.controller.train2.stop
+            RemoteButton.LEFT: train1.stop,
+            RemoteButton.RIGHT: train2.stop
         }
 
         # actions associated with long and dual red button actions
@@ -269,9 +297,49 @@ class Dispatcher:
     broadcast to other trains in the system; the dispatcher should be the way to
     do this. The class exists to provide some degree of decoupling and isolation
     among the trains themselves, and the trains and controller.
+
+    In this version, we use the dispatcher to untangle a lock situation that
+    appears on 3-train setups. Sometimes the 3 trains may be stuck with closed
+    sectors in front all of them. The dispatcher finds that situation by periodically
+    quering the status of each train. When it finds that the 3 trains are stopped
+    in a red-signal situation (it queries their LED status light), it overrides the
+    'occupied' status of specific sector in front one of the trains. This is dependent
+    on the specific layout, and should be generalized.
     '''
     def __init__(self, controller):
         self.controller = controller
+
+        self.start_stuck_thread()
+
+    def start_stuck_thread(self):
+        self._stop = False
+        self.stuck_thread = Thread(target=self._query_train_stuck)
+        self.stuck_thread.start()
+
+    def _query_train_stuck(self):
+        while(1):
+            # to break from the thread
+            if self._stop:
+                break
+
+            # check train status, and free them
+            if self.controller.train1.is_stuck() & \
+               self.controller.train2.is_stuck() & \
+               self.controller.train3.is_stuck():
+
+                # unblock sector TODO this depends on the particular track layout
+                track.sectors[signal.BLUE].occupier = None
+
+                ct = datetime.datetime.now()
+                print(ct, " Dispatcher:  "," releasing sector ", track.sectors[signal.BLUE].color)
+
+            sleep(5.0)
+
+    def _free_trains(self):
+        pass
+
+    def stop(self):
+        self._stop = True
 
     def emergency_stop(self):
         self.controller.reset_all()
@@ -290,8 +358,18 @@ class _DummyTrain():
         return
     def initialize_sectors(self):
         return
-    def timed_stop_at_station(self):
+    def timed_stop_at_station(self, time_to_wait=None):
         return
     def cancel_all_threads(self):
         return
+    def is_stuck(self):
+        return False
+
+
+# testing the Dispatcher class
+if __name__ == '__main__':
+
+    dispatcher = Dispatcher(None)
+    sleep(15)
+    dispatcher.stop()
 
