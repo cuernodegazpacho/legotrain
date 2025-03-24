@@ -8,7 +8,7 @@ from pylgbst.hub import RemoteHandset, RemoteButton, MsgHubAttachedIO
 
 # remote1 = RemoteHandset(address='CA1ADD7D-6619-B0DF-5D02-99B731959396')  # test handset
 # time.sleep(4)
-remote2 = RemoteHandset(address='C8DEE900-B1ED-F26B-7992-6DC06438ADB5')  # train handset
+remote2 = RemoteHandset(address='F99D3D11-B719-5CB6-522B-DEB4D1824A58')  # orig handset
 
 # print(remote1)
 print(remote2)
@@ -30,7 +30,7 @@ class HandsetHandler:
         self.events_to_skip = 0
 
     def callback_from_button(self, button, button_set):
-        # print("value from callback: ", button, button_set)
+        print("value from callback: ", button, button_set)
 
         if self.events_to_skip > 0:
             print(self.events_to_skip)
@@ -38,6 +38,8 @@ class HandsetHandler:
             return
 
         event = HandsetEvent(button, button_set)
+
+        print(event)
 
         # if self.previous_red_event is not None:
         #     print("previous: ", self.previous_red_event, self.previous_red_event.button)

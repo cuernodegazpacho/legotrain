@@ -7,7 +7,7 @@ from pylgbst.peripherals import Peripheral, EncodedMotor, TiltSensor, Current, V
 
 # logging.basicConfig(level=logging.DEBUG)
 
-hub = SmartHub(address='86996732-BF5A-433D-AACE-5611D4C6271D')   # test hub
+hub = SmartHub(address='818B3D5B-EE92-09A6-7594-E7333A2A7C41')   # test hub
 # hub = HandsetRemote(address='2BC6E69B-5F56-4716-AD8C-7B4D5CBC7BF8')  # test handset
 # hub = RemoteHandset(address='5D319849-7D59-4EBB-A561-0C37C5EF8DCD')  # train handset
 
