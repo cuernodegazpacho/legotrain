@@ -88,7 +88,6 @@ class EventProcessor:
         TODO this badly needs refactoring. A conditional-plagued
         code is not conducive to a modular, scalable design.
         '''
-
         # report signal color
         self.train.report_signal(tk_color[event])
 
@@ -191,13 +190,13 @@ class EventProcessor:
         self.train.sector.occupy(self.train.name)
 
         ct = datetime.datetime.now()
-        print(ct, " Event.py _enter_sector 194:   Train ", self.train.name, " occupying sector ", self.train.sector.color)
+        print(ct, " Event.py _enter_sector 193:   Train ", self.train.name, " occupying sector ", self.train.sector.color)
 
         # make sure previous sector is released.
         self.train.previous_sector.release(self.train.name)
 
         ct = datetime.datetime.now()
-        print(ct, " Event.py _enter_sector 200:   Train ", self.train.name, " releasing sector ",
+        print(ct, " Event.py _enter_sector 199:   Train ", self.train.name, " releasing sector ",
               self.train.previous_sector.color)
 
 
@@ -292,7 +291,7 @@ class EventProcessor:
             next_sector.occupy(self.train.name)
 
             ct = datetime.datetime.now()
-            print(ct, " Event.py _enter_sector 294:   Train ", self.train.name, " occupying sector ",
+            print(ct, " Event.py _handle_subsector_transition 294:   Train ", self.train.name, " occupying sector ",
                   next_sector.color)
 
 
@@ -302,6 +301,22 @@ class EventProcessor:
             # speed = DEFAULT_SPEED #TODO
 
             self.accelerate(self._get_exit_speed(), time=0.5)
+
+
+#TODO refactoring path: separate two classes of problems:
+#  1 - sensing sector status (waiting to open), and operating a signal (open/close)
+#  2 - rules for how to proceed when a given sector is queried for status, or
+#      how to proceed to open / close a sector. For instance, a sector could be
+#      opened when the train crosses a sector end signal, or when it crosses a
+#      sector start signal (next sector).
+#
+# Use Notes file for 1-train setup analysis. Procedure:
+#  - see where each one of the code snipets in here falls into the timeline.
+#
+
+
+
+
 
     def process_station_event(self, event):
         '''
@@ -331,7 +346,7 @@ class EventProcessor:
             self.train.previous_sector.release(self.train.name)
 
             ct = datetime.datetime.now()
-            print(ct, " Event.py 333 process_station_event:   Train ", self.train.name,
+            print(ct, " Event.py 349 process_station_event:   Train ", self.train.name,
                   " releasing sector ", self.train.previous_sector.color)
 
             # mark current sector as occupied.
@@ -339,7 +354,7 @@ class EventProcessor:
 
 
             ct = datetime.datetime.now()
-            print(ct, " Event.py 341 process_station_event:   occupying sector: ",
+            print(ct, " Event.py 357 process_station_event:   occupying sector: ",
                   self.train.previous_sector.next[self.train.direction].color, " occupier: ",
                   self.train.previous_sector.next[self.train.direction].occupier)
 
@@ -365,6 +380,11 @@ class EventProcessor:
             self.train.initialize_sectors()
 
     def _exit_sector(self, event, accelerate=True):
+
+        ct = datetime.datetime.now()
+        print(ct, " Event.py 385 _exit_sector:   Train ", self.train.name,
+              " event: ", event)
+
 
         #TODO should be used for sectors, and station sectors
 
@@ -525,7 +545,7 @@ class EventProcessor:
         self.train.led_handler.set_solid(COLOR_RED)
 
         ct = datetime.datetime.now()
-        print(ct, " Event.py 528  _stop_and_wait:   Train ", self.train.name, " stopped. Next sector is ",
+        print(ct, " Event.py 543  _stop_and_wait:   Train ", self.train.name, " stopped. Next sector is ",
               next_sector.color, " and is occupied by ", next_sector.occupier)
 
         # make sure we wait for the next sector to go free.
@@ -533,7 +553,7 @@ class EventProcessor:
               next_sector.occupier != self.train.name:
 
             # ct = datetime.datetime.now()
-            # print(ct, " Event.py 536  _stop_and_wait:   Train ", self.train.name, " stopped. Next sector is ",
+            # print(ct, " Event.py 551  _stop_and_wait:   Train ", self.train.name, " stopped. Next sector is ",
             #       next_sector.color, next_sector, " and is occupied by ", next_sector.occupier)
 
             time.sleep(2.)

@@ -49,7 +49,7 @@ if __name__ == '__main__':
     # ---------------------- Two-train setup (Smart self-driving) ----------------------------
 
     train1 = SmartTrain("Yellow", "1", lock=lock, report=True, record=True,
-                        gui=gui, direction=DIRECTION_B, address=uuid_definitions.HUB_TEST)
+                        gui=gui, direction=DIRECTION_B, address=uuid_definitions.HUB_ORIG)
     train2 = SmartTrain("Purple", "2", ncars=2, led_color=COLOR_PURPLE, lock=lock, report=True, record=True,
                             init_short=False, gui=gui, address=uuid_definitions.HUB_NEW)
 

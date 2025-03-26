@@ -1,4 +1,4 @@
-import sys
+import sys, traceback
 import time, datetime
 from time import sleep
 from threading import Thread, Timer, RLock
@@ -503,7 +503,7 @@ class SmartTrain(Train):
     def initialize_sectors(self):
         '''
         Re-initialize train sector tracking. This should be used only when trains
-        depart in auto mode.
+        are departing in auto mode.
 
         When departing from a station, re-initialize train sector tracking. This means:
         1 - set current sector in train to None (train will formally be in the
@@ -531,6 +531,10 @@ class SmartTrain(Train):
             # mark station sector as occupied
             self.previous_sector.occupy(self.name)
 
+            ct = datetime.datetime.now()
+            print(ct, " Train.py initialize_sectors 535:   Train ", self.name, " occupying sector ",
+                  self.previous_sector.color)
+
         # departing from inter-sector zone
         else:
             self.previous_sector = self.start_sector
@@ -538,9 +542,9 @@ class SmartTrain(Train):
             # occupy sector right in front of this inter-sector zone
             self.previous_sector.next[self.direction].occupy(self.name)
 
-        ct = datetime.datetime.now()
-        print(ct, " Train.py _initialize_sectors_line 565:   Train ", self.name, " occupying sector ",
-              self.previous_sector.next[self.direction].color)
+            ct = datetime.datetime.now()
+            print(ct, " Train.py initialize_sectors 546:   Train ", self.name, " occupying sector ",
+                  self.previous_sector.next[self.direction].color)
 
 
         # event processor must be initialized to properly handle station sectors
@@ -590,7 +594,7 @@ class SmartTrain(Train):
 
 
         ct = datetime.datetime.now()
-        print(ct, " Train.py 616  restart_movement  Train ", self.name, " checking sector: ",
+        print(ct, " Train.py 597  restart_movement  Train ", self.name, " checking sector: ",
               next_sector.color, " occupied by ",
               next_sector.occupier)
 
@@ -615,7 +619,7 @@ class SmartTrain(Train):
         next_sector.occupy(self.name)
 
         ct = datetime.datetime.now()
-        print(ct, " Train.py restart_movement 642:   Train ", self.name, " occupying sector ",
+        print(ct, " Train.py restart_movement 622:   Train ", self.name, " occupying sector ",
               next_sector.color)
 
         # if asked, release previous sector. This normally
@@ -624,7 +628,7 @@ class SmartTrain(Train):
             self.previous_sector.release(self.name)
 
             ct = datetime.datetime.now()
-            print(ct, " Train.py 622  restart_movement:   Train ", self.name, " releasing sector ", self.previous_sector.color)
+            print(ct, " Train.py 631  restart_movement:   Train ", self.name, " releasing sector ", self.previous_sector.color)
 
         # train is departing either from station, or from a sector end signal,
         # so gui displays inter-sector color
@@ -695,15 +699,17 @@ class SmartTrain(Train):
     def mark_exit_valid(self):
         self.just_entered_sector = False
 
-    # make train sensitive to vison sensor signals
+    # make train sensitive to vision sensor signals
     def activate_signals(self):
         self.signal_blind = False
 
     def switch_semaphore(self):
-        # this method is used only to debug the sector enter-exit logic.
-        # It should be called by a handset right button when in 1-train
-        # configuration. That way, pressing the button causes the sector
-        # to open and close.
+        # this method was used to:
+        # (i) debug the sector enter-exit logic. It should be called by a handset
+        # right button when in 1-train configuration. That way, pressing the button
+        # causes the sector to open and close.
+        # (ii) debug the xtrack logic.
+        # Keep the method in here just in case.
 
         # if sectors[GREEN].occupier is None:
         #     sectors[GREEN].occupier = "AAAA"
