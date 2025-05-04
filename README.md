@@ -34,6 +34,18 @@ Composite train with two engines:
 
 Video: https://www.youtube.com/watch?v=AUTcSPW_DJ4
 
+## Configurations
+
+The software was successfully run, so far, with the following configurations:
+
+- one train
+- two trains (default in this distribution)
+- two trains with a track crossing
+- three trains
+- one compound train with basic station stops
+
+Selection among these modes is performed by commenting code lines in module _main.py_.
+
 ## Requirements and installation
 
 This is *not* a plug-and-play software distribution. In order to use it,
@@ -52,10 +64,9 @@ Thus, familiarity with a good Python IDE, as well as some experience in using
 GitHub resources such as forking and branching, would greatly enhance your
 experience (and fun) with the software.
 
-The basic dependence is with package  https://github.com/undera/pylgbst 
-It in turn will require installation of a Python Bluetooth library that
- are available as well. See the documentation at the  *pylgbst* repo for
-further details.
+The basic dependence is with package  https://github.com/undera/pylgbst.
+It in turn requires installation of a Python Bluetooth library. See the 
+documentation at the  *pylgbst* repo for further details.
 
 My installation runs under Python 3.10 on a MacBook M1 Pro with Sonoma 14.2. 
 
@@ -74,11 +85,12 @@ python src/main.py
 ```
 Then one should turn the Powered UP hub on the train, and wait until it
 connects (the hub LED turns solid white for a while and then assumes the
-color specified in the _Train_ subclass constructor; see below). If a second 
-train is present, then turn its hub on. 
+color specified in the _Train_ subclass constructor; see below). If a second
+train is present, then turn its hub on. Same for a third train.
 
-When the hub(s) get connected, then turn on the hub (green) button in the handset.
+When the train hub(s) get connected, then turn on the hub (green) button in the handset.
 Once the handset connects, the GUI pops up on screen and the system is ready to run.
+In a 3-train configuration, one needs two handsets, that are turned on in succession.
 
 From that point on, no commands can be passed via keyboard or mouse (the GUI is
 strictly for status output). All manual commands should be input via the handset
@@ -86,7 +98,7 @@ strictly for status output). All manual commands should be input via the handset
 
 The software as distributed, supports the two-train configuration showed in the
 video above. That configuration is specified in the _src/main.py_ module. Other,
-inactive, configurartions exist in that file. The statements that implement
+inactive, configurations exist in that file. The statements that implement
 them are commented-out. You can comment and un-comment lines of code in that file
 in order to run other configurations. 
 
@@ -143,9 +155,9 @@ and with uneven battery voltages as well (see video with example).
 Currentlly these special configurations may not work properly because most of the 
 recent development work focused on the two-train configuration. I tested only that 
 the basic composite train (without track signals) works correctly, that is, it starts, 
-stops, accelerates, deccelerates, and reverses correctly, and its headlights also 
-work as expected. It should respond to red signals indicating station entry, but
-numerical parameters need to be adjusted by trial and error.
+stops, accelerates, deaccelerates, and reverses correctly, and its headlights also 
+work as expected. It should respond to red signals indicating station entry and stop
+points, but numerical parameters need to be adjusted by trial and error.
 
 #### Color LED signals
 
