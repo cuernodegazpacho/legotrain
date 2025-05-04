@@ -132,7 +132,7 @@ class Train:
         # GUI access
         self.gui = gui
         self.report_signal_timer = None
-        if self.gui is not None:
+        if self.gui is not None and xtrack is not None:
             xtrack.initialize(self)
 
         if report:
@@ -531,21 +531,12 @@ class SmartTrain(Train):
             # mark station sector as occupied
             self.previous_sector.occupy(self.name)
 
-            ct = datetime.datetime.now()
-            print(ct, " Train.py initialize_sectors 535:   Train ", self.name, " occupying sector ",
-                  self.previous_sector.color)
-
         # departing from inter-sector zone
         else:
             self.previous_sector = self.start_sector
 
             # occupy sector right in front of this inter-sector zone
             self.previous_sector.next[self.direction].occupy(self.name)
-
-            ct = datetime.datetime.now()
-            print(ct, " Train.py initialize_sectors 546:   Train ", self.name, " occupying sector ",
-                  self.previous_sector.next[self.direction].color)
-
 
         # event processor must be initialized to properly handle station sectors
         self.event_processor.last_station_event = None
@@ -592,43 +583,29 @@ class SmartTrain(Train):
         previous_sector = self.previous_sector
         next_sector = previous_sector.next[self.direction]
 
-
-        ct = datetime.datetime.now()
-        print(ct, " Train.py 597  restart_movement  Train ", self.name, " checking sector: ",
-              next_sector.color, " occupied by ",
-              next_sector.occupier)
-
-
-        while next_sector.occupier is not None and \
-              next_sector.occupier != self.name:
-            time.sleep(0.5)
+        while next_sector.occupier is not None and next_sector.occupier != self.name:
+            time.sleep(0.2)
 
         # when restarting movement, check for the existence of a xtrack object
         # ahead. In case there is one, check its status, and either book it
         # and proceed moving, or wait until the xtrack is freed.
-        xt1 = previous_sector.look_ahead
-        if xt1 is not None and isinstance(xt1, XTrack):
-            # occupied; wait for opening
-            while not xt1.is_free(self):
-                time.sleep(0.5)
+        if xtrack is not None:
+            xt1 = previous_sector.look_ahead
+            if xt1 is not None and isinstance(xt1, XTrack):
+                # occupied; wait for opening
+                while not xt1.is_free(self):
+                    time.sleep(0.5)
 
-            # book it when starting to leave
-            xtrack.book(self)
+                # book it when starting to leave
+                xtrack.book(self)
 
         # immediately occupy next sector
         next_sector.occupy(self.name)
-
-        ct = datetime.datetime.now()
-        print(ct, " Train.py restart_movement 622:   Train ", self.name, " occupying sector ",
-              next_sector.color)
 
         # if asked, release previous sector. This normally
         # has to be done only when departing a station.
         if False:
             self.previous_sector.release(self.name)
-
-            ct = datetime.datetime.now()
-            print(ct, " Train.py 631  restart_movement:   Train ", self.name, " releasing sector ", self.previous_sector.color)
 
         # train is departing either from station, or from a sector end signal,
         # so gui displays inter-sector color

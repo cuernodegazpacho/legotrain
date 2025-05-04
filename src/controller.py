@@ -116,9 +116,10 @@ class Controller:
             self.train2.initialize_sectors()
             self.train3.initialize_sectors()
 
-            track.xtrack.initialize(self.train1)
-            track.xtrack.initialize(self.train2)
-            track.xtrack.initialize(self.train3)
+            if track.xtrack is not None:
+                track.xtrack.initialize(self.train1)
+                track.xtrack.initialize(self.train2)
+                track.xtrack.initialize(self.train3)
 
         # reset mode for configuration with compound train
         if isinstance(self.train1, CompoundTrain):
@@ -127,7 +128,8 @@ class Controller:
 
             self.train1.train_rear.initialize_sectors()
 
-            track.xtrack.initialize(self.train1.train_rear)
+            if track.xtrack is not None:
+                track.xtrack.initialize(self.train1.train_rear)
 
     def _restart(self):
         # this method assumes the train(s) is(are) stopped at its(their) designated
@@ -330,13 +332,7 @@ class Dispatcher:
                 # unblock sector TODO this depends on the particular track layout
                 track.sectors[signal.BLUE].occupier = None
 
-                ct = datetime.datetime.now()
-                print(ct, " Dispatcher:  "," releasing sector ", track.sectors[signal.BLUE].color)
-
-            sleep(5.0)
-
-    def _free_trains(self):
-        pass
+            sleep(3.0)
 
     def stop(self):
         self._stop = True

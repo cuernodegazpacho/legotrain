@@ -189,16 +189,8 @@ class EventProcessor:
         # it again here just in case.
         self.train.sector.occupy(self.train.name)
 
-        ct = datetime.datetime.now()
-        print(ct, " Event.py _enter_sector 193:   Train ", self.train.name, " occupying sector ", self.train.sector.color)
-
         # make sure previous sector is released.
         self.train.previous_sector.release(self.train.name)
-
-        ct = datetime.datetime.now()
-        print(ct, " Event.py _enter_sector 199:   Train ", self.train.name, " releasing sector ",
-              self.train.previous_sector.color)
-
 
         # in case train departed from an inter-sector zone, we must force that
         # from now on it should behave as a normal train. We reset the start_sector
@@ -290,16 +282,10 @@ class EventProcessor:
             # next sector is free. Grab it.
             next_sector.occupy(self.train.name)
 
-            ct = datetime.datetime.now()
-            print(ct, " Event.py _handle_subsector_transition 294:   Train ", self.train.name, " occupying sector ",
-                  next_sector.color)
-
-
             # drop speed to a reasonable value to cross over the inter-sector zone,
             # but avoid using train.down_speed(), since it kills any underlying threads.
             # speed = min(SECTOR_EXIT_SPEED, self.train.power_index)
             # speed = DEFAULT_SPEED #TODO
-
             self.accelerate(self._get_exit_speed(), time=0.5)
 
 
@@ -345,19 +331,8 @@ class EventProcessor:
             # make sure previous sector is released.
             self.train.previous_sector.release(self.train.name)
 
-            ct = datetime.datetime.now()
-            print(ct, " Event.py 349 process_station_event:   Train ", self.train.name,
-                  " releasing sector ", self.train.previous_sector.color)
-
             # mark current sector as occupied.
             self.train.previous_sector.next[self.train.direction].occupy(self.train.name)
-
-
-            ct = datetime.datetime.now()
-            print(ct, " Event.py 357 process_station_event:   occupying sector: ",
-                  self.train.previous_sector.next[self.train.direction].color, " occupier: ",
-                  self.train.previous_sector.next[self.train.direction].occupier)
-
 
             # after stopping at station, execute a Timer delay followed by a re-start
             self.train.timed_stop_at_station()
@@ -380,11 +355,6 @@ class EventProcessor:
             self.train.initialize_sectors()
 
     def _exit_sector(self, event, accelerate=True):
-
-        ct = datetime.datetime.now()
-        print(ct, " Event.py 385 _exit_sector:   Train ", self.train.name,
-              " event: ", event)
-
 
         #TODO should be used for sectors, and station sectors
 
@@ -544,18 +514,8 @@ class EventProcessor:
         self.train.stop(from_handset=False)
         self.train.led_handler.set_solid(COLOR_RED)
 
-        ct = datetime.datetime.now()
-        print(ct, " Event.py 543  _stop_and_wait:   Train ", self.train.name, " stopped. Next sector is ",
-              next_sector.color, " and is occupied by ", next_sector.occupier)
-
         # make sure we wait for the next sector to go free.
-        while next_sector.occupier is not None and \
-              next_sector.occupier != self.train.name:
-
-            # ct = datetime.datetime.now()
-            # print(ct, " Event.py 551  _stop_and_wait:   Train ", self.train.name, " stopped. Next sector is ",
-            #       next_sector.color, next_sector, " and is occupied by ", next_sector.occupier)
-
+        while next_sector.occupier is not None and next_sector.occupier != self.train.name:
             time.sleep(2.)
 
         self.train.led_handler.set_solid(COLOR_GREEN)

@@ -89,7 +89,7 @@ class Sector():
         '''
         Occupy the sector.
 
-        The sector's occupy property is checked to prevent a train to occuoy
+        The sector's occupy property is checked to prevent a train to occupy
         a sector that is already occupied.
 
         :param train_id: the ID string of the train that occupies the sector
@@ -103,6 +103,9 @@ class Sector():
 
             self.occupier = train_id
         else:
+
+#TODO emergency full stop - reset
+
             raise Exception("Attempted to occupy an already occupied sector: ", self.color)
 
     def release(self, train_id):
@@ -235,7 +238,7 @@ class XTrack():
         # each other. In the current track layout, these are invalid
         # combinations. That is, there are no situations where a RED tile
         # immediately precedes, or is followed, by a PURPLE tile.
-        # TODO: this might not be the casee when 2 xtracks are present
+        # TODO: this might not be the case when 2 xtracks are present
         if (current_event in [PURPLE] and previous_event in [RED]) or \
                 (current_event in [RED] and previous_event in [PURPLE]):
             result = False
@@ -263,13 +266,17 @@ def clear_track():
 # this track layout has one instance of cross-track
 xtrack = XTrack("Crossing 1")
 
+# USE THIS TO DISABLE XTRACK - depending on specific track layout
+xtrack = None
+
 # sectors. Note that the xtrack sits right after the exit from RED_2
 sectors = {"RED_1": Sector(RED, max_speed=2, max_speed_time=1.),
            GREEN: Sector(GREEN, max_speed_time=5., exit_speed={DIRECTION_A: 2,
                                                                DIRECTION_B: 1}),
            "RED_2": Sector(RED, max_speed=2, max_speed_time=1, look_ahead=xtrack),
-           BLUE: StructuredSector(BLUE, max_speed_time=3., exit_speed={DIRECTION_A: SECTOR_EXIT_SPEED,
-                                                                       DIRECTION_B: 2}),
+           BLUE: StructuredSector(BLUE, max_speed_time=3., max_speed=4,
+                                  exit_speed={DIRECTION_A: SECTOR_EXIT_SPEED,
+                                              DIRECTION_B: 2}),
            }
 
 station_sector_names = {DIRECTION_B: "RED_1",
