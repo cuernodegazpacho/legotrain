@@ -117,11 +117,11 @@ def from_files():
         print()
 
 if __name__ == '__main__':
-    smart_hub = SmartHub(address=uuid_definitions.HUB_TEST)
-    demo_color_sensor(smart_hub)
-    demo_color_sensor_modes(smart_hub, 6)
+    # smart_hub = SmartHub(address=uuid_definitions.HUB_TEST)
+    # demo_color_sensor(smart_hub)
+    # demo_color_sensor_modes(smart_hub, 6)
 
     # alternate form that reads RGB data from previously collected files
-    # from_files()
+    from_files()
 
 

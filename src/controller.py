@@ -112,6 +112,11 @@ class Controller:
             self.train2.cancel_all_threads()
             self.train3.cancel_all_threads()
 
+            # need to do it again
+            self.train1.stop()
+            self.train2.stop()
+            self.train3.stop()
+
             self.train1.initialize_sectors()
             self.train2.initialize_sectors()
             self.train3.initialize_sectors()

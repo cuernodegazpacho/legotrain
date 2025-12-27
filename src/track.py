@@ -17,7 +17,7 @@ TIME_BLIND = 0.7
 DEFAULT_BRAKING_TIME = 2.0
 XTRACK_BRAKING_TIME = 0.5
 
-MAX_SPEED = 5
+MAX_SPEED = 6
 MAX_SPEED_TIME = 4.5 # s
 DEFAULT_SPEED = 4
 SECTOR_EXIT_SPEED = 3
@@ -103,9 +103,6 @@ class Sector():
 
             self.occupier = train_id
         else:
-
-#TODO emergency full stop - reset
-
             raise Exception("Attempted to occupy an already occupied sector: ", self.color)
 
     def release(self, train_id):
@@ -271,8 +268,8 @@ xtrack = None
 
 # sectors. Note that the xtrack sits right after the exit from RED_2
 sectors = {"RED_1": Sector(RED, max_speed=2, max_speed_time=1.),
-           GREEN: Sector(GREEN, max_speed_time=5., exit_speed={DIRECTION_A: 2,
-                                                               DIRECTION_B: 1}),
+           GREEN: Sector(GREEN, max_speed=4, max_speed_time=5., exit_speed={DIRECTION_A: 2,
+                                                                            DIRECTION_B: 1}),
            "RED_2": Sector(RED, max_speed=2, max_speed_time=1, look_ahead=xtrack),
            BLUE: StructuredSector(BLUE, max_speed_time=3., max_speed=4,
                                   exit_speed={DIRECTION_A: SECTOR_EXIT_SPEED,

@@ -13,19 +13,21 @@ INTER_SECTOR = "inter-sector"
 
 # Vision sensor colorimetry parameters.
 RGB_MINIMUM = 10.0
-V_MINIMUM = 100.
+V_MINIMUM = 65.
 
 HUE = {}
 SATURATION = {}
 
 HUE[RED]    = (0.985, 1.01)  # min and max hue
-HUE[GREEN]  = (0.35,  0.40)
+# HUE[GREEN]  = (0.35,  0.40)
+HUE[GREEN]  = (0.34,  0.41)      # DarkGreen_2
 HUE[BLUE]   = (0.55,  0.60)
 HUE[YELLOW] = (0.09,  0.13)
 HUE[PURPLE] = (0.94,  0.97)
 
-SATURATION[RED]    = (0.78, 0.88)  # min and max saturation
-SATURATION[GREEN]  = (0.66, 0.81)
+SATURATION[RED]    = (0.76, 0.88)  # min and max saturation
+# SATURATION[GREEN]  = (0.66, 0.81)
+SATURATION[GREEN]  = (0.63, 0.81)   # DarkGreen_2
 SATURATION[BLUE]   = (0.76, 0.86)
 SATURATION[YELLOW] = (0.55, 0.63)
 SATURATION[PURPLE] = (0.71, 0.83)

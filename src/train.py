@@ -168,8 +168,8 @@ class Train:
             self.current = value
             _print_values()
 
-        self.hub.voltage.subscribe(_report_voltage, mode=Voltage.VOLTAGE_L, granularity=5)
-        self.hub.current.subscribe(_report_current, mode=Current.CURRENT_L, granularity=15)
+        self.hub.voltage.subscribe(_report_voltage, mode=Voltage.VOLTAGE_L, granularity=10)
+        self.hub.current.subscribe(_report_current, mode=Current.CURRENT_L, granularity=20)
 
     def report_astation(self):
         # update GUI with @station value

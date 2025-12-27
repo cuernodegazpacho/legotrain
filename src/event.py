@@ -162,9 +162,12 @@ class EventProcessor:
 
         elif self.train.sector is None:
             # train is in inter-sector zone, thus this event signals the entry
-            # in a new sector
-            self._enter_sector(event)
-
+            # in a new sector. In  case the sector is already occupied, that signals
+            # a loss-of-control situation and the entire system must stop.
+            try:
+                self._enter_sector(event)
+            except Exception as e:
+                self.train.dispatcher.emergency_stop()
         else:
             # handle unusual situations
             self.recover(event)
@@ -543,6 +546,8 @@ class EventProcessor:
         print("ERROR: spurious signal inside sector. Train sector: ", self.train.sector.color,
               "  event: ", event, "  just entered: ", self.train.just_entered_sector, "  ",
               self.train.name)
+
+        self.train.dispatcher.emergency_stop()
 
         # # event color matches train's next sector color. This means that the end-of-sector
         # # signal was missed and the train already entered the next sector.
