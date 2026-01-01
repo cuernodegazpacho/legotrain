@@ -5,6 +5,7 @@ sensor sits from the colored tiles. Ambient ligth can also affect their performa
 
 I used LEGO® part #6254807 (Plate 2X2 Angle) as a mounting bracket:
 
+
 | <img src="pics/Angle.jpg" width="250"></img> |
 
 #### Vision sensor mounted on a 60197 train engine
